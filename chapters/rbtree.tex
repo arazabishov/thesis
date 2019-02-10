@@ -1,0 +1,231 @@
+\chapter{Radix Balanced Tree}
+
+Radix Balanced Tree or \emph{\rbtree}, is a tree like data structure where each node has at most \m number of children and uses element indices as keys. It was first introduced by Rich Hickey as a basis for the persistent vector implementation in the Clojure's standard library \cite{the-clojure-programming-language}. 
+
+Most data structures are tailored to specific use cases, with some operations being faster than others. For example, a persistent linked list can prepend elements and read the head in \bigo{1} time. However, random access is proportional to \bigo{n}, which is unacceptable in practical scenarios. 
+
+In comparison, the Clojure's vector implementation is delivering \emph{practically} \bigo{1} time on fundamental operations such as access, update, push, and pop, rivaling ephemeral vector in performance.
+
+This chapter introduces the inner workings of \rbtree and covers algorithms used in core operations. For more formal description of the persistent vector refer to \cite{improving-performance-through-transience}. 
+
+\section{Memory layout}
+
+\rbtree consists of nodes which contain references either to other sub-trees or values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of sub-trees and values in the node is configurable and will be denoted as \m, also known as \emph{branching factor}. 
+
+When \m is set to a large value, \rbtree becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations, but technically this number can be any power of 2.
+
+From now and onwards the height of the tree will be referred to as \h. The upper bound of \h can be calculated using ${\log_m(n - 1) + 1}$, where $n$ is the total count of elements in the tree. If \m is 32 and the number of elements will never be larger than the maximum index representable with 32 bit signed integers, the maximum height of the tree won't exceed 7 levels. 
+
+References to values are stored at the leaf nodes of the tree. If the count of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate, branch nodes, which contain references to other branches or leaves. 
+
+\section{Radix search}
+
+Before trying to understand how primitive operations such as push, pop and update work, let's take a look at how to access the right element in \rbtree. The lookup mechanism is called \emph{radix search}, a fundamental operation which forms the basis for other primitives.
+
+Conceptually, the idea behind search in a tree-like structure boils down to picking correct nodes based on the given key. If there is a value corresponding to the key, we stop searching and return the value. Otherwise, an empty value or error is returned.
+
+The lookup mechanism often depends on organization of nodes in the tree. Let's consider an example where each node can have at most two child nodes, called \emph{binary tree}. A binary tree where every node fits a specific ordering property is called \emph{binary search tree}. While searching, the key at each node is compared to the search key. All that is important is whether the key in the node is less than, equal to, or greater than the search key. The search is continued until an exact match or reaching leaf nodes.
+
+Another tree-like data structure --- trie, also known as prefix tree, is interesting because its nodes do not store complete keys. Instead, each node stores only part of it. A trie is a variant of an n-ary tree in which characters are stored at each node. Each path down the tree may represent a word. A node in a trie could have anywhere from 0 through the size of the alphabet children. For example, English alphabet has 26 letters, meaning that each node in a trie might have up to 26 children.
+
+The lookup procedure for tries involves breaking down the search key into multiple sub-keys, which are used to pick corresponding sub-tries. For example, the key "car" will be broken down into several smaller keys such as "c", "a", "r". If there is a value present at the last node of the path, it is returned. Otherwise, the search key is not present in the structure.
+
+\subsection*{Bit partitioning}
+
+\rbtree is a variation of a trie, which is also known as \emph{persistent bit-partitioned vector trie}. So what does make it so special? 
+
+A search key in \rbtree is an integer, which can be viewed as a composite key, where each sub-key is represented by a sequence of bits. The idea is to divide the key into blocks of bits, where each block forms an index specific to the tree node. The count of bits in each of those chunks can be derived from the branching factor and will be called as \emph{bits per level}.
+
+The \emph{bits per level} or \x is the count of bits used to address \m nodes in the binary numeral system. The relationship between \m and \x can be represented as: 
+
+\begin{equation}
+    2^x = m
+\end{equation}
+
+This leads us to a formula which derives the count of \emph{bits per level} from \m: 
+
+\begin{equation}
+    \label{eq:bits-per-level}
+    x = log_2(m)
+\end{equation}
+
+For example, with \m equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m into equation \ref{eq:bits-per-level}, we will get the same value. 
+
+\subsection*{Extracting sub-keys}
+
+Now when the size of the sub-key is known, next step is to identify its location. The count of sub-keys within the search key depends on the heght of the tree. Each new level in \rbtree will use \x additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 sub-keys taking up 6 bits of space in total.
+
+Sub-keys are arranged in the order from the most to the least significant bits, where the most significant sequence is a key used to access child node of the root. Each following key is used to index into child node on the corresponding tree level.
+
+Knowing the depth at which a node is located and the count of bits per level, the value of the key can be calculated using bitwise operations such as logical shift and masking. Let's take a look at mechanism used to extract the right sub-key. 
+
+In the following example there is a byte which represents a key equal to 54. Let's assume that it belongs to the tree where \m is 4, \x is 2 and that height of the tree 3. 
+
+\begin{equation}
+    54_{10} = 00110110_2    
+\end{equation}
+
+Since there are three levels, we have only three sub-keys: $11_2$, $01_2$ and $10_2$. Let's say that we are interested in extracting sub-key for the child node on the second level --- $01_2$. 
+
+First, let's get rid of the bits following the sub-key of our interest. Logical right shift operation --- $\ggg$, will push $(l - 1) * x$ 0s into key, where $l$ is the \emph{level} at which current node is located. 
+
+\begin{equation}
+    00110110 \ggg ((l - 1) * x)
+\end{equation}
+
+Since the node in the example is located at $l = 2$ and $x = 2$, the search key will be shifted by 2. The result of operation is $00001101_2$. As you can see, the "tail" of the key is truncated.
+
+The next step is to get rid of bits preceding the sub-key by masking them to 0. An operator used for this is known as bitwise "and" and it will be applied to the result of shifting operation. 
+
+A bitwise "and" takes two equal-length binary representations and performs the logical "and" operation on each pair of the corresponding bits. 
+
+Thus, if both bits in the compared position are 1, the bit in the resulting binary representation is 1; otherwise, the result is 0. Here is an example:
+
+\begin{equation}
+    00001101 \ \& \ 00000011 = 00000001
+\end{equation}
+                                    
+The first and the second operands are the key and mask respectively. 
+
+Only the last two bits of the mask are set to 1, which means that all bits of the key except last two will be masked to 0. The result of the "and"-ing operation will be the value of the sub-key.
+
+Now the question is how to define a mask and what are the requirements to it. First of all, it has to be of the same type as the key, meaning that it must have the same count of bits in the binary representation. Secondly, the last \x bits must be set to 1.
+
+The mask is equal to the maximum value of the sub-key, which can be calculated from the branching factor:
+
+\begin{equation}
+    mask = m - 1
+\end{equation}
+
+If \m is equal to 4 the maximum sub-key value will be 3, which equals to 00000011 in the binary representation.
+
+\subsection*{Summary}
+
+\begin{figure}    
+    \label{fig:rb-tree-example-1}
+    \caption{A part of a RB-Tree}
+    \centering
+    \begin{tikzpicture} [    
+        node/.style = { 
+            matrix of nodes, 
+            nodes = { draw, minimum width = 6mm, minimum height = 8mm, anchor = center},
+            font = \small,
+            nodes in empty cells        
+        },    
+        value/.style = { 
+            matrix of nodes, 
+            nodes = { draw = none, minimum width = 4mm, minimum height = 4mm, anchor = center, rotate = 90 },
+            font = \small,            
+            nodes in empty cells        
+        },    
+        edge/.style = { ->, shorten >= 4pt }
+    ]   
+        \node[] (index) at (current page.north west) { $104_{10}$ = $01 10 10 00_{2}$ };        
+        
+        \matrix[node] (node-1-1) [below right = 8mm and 1cm of index] { 00 & 01 & 10 & 11 \\ };
+                
+        \scoped[on background layer] {
+            \node[fit=(node-1-1-1-1), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-1-1-1-2), fill=color-path, inner sep = 0pt]   {};
+            \node[fit=(node-1-1-1-3), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-1-1-1-4), fill=color-node, inner sep = 0pt]   {};
+        }
+        
+        \matrix[node, inner sep = 0pt] (node-2-2) [below left = 8mm and 1mm of node-1-1.south] { 00 & 01 & 10 & 11 \\ };
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-2-3) [below right = 8mm and 1mm of node-1-1.south] { & & & \\ };
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-2-1) [left = 2mm of node-2-2.west] { & & & \\ };
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-2-4) [right = 2mm of node-2-3.east] { & & & \\ };
+
+        \scoped[on background layer] {
+            \node[fit=(node-2-2-1-1), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-2-2-1-2), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-2-2-1-3), fill=color-path, inner sep = 0pt]   {};
+            \node[fit=(node-2-2-1-4), fill=color-node, inner sep = 0pt]   {};
+        }
+
+        \draw[edge, out=225, in=45] (node-1-1-1-1.south) to (node-2-1.north);
+        \draw[edge, out=225, in=45] (node-1-1-1-2.south) to (node-2-2.north);
+        \draw[edge, out=315, in=135] (node-1-1-1-3.south) to (node-2-3.north);
+        \draw[edge, out=315, in=135] (node-1-1-1-4.south) to (node-2-4.north);
+
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-3-2) [below left = 8mm and 1mm of node-2-2.south] { & & & \\ };
+        \matrix[node, inner sep = 0pt] (node-3-3) [below right = 8mm and 1mm of node-2-2.south] { 00 & 01 & 10 & 11 \\ };
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-3-1) [left = 2mm of node-3-2.west] { & & & \\ };        
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-3-4) [right = 2mm of node-3-3.east] { & & & \\ };
+
+        \scoped[on background layer] {
+            \node[fit=(node-3-3-1-1), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-3-3-1-2), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-3-3-1-3), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-3-3-1-4), fill=color-path, inner sep = 0pt]   {};
+        }
+
+        \draw[edge, out=225, in=45] (node-2-2-1-1.south) to (node-3-1.north);
+        \draw[edge, out=225, in=45] (node-2-2-1-2.south) to (node-3-2.north);
+        \draw[edge, out=315, in=135] (node-2-2-1-3.south) to (node-3-3.north);
+        \draw[edge, out=315, in=135] (node-2-2-1-4.south) to (node-3-4.north);
+
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-4-2) [below left = 8mm and 1mm of node-3-3.south] { & & & \\ };        
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-4-3) [below right = 8mm and 1mm of node-3-3.south] { & & & \\ };
+        \matrix[node, fill = color-node, inner sep = 0pt] (node-4-1) [left = 2mm of node-4-2.west] { & & & \\ };        
+        \matrix[node, inner sep = 0pt] (node-4-4) [right = 2mm of node-4-3.east] { 00 & 01 & 10 & 11 \\ };
+
+        \scoped[on background layer] {
+            \node[fit=(node-4-4-1-1), fill=color-path, inner sep = 0pt]   {};
+            \node[fit=(node-4-4-1-2), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-4-4-1-3), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-4-4-1-4), fill=color-node, inner sep = 0pt]   {};
+        }
+        
+        \draw[edge, out=225, in=45] (node-3-3-1-1.south) to (node-4-1.north);
+        \draw[edge, out=225, in=45] (node-3-3-1-2.south) to (node-4-2.north);
+        \draw[edge, out=315, in=135] (node-3-3-1-3.south) to (node-4-3.north);
+        \draw[edge, out=315, in=135] (node-3-3-1-4.south) to (node-4-4.north);
+
+        \matrix[value] (node-5-1) [below = 0mm of node-4-1.south] { 139 & 140 & 141 & 142 \\ };
+        \matrix[value] (node-5-2) [below = 0mm of node-4-2.south] { 143 & 144 & 145 & 146 \\ };
+        \matrix[value] (node-5-3) [below = 0mm of node-4-3.south] { 147 & 148 & 149 & 150 \\ };
+        \matrix[value] (node-5-4) [below = 0mm of node-4-4.south] { 151 & 152 & 153 & 154 \\ };
+    \end{tikzpicture}
+\end{figure}
+
+Let's put everything together and review the radix search step by step based on the concrete example. In \ref{fig:rb-tree-example-1}, we can see a part of the \rbtree which represents elements of persistent vector in the range [92, 107].
+
+The branching factor of the tree is equal to 4, which means that 2 bits will be used for the sub-key representation. The mask is equal to 3 or 00000011 in the binary representation.
+
+The index type is \emph{unsigned byte}, which has a capacity of 256 \footnote{The capacity of any integer type can be calculated by taking the base of the system --- 2, to the power of bits available for its representation. For byte, it will be $2^8 = 256$.}. In practice, the index type is usually a 32 or a 64 bit integer, which has significantly bigger capacity.
+
+The height of the tree in the given state is 4. The node at the top is root, while nodes at the bottom are leaves. The goal is to lookup the contents of an element corresponding to the key 104. 104 in binary representation is equal to 01101000.
+
+Here are the steps which outline the radix search algorithm for the given example: 
+\begin{itemize}
+    \item Set node and level variables to root and $h - 1$ correspondingly.
+    \item As level is bigger than 0, the for loop will be entered:
+    \begin{itemize}
+        \item Shift the key by $level * x$ bits: $104 \ggg 6 = 00000001_2$.
+        \item Mask the result of previous operation: $00000001\ \& \ 00000011 = 00000001$, which yields the sub-key equal to $1_{10}$.
+        \item The node is replaced with the child node at index 1. 
+    \end{itemize}
+    \item Level is decremented by 1 and now equals to 2. 
+    \item As level is bigger than 0, the for loop will be entered: 
+    \begin{itemize}
+        \item Shift the key by $level * x$ bits: $104 \ggg 4 = 00000110_2$.
+        \item Mask the result of previous operation: $00000110\ \& \ 00000011 = 00000010$, which yields the sub-key equal to $3_{10}$.
+        \item The node is replaced with the child node at index 3.
+    \end{itemize}
+    \item Level is decremented by 1 and now equals to 1. 
+    \item As level is bigger than 0, the for loop will be entered: 
+    \begin{itemize}
+        \item Shift the key by $level * x$ bits: $104 \ggg 2 = 00011010_2$.
+        \item Mask the result of previous operation: $00011010\ \& \ 00000011$, which yields the sub-key equal to $3_{10}$.        
+        \item The node is replaced with the child node at index 3.
+    \end{itemize}
+    \item Level is decremented by 1 and now equals to 0. 
+    \item As level is no longer bigger than 0, we exit the for loop.
+    \item Perform masking over the key: $01101000\ \& \ 00000011 = 00000000$, which yields the sub-key equal to $0_{10}$.
+    \item Return the value at node of index 0 --- 151.
+\end{itemize}
+
+\section{Update}
+\section{Push} 
+\section{Pop}

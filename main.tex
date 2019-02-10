@@ -1,0 +1,110 @@
+\documentclass[12pt,a4paper,english,twoside,openright]{report}
+\usepackage{parskip}
+
+\usepackage[includeheadfoot, inner=3.5cm, outer=3.5cm]{geometry}
+\setlength{\headheight}{15pt}
+
+\usepackage{emptypage}
+\usepackage{pdfpages}
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\renewcommand{\sectionmark}[1]{ \markright{\thesection\ #1}{} }
+\fancyhead[RE,LO]{\rightmark}
+
+\usepackage{float}
+\floatstyle{boxed}
+\restylefloat{figure}
+
+\usepackage[
+  colorinlistoftodos,
+  prependcaption,
+  textsize=small
+]{todonotes}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc,url}
+\urlstyle{sf}
+
+\usepackage{amssymb}
+\usepackage{tikz}
+\usetikzlibrary{matrix,arrows,backgrounds,fit}
+
+\usepackage{minted}
+\newmintinline[ir]{rust}{}
+\newmintedfile[rustfile]{rust}{}
+
+\usepackage{babel,textcomp,csquotes,varioref,graphicx}
+
+\usepackage[
+  backend=biber,
+  maxbibnames=6,
+  isbn=false,
+  doi=false,
+  defernumbers=true
+]{biblatex}
+\addbibresource{refs.bib}
+\setlength\bibitemsep{\baselineskip}
+
+\usepackage[
+  pdftitle={Efficient Persistent Vector Implementation for Rust},
+  pdfauthor={Araz Abishov},
+  hidelinks=true,
+  unicode=true  
+]{hyperref}
+\urlstyle{same}
+
+\newcommand{\bigo}[1] { $\mathcal{O}(#1)$ }
+
+\newcommand{\rbtree} { RB-Tree }
+\newcommand{\m} { $m$ }
+\newcommand{\h} { $h$ }
+\newcommand{\x} { $x$ }
+
+\colorlet{color-path}{blue!30}
+\colorlet{color-node}{blue!10}
+
+\title{Efficient Persistent Vector Implementation for Rust}
+\author{Araz Abishov}
+
+\begin{document}
+
+\pagenumbering{roman}
+\includepdf[pages={-}]{forside/forside.pdf}
+\setcounter{page}{5}
+
+\pdfbookmark[0]{Front matter}{bm-frontmatter}
+\pdfbookmark[1]{Contents}{bm-toc}
+\tableofcontents{}
+
+\cleardoublepage
+\pdfbookmark[1]{List of Listings}{bm-listings}
+\listoflistings
+
+\cleardoublepage
+\pdfbookmark[1]{List of Figures}{bm-figures}
+\listoffigures
+
+\cleardoublepage
+\include{chapters/abstract}
+
+\cleardoublepage
+\include{chapters/acknowledgements}
+
+\cleardoublepage
+\include{chapters/preface}
+
+\pagenumbering{arabic}
+
+\include{chapters/introduction}
+\include{chapters/rbtree}
+\include{chapters/rrbtree}
+\include{chapters/memlayout}
+\include{chapters/example}
+
+\listoftodos
+
+\printbibliography
+\end{document}
