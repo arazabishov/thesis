@@ -103,7 +103,7 @@ If \m is equal to 4 the maximum sub-key value will be 3, which equals to 0000001
 
 \begin{figure}    
     \label{fig:rb-tree-example-1}
-    \caption{A part of a RB-Tree}
+    \caption{Accessing element at index 104 in a tree of height 4. Empty nodes represent collapsed subtrees.}
     \centering
     \begin{tikzpicture} [    
         node/.style = { 
@@ -227,5 +227,29 @@ Here are the steps which outline the radix search algorithm for the given exampl
 \end{itemize}
 
 \section{Update}
+- What does this operation?
+- What are semantics of the update operation?
+    - What is api of this function?
+        - What does function accept?
+            - Index
+            - A new value for the given index
+        - What does function return?
+            - A new version of the data structure
+            - How the new version of the data structure is represented? (id of new version, object, node, etc)
+    - What is expected behavior? (mutating in-place, yielding new version, etc)
+        - It might be mutated internally, but this is abstracted away from the caller
+        - Accepts index and a new value, and returns a new version which contains requested changes
+- How to find the existing value?
+    - Using radix search
+- How to ensure that old version remains untouched?
+    - Path copying - a technic which allows to copy only the path which has been updated (reference to okasaki)
+        - Share parts of the tree which won't be affected by the change
+        - Copy and update parts of the tree which are going to be affected by the change or a new value
+        - Each node is copy-on-write
+        - What is expected performance of this operation?
+- What happens if value doesn't exist or non-existing index is provided
+    - Return an error or throw an exception, depending on the programming language you're using for algorithm
+- Take a look at concrete example as you did in the radix search section
+
 \section{Push} 
 \section{Pop}
