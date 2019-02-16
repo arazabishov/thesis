@@ -223,8 +223,28 @@ Here are the steps which outline the radix search algorithm for the given exampl
     \item Level is decremented by 1 and now equals to 0. 
     \item As level is no longer bigger than 0, we exit the for loop.
     \item Perform masking over the key: $01101000\ \& \ 00000011 = 00000000$, which yields the sub-key equal to $0_{10}$.
-    \item Return the value at node of index 0 --- 151.
+    \item Return the value at node of index 0 --- 151.    
 \end{itemize}
+
+\begin{listing}[ht!]    
+\caption{Pseudocode for the radix search implementation}
+
+\begin{algorithmic}
+    \Function{RadixSearch}{root, height, key}
+        \State $node \leftarrow root$
+
+        \For{$level \leftarrow height - 1, 1$}
+            \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
+            \State $node  \leftarrow node[index]$
+        \EndFor
+
+        \State $index \leftarrow key\ \&\ mask$
+        \State \Return ${node[index]}$
+    \EndFunction
+\end{algorithmic}
+
+\label{lst:enum}
+\end{listing}
 
 \section{Update}
 - What does this operation?
@@ -250,6 +270,30 @@ Here are the steps which outline the radix search algorithm for the given exampl
 - What happens if value doesn't exist or non-existing index is provided
     - Return an error or throw an exception, depending on the programming language you're using for algorithm
 - Take a look at concrete example as you did in the radix search section
+
+\begin{listing}[ht!]    
+    \caption{Pseudocode for the RB-Tree's update implementation}
+    
+    \begin{algorithmic}
+        \Function{Update}{root, height, key, value}
+            \State $newRoot \leftarrow clone(root)$
+            \State $node \leftarrow newRoot$
+    
+            \For{$level \leftarrow height - 1, 1$}
+                \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
+                \State $newChildNode \leftarrow clone(node[index])$
+                \State $node[index] \leftarrow newChildNode$
+                \State $node \leftarrow newChildNode$
+            \EndFor
+    
+            \State $index \leftarrow key\ \&\ mask$
+            \State $node[index] \leftarrow value$            
+            \State \Return $newRoot$
+        \EndFunction
+    \end{algorithmic}
+    
+    \label{lst:enum}
+    \end{listing}
 
 \section{Push} 
 \section{Pop}
