@@ -9,6 +9,7 @@ In comparison, the Clojure's vector implementation is delivering \emph{practical
 This chapter introduces the inner workings of \rbtree and covers algorithms used in core operations. For more formal description of the persistent vector refer to \cite{improving-performance-through-transience}. 
 
 \section{Memory layout}
+\label{sec:rb-tree-memory-layout}
 
 \rbtree consists of nodes which contain references either to other sub-trees or values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of sub-trees and values in the node is configurable and will be denoted as \m, also known as \emph{branching factor}. 
 
@@ -227,51 +228,46 @@ Here are the steps which outline the radix search algorithm for the given exampl
 \end{itemize}
 
 \begin{listing}[ht!]    
-\caption{Pseudocode for the radix search implementation}
+    \label{lst:rb-tree-radix-search}
+    \caption{Pseudocode for the RB-Tree's radix search implementation}
 
-\begin{algorithmic}
-    \Function{RadixSearch}{root, height, key}
-        \State $node \leftarrow root$
+    \begin{algorithmic}
+        \Function{RadixSearch}{root, height, key}
+            \State $node \leftarrow root$
 
-        \For{$level \leftarrow height - 1, 1$}
-            \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
-            \State $node  \leftarrow node[index]$
-        \EndFor
+            \For{$level \leftarrow height - 1, 1$}
+                \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
+                \State $node  \leftarrow node[index]$
+            \EndFor
 
-        \State $index \leftarrow key\ \&\ mask$
-        \State \Return ${node[index]}$
-    \EndFunction
-\end{algorithmic}
-
-\label{lst:enum}
+            \State $index \leftarrow key\ \&\ mask$
+            \State \Return ${node[index]}$
+        \EndFunction
+    \end{algorithmic}
 \end{listing}
 
 \section{Update}
-- What does this operation?
-- What are semantics of the update operation?
-    - What is api of this function?
-        - What does function accept?
-            - Index
-            - A new value for the given index
-        - What does function return?
-            - A new version of the data structure
-            - How the new version of the data structure is represented? (id of new version, object, node, etc)
-    - What is expected behavior? (mutating in-place, yielding new version, etc)
-        - It might be mutated internally, but this is abstracted away from the caller
-        - Accepts index and a new value, and returns a new version which contains requested changes
-- How to find the existing value?
-    - Using radix search
-- How to ensure that old version remains untouched?
-    - Path copying - a technic which allows to copy only the path which has been updated (reference to okasaki)
-        - Share parts of the tree which won't be affected by the change
-        - Copy and update parts of the tree which are going to be affected by the change or a new value
-        - Each node is copy-on-write
-        - What is expected performance of this operation?
-- What happens if value doesn't exist or non-existing index is provided
-    - Return an error or throw an exception, depending on the programming language you're using for algorithm
-- Take a look at concrete example as you did in the radix search section
+The purpose of the update operation is to replace the value in the instance of \rbtree for the given search  key. 
+
+\emph{Emphemeral} update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable. 
+
+\emph{Version} is something what differentiates one instance of the \rbtree from another. Instead using an explicit versioning such as assigning unique numbers to instances of \rbtree, we will rely on the memory address as unique identifier. 
+
+The update function accepts two arguments: a search key and a new value. If operation is successfully executed, It returns a new instance of \rbtree. If the search key is not present in the original version, new value is either ignored or error is returned. 
+
+There are a few challenges associated with the implementation. If radix search was only reading values without any modifications, update is supposed to both change the value for the given key and ensure that the original structure stays unmodified. 
+
+\subsection*{Path copying}
+Radix search will be used to find the value corresponding to the given key. In order to make sure that original data structure is not modified, each branch and leaf node on the way from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated. 
+
+In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m. Then, the \m sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root. 
+
+To summarize, the update operation performs the \h count copies of \m sized nodes, where \h is the maximum height of the tree. As described in section \ref{sec:rb-tree-memory-layout}, \h is bound by \bigo{log_m(n)}, which results in the {\bigo{m * log_m(n)}} complexity of the update operation. 
+
+When branching factor \m is set to a large value such as 32, performance becomes \bigo{1} in practice. For example, if the tree was completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer —  2147483647, \h will be at most 7. Since both \h and \m are effectively constant factors, the resulting performance is proportional to \bigo{1}. 
 
 \begin{listing}[ht!]    
+    \label{lst:rb-tree-update}
     \caption{Pseudocode for the RB-Tree's update implementation}
     
     \begin{algorithmic}
@@ -291,9 +287,9 @@ Here are the steps which outline the radix search algorithm for the given exampl
             \State \Return $newRoot$
         \EndFunction
     \end{algorithmic}
-    
-    \label{lst:enum}
-    \end{listing}
+\end{listing}
+
+Based on \ref{lst:rb-tree-update}, the update operation is very similar to radix search from the implementation standpoint. The main difference is that every visited node must be copied, including root. The return value is the root node to the new version of the tree. 
 
 \section{Push} 
 \section{Pop}
