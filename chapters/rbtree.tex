@@ -366,3 +366,41 @@ Root overflow can be solved by adding a new level to the tree. This is done by c
 \end{listing}
 
 \section{Pop}
+
+\begin{listing}[ht!]    
+    \label{lst:rb-tree-pop}
+    \caption{Pseudocode for the RB-Tree's pop implementation}
+    
+    \begin{algorithmic}
+        \Function{PopNode}{node, key}
+            \State $newNode \leftarrow Clone(node)$
+            \State $value \leftarrow NIL$
+
+            \If{$node_{height} = 0$}                
+                \State $index \leftarrow key\ \&\ mask$
+                \State $value \leftarrow newNode[index]$
+                \State $newNode[index] \leftarrow NIL$
+            \Else                 
+                \State $index \leftarrow (key \ggg (newNode_{height} * x))\ \&\ mask$
+                \State $value, childNode \leftarrow PopNode(newNode[index], key)$                
+                \State $newNode[index] \leftarrow childNode$
+            \EndIf
+            
+            \If{$newNode[0] = NIL$}
+                \State \Return $value, NIL$
+            \Else
+                \State \Return $value, newNode$
+            \EndIf
+        \EndFunction
+        \State        
+        \Function{Pop}{root}
+            \State $value, newRoot \leftarrow PopNode(root, root_{size} - 1)$
+            
+            \If{$newRoot[1] = NIL)$}                                
+                \State $newRoot \leftarrow newRoot[0]$            
+            \EndIf
+
+            \State \Return $value, newRoot$
+        \EndFunction
+    \end{algorithmic}
+\end{listing}
