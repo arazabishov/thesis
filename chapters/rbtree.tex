@@ -367,6 +367,10 @@ Root overflow can be solved by adding a new level to the tree. This is done by c
 
 \section{Pop}
 
+Removing items from \rbtree is made possible by the pop operation. Together with push, it conforms to the LIFO \footnote{Last In First Out} principle which is typical for the stack abstract data type. It accepts root as input and returns both a popped value and a new version of a structure. 
+
+Pop is responsible for reducing capacity of \rbtree when necessary, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm. 
+
 \begin{listing}[ht!]    
     \label{lst:rb-tree-pop}
     \caption{Pseudocode for the RB-Tree's pop implementation}
@@ -404,3 +408,7 @@ Root overflow can be solved by adding a new level to the tree. This is done by c
         \EndFunction
     \end{algorithmic}
 \end{listing}
+
+Since \rbtree is a complete tree, it is true that all entries to the right of \emph{NIL} must be absent as well. As shown in Listing \ref{lst:rb-tree-pop}, \emph{NIL}checking the 0th entry is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \emph{NIL} reference in the parent node. 
+
+Lowering the height of the tree is crucial from both performance and memory consumption standpoints. A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \emph{NIL}.  The original root is demoted by replacing it with the first child node, which becomes the new root. 
