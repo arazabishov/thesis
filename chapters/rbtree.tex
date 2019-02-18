@@ -292,6 +292,34 @@ When branching factor \m is set to a large value such as 32, performance becomes
 Based on \ref{lst:rb-tree-update}, the update operation is very similar to radix search from the implementation standpoint. The main difference is that every visited node must be copied, including root. The return value is the root node to the new version of the tree. 
 
 \section{Push} 
+The push operation is used to add new elements to the end of \rbtree. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree. 
+
+A key for the new element is equal to the count of elements in \rbtree, also known as \emph{size}. For example, if the size is equal to 9, the key for the new value will also be equal to 9. After operation is executed, the size will be incremented by 1. 
+
+The main difference between the update and the push operation is that the latter one has to take care of allocating more space for new elements. If the right most leaf node has available slots, then behavior of push is very similar to update. Otherwise, there are two additional scenarios in which either the right most leaf is completely full or there is no more space left in the root node. 
+
+Solution for the first case flows from the radix search algorithm. Given a unique key, it calculates a path for the new value, which will never lead to a full leaf node. What might happen is that a path will include nodes which are not created yet. This can be solved by generating them on demand. 
+
+The second case, also known as \emph{root overflow}, occurs when the \emph{size} of the tree exceeds its \emph{capacity}. \emph{Capacity} is the maximum number of elements a tree can accommodate, which can be calculated based on the height \h and the branching factor \m of \rbtree:
+
+\begin{equation}
+	capacity = m^h.
+\end{equation}
+
+The algorithm for this calculation is based on the left bit shift operation, described in Listing \ref{lst:rb-tree-capacity}. 
+
+Root overflow can be solved by adding a new level to the tree. This is done by creating a new root node and setting the old root as the first child of the new root. The rest is handled by generating new nodes in the path to the new value. For more details, see Listing \ref{lst:rb-tree-push}. 
+
+\begin{listing}[ht!]    
+    \label{lst:rb-tree-capacity}
+    \caption{Pseudocode for the RB-Tree's capacity implementation}
+    
+    \begin{algorithmic}
+        \Function{Capacity}{h}
+		\State \Return $m \ll ((h - 1) * x)$
+        \EndFunction
+    \end{algorithmic}
+\end{listing}
 
 \begin{listing}[ht!]    
     \label{lst:rb-tree-push}
@@ -299,14 +327,14 @@ Based on \ref{lst:rb-tree-update}, the update operation is very similar to radix
     
     \begin{algorithmic}
         \Function{Push}{root, value}
-            \State $newRoot = NIL$
+            \State $newRoot \leftarrow NIL$
 
             \If{$capacity(root_{height}) <= root_{size}$}                
                 \State $newRoot \leftarrow CreateNode()$
                 \State $newRoot[0] \leftarrow Clone(root)$
                 \State $newRoot_{height} \leftarrow root_{height} + 1$
             \Else 
-                \State $newRoot = Clone(root)$
+                \State $newRoot \leftarrow Clone(root)$
             \EndIf
                         
             \State $node \leftarrow newRoot$
@@ -316,12 +344,12 @@ Based on \ref{lst:rb-tree-update}, the update operation is very similar to radix
                 \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
                 
                 \State $childNode \leftarrow node[index]$
-                \State $newChildNode = NIL$
+                \State $newChildNode \leftarrow NIL$
 
                 \If{$childNode = NIL$}
-                    \State $newChildNode = CreateNode()$
+                    \State $newChildNode \leftarrow CreateNode()$
                 \Else
-                    \State $newChildNode = clone(childNode)$
+                    \State $newChildNode \leftarrow clone(childNode)$
                 \EndIf
                 
                 \State $node[index] \leftarrow newChildNode$
@@ -331,7 +359,7 @@ Based on \ref{lst:rb-tree-update}, the update operation is very similar to radix
             \State $index \leftarrow key\ \&\ mask$
             \State $node[index] \leftarrow value$ 
 
-            \State $newRoot_{size} = newRoot_{size} + 1$
+            \State $newRoot_{size} \leftarrow newRoot_{size} + 1$
             \State \Return $newRoot$
         \EndFunction
     \end{algorithmic}
