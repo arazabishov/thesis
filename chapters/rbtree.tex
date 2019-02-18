@@ -292,4 +292,49 @@ When branching factor \m is set to a large value such as 32, performance becomes
 Based on \ref{lst:rb-tree-update}, the update operation is very similar to radix search from the implementation standpoint. The main difference is that every visited node must be copied, including root. The return value is the root node to the new version of the tree. 
 
 \section{Push} 
+
+\begin{listing}[ht!]    
+    \label{lst:rb-tree-push}
+    \caption{Pseudocode for the RB-Tree's push implementation}
+    
+    \begin{algorithmic}
+        \Function{Push}{root, value}
+            \State $newRoot = NIL$
+
+            \If{$capacity(root_{height}) <= root_{size}$}                
+                \State $newRoot \leftarrow CreateNode()$
+                \State $newRoot[0] \leftarrow Clone(root)$
+                \State $newRoot_{height} \leftarrow root_{height} + 1$
+            \Else 
+                \State $newRoot = Clone(root)$
+            \EndIf
+                        
+            \State $node \leftarrow newRoot$
+            \State $key \leftarrow newRoot_{size}$
+    
+            \For{$level \leftarrow newRoot_{height} - 1, 1$}
+                \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
+                
+                \State $childNode \leftarrow node[index]$
+                \State $newChildNode = NIL$
+
+                \If{$childNode = NIL$}
+                    \State $newChildNode = CreateNode()$
+                \Else
+                    \State $newChildNode = clone(childNode)$
+                \EndIf
+                
+                \State $node[index] \leftarrow newChildNode$
+                \State $node \leftarrow newChildNode$
+            \EndFor        
+    
+            \State $index \leftarrow key\ \&\ mask$
+            \State $node[index] \leftarrow value$ 
+
+            \State $newRoot_{size} = newRoot_{size} + 1$
+            \State \Return $newRoot$
+        \EndFunction
+    \end{algorithmic}
+\end{listing}
+
 \section{Pop}
