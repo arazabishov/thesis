@@ -50,7 +50,7 @@ This leads us to a formula which derives the count of \emph{bits per level} from
     x = log_2(m)
 \end{equation}
 
-For example, with \m equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m into equation \ref{eq:bits-per-level}, we will get the same value. 
+For example, with \m equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m into \Cref{eq:bits-per-level}, we will get the same value. 
 
 \subsection*{Extracting sub-keys}
 
@@ -102,9 +102,10 @@ If \m is equal to 4 the maximum sub-key value will be 3, which equals to 0000001
 
 \subsection*{Summary}
 
-\begin{figure}    
-    \label{fig:rb-tree-example-1}
+\begin{figure}        
     \caption{Accessing element at index 104 in a tree of height 4. Empty nodes represent collapsed subtrees.}
+    \label{fig:rb-tree-example-1}
+
     \centering
     \begin{tikzpicture} [    
         node/.style = { 
@@ -190,7 +191,7 @@ If \m is equal to 4 the maximum sub-key value will be 3, which equals to 0000001
     \end{tikzpicture}
 \end{figure}
 
-Let's put everything together and review the radix search step by step based on the concrete example. In \ref{fig:rb-tree-example-1}, we can see a part of the \rbtree which represents elements of persistent vector in the range [92, 107].
+Let's put everything together and review the radix search step by step based on the concrete example. In \Cref{fig:rb-tree-example-1}, we can see a part of the \rbtree which represents elements of persistent vector in the range [92, 107].
 
 The branching factor of the tree is equal to 4, which means that 2 bits will be used for the sub-key representation. The mask is equal to 3 or 00000011 in the binary representation.
 
@@ -227,9 +228,9 @@ Here are the steps which outline the radix search algorithm for the given exampl
     \item Return the value at node of index 0 --- 151.    
 \end{itemize}
 
-\begin{listing}[ht!]    
-    \label{lst:rb-tree-radix-search}
+\begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's radix search implementation}
+    \label{lst:rb-tree-radix-search}
 
     \begin{algorithmic}
         \Function{RadixSearch}{root, key}
@@ -260,15 +261,15 @@ There are a few challenges associated with the implementation. If radix search w
 \subsection*{Path copying}
 Radix search will be used to find the value corresponding to the given key. In order to make sure that original data structure is not modified, each branch and leaf node on the way from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated. 
 
-In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m. Then, the \m sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root. 
+In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m. Then, the \m sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root.  
 
-To summarize, the update operation performs the \h count copies of \m sized nodes, where \h is the maximum height of the tree. As described in section \ref{sec:rb-tree-memory-layout}, \h is bound by \bigo{log_m(n)}, which results in the {\bigo{m * log_m(n)}} complexity of the update operation. 
+To summarize, the update operation performs the \h count copies of \m sized nodes, where \h is the maximum height of the tree. As described in \Cref{sec:rb-tree-memory-layout}, \h is bound by \bigo{log_m(n)}, which results in the {\bigo{m * log_m(n)}} complexity of the update operation. 
 
 When branching factor \m is set to a large value such as 32, performance becomes \bigo{1} in practice. For example, if the tree was completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer —  2147483647, \h will be at most 7. Since both \h and \m are effectively constant factors, the resulting performance is proportional to \bigo{1}. 
 
-\begin{listing}[ht!]    
-    \label{lst:rb-tree-update}
+\begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's update implementation}
+    \label{lst:rb-tree-update}
     
     \begin{algorithmic}
         \Function{Update}{root, key, value}
@@ -289,7 +290,7 @@ When branching factor \m is set to a large value such as 32, performance becomes
     \end{algorithmic}
 \end{listing}
 
-Based on \ref{lst:rb-tree-update}, the update operation is very similar to radix search from the implementation standpoint. The main difference is that every visited node must be copied, including root. The return value is the root node to the new version of the tree. 
+Based on \Cref{lst:rb-tree-update}, the update operation is very similar to radix search from the implementation standpoint. The main difference is that every visited node must be copied, including root. The return value is the root node to the new version of the tree. 
 
 \section{Push} 
 The push operation is used to add new elements to the end of \rbtree. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree. 
@@ -306,13 +307,13 @@ The second case, also known as \emph{root overflow}, occurs when the \emph{size}
 	capacity = m^h.
 \end{equation}
 
-The algorithm for this calculation is based on the left bit shift operation, described in Listing \ref{lst:rb-tree-capacity}. 
+The algorithm for this calculation is based on the left bit shift operation, described in \Cref{lst:rb-tree-capacity}. 
 
-Root overflow can be solved by adding a new level to the tree. This is done by creating a new root node and setting the old root as the first child of the new root. The rest is handled by generating new nodes in the path to the new value. For more details, see Listing \ref{lst:rb-tree-push}. 
+Root overflow can be solved by adding a new level to the tree. This is done by creating a new root node and setting the old root as the first child of the new root. The rest is handled by generating new nodes in the path to the new value. For more details, see \Cref{lst:rb-tree-push}. 
 
-\begin{listing}[ht!]    
-    \label{lst:rb-tree-capacity}
+\begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's capacity implementation}
+    \label{lst:rb-tree-capacity}
     
     \begin{algorithmic}
         \Function{Capacity}{h}
@@ -321,9 +322,9 @@ Root overflow can be solved by adding a new level to the tree. This is done by c
     \end{algorithmic}
 \end{listing}
 
-\begin{listing}[ht!]    
-    \label{lst:rb-tree-push}
+\begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's push implementation}
+    \label{lst:rb-tree-push}
     
     \begin{algorithmic}
         \Function{Push}{root, value}
@@ -371,9 +372,9 @@ Removing items from \rbtree is made possible by the pop operation. Together with
 
 Pop is responsible for reducing capacity of \rbtree when necessary, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm. 
 
-\begin{listing}[ht!]    
-    \label{lst:rb-tree-pop}
+\begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's pop implementation}
+    \label{lst:rb-tree-pop}
     
     \begin{algorithmic}
         \Function{PopNode}{node, key}
@@ -409,6 +410,6 @@ Pop is responsible for reducing capacity of \rbtree when necessary, including re
     \end{algorithmic}
 \end{listing}
 
-Since \rbtree is a complete tree, it is true that all entries to the right of \emph{NIL} must be absent as well. As shown in Listing \ref{lst:rb-tree-pop}, \emph{NIL}checking the 0th entry is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \emph{NIL} reference in the parent node. 
+Since \rbtree is a complete tree, it is true that all entries to the right of \emph{NIL} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, \emph{NIL} checking the 0th entry is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \emph{NIL} reference in the parent node. 
 
 Lowering the height of the tree is crucial from both performance and memory consumption standpoints. A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \emph{NIL}.  The original root is demoted by replacing it with the first child node, which becomes the new root. 
