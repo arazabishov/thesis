@@ -1,27 +1,27 @@
 \chapter{Radix Balanced Tree}
 
-Radix Balanced Tree or \emph{\rbtree}, is a tree like data structure where each node has at most \m number of children and uses element indices as keys. It was first introduced by Rich Hickey as a basis for the persistent vector implementation in the Clojure's standard library \cite{the-clojure-programming-language}. 
+Radix Balanced Tree or \emph{\rbtree}, is a tree like data structure where each node has at most \m{} number of children and uses element indices as keys. It was first introduced by Rich Hickey as a basis for the persistent vector implementation in the Clojure's standard library \cite{the-clojure-programming-language}. 
 
 Most data structures are tailored to specific use cases, with some operations being faster than others. For example, a persistent linked list can prepend elements and read the head in \bigo{1} time. However, random access is proportional to \bigo{n}, which is unacceptable in practical scenarios. 
 
 In comparison, the Clojure's vector implementation is delivering \emph{practically} \bigo{1} time on fundamental operations such as access, update, push, and pop, rivaling ephemeral vector in performance.
 
-This chapter introduces the inner workings of \rbtree and covers algorithms used in core operations. For more formal description of the persistent vector refer to \cite{improving-performance-through-transience}. 
+This chapter introduces the inner workings of \rbtree{} and covers algorithms used in core operations. For more formal description of the persistent vector refer to \cite{improving-performance-through-transience}. 
 
 \section{Memory layout}
 \label{sec:rb-tree-memory-layout}
 
-\rbtree consists of nodes which contain references either to other sub-trees or values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of sub-trees and values in the node is configurable and will be denoted as \m, also known as \emph{branching factor}. 
+\rbtree{} consists of nodes which contain references either to other sub-trees or values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of sub-trees and values in the node is configurable and will be denoted as \m{}, also known as \emph{branching factor}. 
 
-When \m is set to a large value, \rbtree becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations, but technically this number can be any power of 2.
+When \m{} is set to a large value, \rbtree{} becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations, but technically this number can be any power of 2.
 
-From now and onwards the height of the tree will be referred to as \h. The upper bound of \h can be calculated using ${\log_m(n - 1) + 1}$, where $n$ is the total count of elements in the tree. If \m is 32 and the number of elements will never be larger than the maximum index representable with 32 bit signed integers, the maximum height of the tree won't exceed 7 levels. 
+From now and onwards the height of the tree will be referred to as \h{}. The upper bound of \h{} can be calculated using ${\log_m(n - 1) + 1}$, where $n$ is the total count of elements in the tree. If \m{} is 32 and the number of elements will never be larger than the maximum index representable with 32 bit signed integers, the maximum height of the tree won't exceed 7 levels. 
 
 References to values are stored at the leaf nodes of the tree. If the count of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate, branch nodes, which contain references to other branches or leaves. 
 
 \section{Radix search}
 
-Before trying to understand how primitive operations such as push, pop and update work, let's take a look at how to access the right element in \rbtree. The lookup mechanism is called \emph{radix search}, a fundamental operation which forms the basis for other primitives.
+Before trying to understand how primitive operations such as push, pop and update work, let's take a look at how to access the right element in \rbtree{}. The lookup mechanism is called \emph{radix search}, a fundamental operation which forms the basis for other primitives.
 
 Conceptually, the idea behind search in a tree-like structure boils down to picking correct nodes based on the given key. If there is a value corresponding to the key, we stop searching and return the value. Otherwise, an empty value or error is returned.
 
@@ -33,34 +33,34 @@ The lookup procedure for tries involves breaking down the search key into multip
 
 \subsection*{Bit partitioning}
 
-\rbtree is a variation of a trie, which is also known as \emph{persistent bit-partitioned vector trie}. So what does make it so special? 
+\rbtree{} is a variation of a trie, which is also known as \emph{persistent bit-partitioned vector trie}. So what does make it so special? 
 
-A search key in \rbtree is an integer, which can be viewed as a composite key, where each sub-key is represented by a sequence of bits. The idea is to divide the key into blocks of bits, where each block forms an index specific to the tree node. The count of bits in each of those chunks can be derived from the branching factor and will be called as \emph{bits per level}.
+A search key in \rbtree{} is an integer, which can be viewed as a composite key, where each sub-key is represented by a sequence of bits. The idea is to divide the key into blocks of bits, where each block forms an index specific to the tree node. The count of bits in each of those chunks can be derived from the branching factor and will be called as \emph{bits per level}.
 
-The \emph{bits per level} or \x is the count of bits used to address \m nodes in the binary numeral system. The relationship between \m and \x can be represented as: 
+The \emph{bits per level} or \x{} is the count of bits used to address \m{} nodes in the binary numeral system. The relationship between \m{} and \x{} can be represented as: 
 
 \begin{equation}
     2^x = m
 \end{equation}
 
-This leads us to a formula which derives the count of \emph{bits per level} from \m: 
+This leads us to a formula which derives the count of \emph{bits per level} from \m{}: 
 
 \begin{equation}
     \label{eq:bits-per-level}
     x = log_2(m)
 \end{equation}
 
-For example, with \m equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m into \Cref{eq:bits-per-level}, we will get the same value. 
+For example, with \m{} equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m{} into \Cref{eq:bits-per-level}, we will get the same value. 
 
 \subsection*{Extracting sub-keys}
 
-Now when the size of the sub-key is known, next step is to identify its location. The count of sub-keys within the search key depends on the heght of the tree. Each new level in \rbtree will use \x additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 sub-keys taking up 6 bits of space in total.
+Now when the size of the sub-key is known, next step is to identify its location. The count of sub-keys within the search key depends on the heght of the tree. Each new level in \rbtree{} will use \x{} additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 sub-keys taking up 6 bits of space in total.
 
 Sub-keys are arranged in the order from the most to the least significant bits, where the most significant sequence is a key used to access child node of the root. Each following key is used to index into child node on the corresponding tree level.
 
 Knowing the depth at which a node is located and the count of bits per level, the value of the key can be calculated using bitwise operations such as logical shift and masking. Let's take a look at mechanism used to extract the right sub-key. 
 
-In the following example there is a byte which represents a key equal to 54. Let's assume that it belongs to the tree where \m is 4, \x is 2 and that height of the tree 3. 
+In the following example there is a byte which represents a key equal to 54. Let's assume that it belongs to the tree where \m{} is 4, \x{} is 2 and that height of the tree 3. 
 
 \begin{equation}
     54_{10} = 00110110_2    
@@ -98,7 +98,7 @@ The mask is equal to the maximum value of the sub-key, which can be calculated f
     mask = m - 1
 \end{equation}
 
-If \m is equal to 4 the maximum sub-key value will be 3, which equals to 00000011 in the binary representation.
+If \m{} is equal to 4 the maximum sub-key value will be 3, which equals to 00000011 in the binary representation.
 
 \subsection*{Summary}
 
@@ -191,7 +191,7 @@ If \m is equal to 4 the maximum sub-key value will be 3, which equals to 0000001
     \end{tikzpicture}
 \end{figure}
 
-Let's put everything together and review the radix search step by step based on the concrete example. In \Cref{fig:rb-tree-example-1}, we can see a part of the \rbtree which represents elements of persistent vector in the range [92, 107].
+Let's put everything together and review the radix search step by step based on the concrete example. In \Cref{fig:rb-tree-example-1}, we can see a part of the \rbtree{} which represents elements of persistent vector in the range [92, 107].
 
 The branching factor of the tree is equal to 4, which means that 2 bits will be used for the sub-key representation. The mask is equal to 3 or 00000011 in the binary representation.
 
@@ -248,24 +248,24 @@ Here are the steps which outline the radix search algorithm for the given exampl
 \end{listing}
 
 \section{Update}
-The purpose of the update operation is to replace the value in the instance of \rbtree for the given search  key. 
+The purpose of the update operation is to replace the value in the instance of \rbtree{} for the given search  key. 
 
 \emph{Emphemeral} update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable. 
 
-\emph{Version} is something what differentiates one instance of the \rbtree from another. Instead using an explicit versioning such as assigning unique numbers to instances of \rbtree, we will rely on the memory address as unique identifier. 
+\emph{Version} is something what differentiates one instance of the \rbtree{} from another. Instead using an explicit versioning such as assigning unique numbers to instances of \rbtree{}, we will rely on the memory address as unique identifier. 
 
-The update function accepts two arguments: a search key and a new value. If operation is successfully executed, It returns a new instance of \rbtree. If the search key is not present in the original version, new value is either ignored or error is returned. 
+The update function accepts two arguments: a search key and a new value. If operation is successfully executed, It returns a new instance of \rbtree{}. If the search key is not present in the original version, new value is either ignored or error is returned. 
 
 There are a few challenges associated with the implementation. If radix search was only reading values without any modifications, update is supposed to both change the value for the given key and ensure that the original structure stays unmodified. 
 
 \subsection*{Path copying}
 Radix search will be used to find the value corresponding to the given key. In order to make sure that original data structure is not modified, each branch and leaf node on the way from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated. 
 
-In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m. Then, the \m sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root.  
+In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m{}. Then, the \m{} sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root.  
 
-To summarize, the update operation performs the \h count copies of \m sized nodes, where \h is the maximum height of the tree. As described in \Cref{sec:rb-tree-memory-layout}, \h is bound by \bigo{log_m(n)}, which results in the {\bigo{m * log_m(n)}} complexity of the update operation. 
+To summarize, the update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{sec:rb-tree-memory-layout}, \h{} is bound by \bigo{log_m(n)}, which results in the {\bigo{m * log_m(n)}} complexity of the update operation. 
 
-When branching factor \m is set to a large value such as 32, performance becomes \bigo{1} in practice. For example, if the tree was completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer —  2147483647, \h will be at most 7. Since both \h and \m are effectively constant factors, the resulting performance is proportional to \bigo{1}. 
+When branching factor \m{} is set to a large value such as 32, performance becomes \bigo{1} in practice. For example, if the tree was completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer —  2147483647, \h{} will be at most 7. Since both \h{} and \m{} are effectively constant factors, the resulting performance is proportional to \bigo{1}. 
 
 \begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's update implementation}
@@ -293,15 +293,15 @@ When branching factor \m is set to a large value such as 32, performance becomes
 Based on \Cref{lst:rb-tree-update}, the update operation is very similar to radix search from the implementation standpoint. The main difference is that every visited node must be copied, including root. The return value is the root node to the new version of the tree. 
 
 \section{Push} 
-The push operation is used to add new elements to the end of \rbtree. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree. 
+The push operation is used to add new elements to the end of \rbtree{}. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree. 
 
-A key for the new element is equal to the count of elements in \rbtree, also known as \emph{size}. For example, if the size is equal to 9, the key for the new value will also be equal to 9. After operation is executed, the size will be incremented by 1. 
+A key for the new element is equal to the count of elements in \rbtree{}, also known as \emph{size}. For example, if the size is equal to 9, the key for the new value will also be equal to 9. After operation is executed, the size will be incremented by 1. 
 
 The main difference between the update and the push operation is that the latter one has to take care of allocating more space for new elements. If the right most leaf node has available slots, then behavior of push is very similar to update. Otherwise, there are two additional scenarios in which either the right most leaf is completely full or there is no more space left in the root node. 
 
 Solution for the first case flows from the radix search algorithm. Given a unique key, it calculates a path for the new value, which will never lead to a full leaf node. What might happen is that a path will include nodes which are not created yet. This can be solved by generating them on demand. 
 
-The second case, also known as \emph{root overflow}, occurs when the \emph{size} of the tree exceeds its \emph{capacity}. \emph{Capacity} is the maximum number of elements a tree can accommodate, which can be calculated based on the height \h and the branching factor \m of \rbtree:
+The second case, also known as \emph{root overflow}, occurs when the \emph{size} of the tree exceeds its \emph{capacity}. \emph{Capacity} is the maximum number of elements a tree can accommodate, which can be calculated based on the height \h{} and the branching factor \m{} of \rbtree{}:
 
 \begin{equation}
 	capacity = m^h.
@@ -368,9 +368,9 @@ Root overflow can be solved by adding a new level to the tree. This is done by c
 
 \section{Pop}
 
-Removing items from \rbtree is made possible by the pop operation. Together with push, it conforms to the LIFO \footnote{Last In First Out} principle which is typical for the stack abstract data type. It accepts root as input and returns both a popped value and a new version of a structure. 
+Removing items from \rbtree{} is made possible by the pop operation. Together with push, it conforms to the LIFO \footnote{Last In First Out} principle which is typical for the stack abstract data type. It accepts root as input and returns both a popped value and a new version of a structure. 
 
-Pop is responsible for reducing capacity of \rbtree when necessary, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm. 
+Pop is responsible for reducing capacity of \rbtree{} when necessary, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm. 
 
 \begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's pop implementation}
@@ -410,6 +410,6 @@ Pop is responsible for reducing capacity of \rbtree when necessary, including re
     \end{algorithmic}
 \end{listing}
 
-Since \rbtree is a complete tree, it is true that all entries to the right of \emph{NIL} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, \emph{NIL} checking the 0th entry is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \emph{NIL} reference in the parent node. 
+Since \rbtree{} is a complete tree, it is true that all entries to the right of \emph{NIL} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, \emph{NIL} checking the 0th entry is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \emph{NIL} reference in the parent node. 
 
 Lowering the height of the tree is crucial from both performance and memory consumption standpoints. A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \emph{NIL}.  The original root is demoted by replacing it with the first child node, which becomes the new root. 
