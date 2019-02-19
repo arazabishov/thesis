@@ -232,10 +232,10 @@ Here are the steps which outline the radix search algorithm for the given exampl
     \caption{Pseudocode for the RB-Tree's radix search implementation}
 
     \begin{algorithmic}
-        \Function{RadixSearch}{root, height, key}
+        \Function{RadixSearch}{root, key}
             \State $node \leftarrow root$
 
-            \For{$level \leftarrow height - 1, 1$}
+            \For{$level \leftarrow root_{height} - 1, 1$}
                 \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
                 \State $node  \leftarrow node[index]$
             \EndFor
@@ -271,11 +271,11 @@ When branching factor \m is set to a large value such as 32, performance becomes
     \caption{Pseudocode for the RB-Tree's update implementation}
     
     \begin{algorithmic}
-        \Function{Update}{root, height, key, value}
+        \Function{Update}{root, key, value}
             \State $newRoot \leftarrow clone(root)$
             \State $node \leftarrow newRoot$
     
-            \For{$level \leftarrow height - 1, 1$}
+            \For{$level \leftarrow root_{height} - 1, 1$}
                 \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
                 \State $newChildNode \leftarrow clone(node[index])$
                 \State $node[index] \leftarrow newChildNode$
