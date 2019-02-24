@@ -413,3 +413,39 @@ Pop is responsible for reducing capacity of \rbtree{} when necessary, including 
 Since \rbtree{} is a complete tree, it is true that all entries to the right of \emph{NIL} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, \emph{NIL} checking the 0th entry is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \emph{NIL} reference in the parent node. 
 
 Lowering the height of the tree is crucial from both performance and memory consumption standpoints. A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \emph{NIL}.  The original root is demoted by replacing it with the first child node, which becomes the new root. 
+
+\section{Tail optimization for persistent vector}
+
+In practice, changes are often confined to the end or \emph{tail} of the data structure. Stack is specifically designed for such use cases, by offering constant performance for the push and pop operations. 
+
+Even though \rbtree\ has similar performance characteristics in practice, its push and pop implementations include pesky constant factors in the form of \emph{radix search} and \emph{path copying} algorithms. 
+
+The \emph{tail} optimization is intended to offset this cost by reducing count of \rbtree\ accesses. Instead of adding or removing elements one by one, changes are batched in the array of size \m\. This array could be thought as of  a leaf node, which is attached to the tree only when it is full. 
+
+The following sections review changes in the core operations including the \emph{tail} optimization. 
+
+\subsection*{Push}
+As shown in \Cref{lst:pvec-push}, the value is set into cloned tail at position $tail_{size}$. Since \rbtree\ is a complete tree, the right most leaf node is the only one which can be empty or semi-full. In this case, the right most leaf node is the tail. Hence, the size of the tail can be used as index for the new value.
+
+If after update the tail is full, it will be pushed into a tree and replaced with an empty tail in the new version of vector. Otherwise, the original root is reused in the new vector. 
+
+\begin{listing}[ht!]        
+    \caption{Tail optimization for persistent vector’s push implementation}
+    \label{lst:pvec-push}
+    
+    \begin{algorithmic}
+        \Function{Pvec-Push}{vec, value}        
+        \State $newTail \leftarrow Clone(vec_{tail})$
+        \State $newTail[tail_{size}] \leftarrow value$
+        \State $newTail_{size} \leftarrow tail_{size} + 1$
+        \State $newRoot \leftarrow vec_{root}$
+            
+        \If{$newTail_{size} = m$}
+            \State $newRoot \leftarrow RbTree-Push(vec_{root}, newTail)$
+            \State $newTail \leftarrow CreateNode()$        
+        \EndIf
+        
+        \State \Return $CreateVec(newRoot, newTail)$
+        \EndFunction
+    \end{algorithmic}
+\end{listing}
