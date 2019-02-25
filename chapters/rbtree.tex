@@ -297,7 +297,7 @@ The push operation is used to add new elements to the end of \rbtree{}. It emplo
 
 A key for the new element is equal to the count of elements in \rbtree{}, also known as \emph{size}. For example, if the size is equal to 9, the key for the new value will also be equal to 9. After operation is executed, the size will be incremented by 1. 
 
-The main difference between the update and the push operation is that the latter one has to take care of allocating more space for new elements. If the right most leaf node has available slots, then behavior of push is very similar to update. Otherwise, there are two additional scenarios in which either the right most leaf is completely full or there is no more space left in the root node. 
+The main difference between the update and the push operation is that the latter one has to take care of allocating more space for new elements. If the rightmost leaf node has available slots, then behavior of push is very similar to update. Otherwise, there are two additional scenarios in which either the rightmost leaf is completely full or there is no more space left in the root node. 
 
 Solution for the first case flows from the radix search algorithm. Given a unique key, it calculates a path for the new value, which will never lead to a full leaf node. What might happen is that a path will include nodes which are not created yet. This can be solved by generating them on demand. 
 
@@ -424,10 +424,10 @@ The \emph{tail} optimization is intended to offset this cost by reducing count o
 
 The following sections review changes in the core operations including the \emph{tail} optimization. 
 
-\subsection*{Push}
-As shown in \Cref{lst:pvec-push}, the value is set into cloned tail at position $tail_{size}$. Since \rbtree\ is a complete tree, the right most leaf node is the only one which can be empty or semi-full. In this case, the right most leaf node is the tail. Hence, the size of the tail can be used as index for the new value.
+\subsection*{Optimizing the push operation}
+As shown in \Cref{lst:pvec-push}, the value is set into a cloned tail at the position $tail_{size}$. Since \rbtree\ is a complete tree, the rightmost leaf node is the only node which can be empty or semi-full. As the rightmost leaf node is the tail, its size can be used as an index for the new value.
 
-If after update the tail is full, it will be pushed into a tree and replaced with an empty tail in the new version of vector. Otherwise, the original root is reused in the new vector. 
+If after update the tail is full, it will be pushed into a tree and replaced with an empty tail. 
 
 \begin{listing}[ht!]        
     \caption{Tail optimization for persistent vector’s push implementation}
