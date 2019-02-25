@@ -481,7 +481,7 @@ Now when the tail holds last elements, pop has to retrieve values from it instea
 \subsection*{Adapting the update and radix search operations}
 Changes for both update and radix search are very similar, with difference that update has to ensure that original vector stays unmodified. 
 
-Since values are residing both in \rbtree\ and tail, one has to check where the given search key is located. A value is located within the tree if the key is less than the tree size. In this case the search process is delegated to \rbtree. Otherwise, the index for value in the tail is calculated by by subtracting the tree size from the key. 
+Since values are residing both in \rbtree\ and tail, one has to check where the given search key is located. A value is located within the tree if the key is less than the tree size. In this case the search process is delegated to \rbtree. Otherwise, the index for value in the tail is calculated by subtracting the tree size from the key. 
 
 \begin{listing}[ht!]
     \caption{Adapting the update operation to support tail}
