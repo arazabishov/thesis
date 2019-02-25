@@ -449,3 +449,74 @@ If after update the tail is full, it will be pushed into a tree and replaced wit
         \EndFunction
     \end{algorithmic}
 \end{listing}
+
+\subsection*{Optimizing the pop operation}
+
+\begin{listing}[ht!]
+    \caption{Tail optimization for persistent vector’s pop implementation}
+    \label{lst:pvec-pop}
+    
+    \begin{algorithmic}
+        \Function{Pvec-Pop}{vec}
+        
+        \State newTail $\leftarrow$ Clone(vec\textsubscript{tail})
+        \State newRoot $\leftarrow$ NIL
+
+        \State value $\leftarrow$ newTail[newTail\textsubscript{size} - 1]
+        \State newTail\textsubscript{size} $\leftarrow$ newTail\textsubscript{size} - 1     
+            
+        \If{newTail\textsubscript{size} = 0}
+            \State newRoot, newTail $\leftarrow$ RbTree-Pop(vec\textsubscript{root})            
+        \Else 
+            \State newRoot $\leftarrow$ vec\textsubscript{root}
+        \EndIf
+        
+        \State \Return CreateVec(newRoot, newTail)
+        \EndFunction
+    \end{algorithmic}
+\end{listing}
+
+\subsection*{Adapting the update operation}
+
+\begin{listing}[ht!]
+    \caption{Adapting the update operation to support tail}
+    \label{lst:pvec-update}
+    
+    \begin{algorithmic}
+        \Function{Pvec-Update}{vec, key, value}
+
+        \State root $\leftarrow$ vec\textsubscript{root}
+        \State tail $\leftarrow$ vec\textsubscript{tail}
+
+        \If{key < root\textsubscript{size}}
+            \State newRoot $\leftarrow$ RbTree-Update(root, key, value)
+            \State \Return CreateVec(newRoot, tail)
+        \Else
+            \State newTail $\leftarrow$ Clone(tail)
+            \State newTail[key - root\textsubscript{size}] $\leftarrow$ value
+            \State \Return CreateVec(root, newTail)
+        \EndIf        
+        \EndFunction
+    \end{algorithmic}
+\end{listing}
+
+\subsection*{Adapting the radix search operation}
+
+\begin{listing}[ht!]
+    \caption{Adapting the radix search operation to support tail}
+    \label{lst:pvec-radix-search}
+    
+    \begin{algorithmic}
+        \Function{Pvec-Radix-Search}{vec, key}
+        
+        \State root $\leftarrow$ vec\textsubscript{root}
+        \State tail $\leftarrow$ vec\textsubscript{tail}
+
+        \If{key < root\textsubscript{size}}
+            \State \Return RbTree-Radix-Search(root, key)            
+        \Else            
+            \State \Return tail[key - root\textsubscript{size}]            
+        \EndIf
+        \EndFunction
+    \end{algorithmic}
+\end{listing}
