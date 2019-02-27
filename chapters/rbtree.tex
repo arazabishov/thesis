@@ -197,36 +197,9 @@ The branching factor of the tree is equal to 4, which means that 2 bits will be 
 
 The index type is \emph{unsigned byte}, which has a capacity of 256 \footnote{The capacity of any integer type can be calculated by taking the base of the system --- 2, to the power of bits available for its representation. For byte, it will be $2^8 = 256$.}. In practice, the index type is usually a 32 or a 64 bit integer, which has significantly bigger capacity.
 
-The height of the tree in the given state is 4. The node at the top is root, while nodes at the bottom are leaves. The goal is to lookup the contents of an element corresponding to the key 104. 104 in binary representation is equal to 01101000.
+The height of the tree in the given state is 4. The node at the top is root, while nodes at the bottom are leaves. The goal is to lookup the contents of an element corresponding to the key 104. 104 in binary representation is equal to 01101000. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm implementation. 
 
-Here are the steps which outline the radix search algorithm for the given example: 
-\begin{itemize}
-    \item Set node and level variables to root and $h - 1$ correspondingly.
-    \item As level is bigger than 0, the for loop will be entered:
-    \begin{itemize}
-        \item Shift the key by $level * x$ bits: $104 \ggg 6 = 00000001_2$.
-        \item Mask the result of previous operation: $00000001\ \& \ 00000011 = 00000001$, which yields the sub-key equal to $1_{10}$.
-        \item The node is replaced with the child node at index 1. 
-    \end{itemize}
-    \item Level is decremented by 1 and now equals to 2. 
-    \item As level is bigger than 0, the for loop will be entered: 
-    \begin{itemize}
-        \item Shift the key by $level * x$ bits: $104 \ggg 4 = 00000110_2$.
-        \item Mask the result of previous operation: $00000110\ \& \ 00000011 = 00000010$, which yields the sub-key equal to $3_{10}$.
-        \item The node is replaced with the child node at index 3.
-    \end{itemize}
-    \item Level is decremented by 1 and now equals to 1. 
-    \item As level is bigger than 0, the for loop will be entered: 
-    \begin{itemize}
-        \item Shift the key by $level * x$ bits: $104 \ggg 2 = 00011010_2$.
-        \item Mask the result of previous operation: $00011010\ \& \ 00000011$, which yields the sub-key equal to $3_{10}$.        
-        \item The node is replaced with the child node at index 3.
-    \end{itemize}
-    \item Level is decremented by 1 and now equals to 0. 
-    \item As level is no longer bigger than 0, we exit the for loop.
-    \item Perform masking over the key: $01101000\ \& \ 00000011 = 00000000$, which yields the sub-key equal to $0_{10}$.
-    \item Return the value at node of index 0 --- 151.    
-\end{itemize}
+The search process starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node. 
 
 \begin{listing}[ht!]        
     \caption{Pseudocode for the RB-Tree's radix search implementation}
