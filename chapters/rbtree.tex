@@ -1,23 +1,29 @@
 \chapter{Radix Balanced Tree}
 
-Radix Balanced Tree or \emph{\rbtree}, is a tree like data structure where each node has at most \m{} number of children and uses element indices as keys. It was first introduced by Rich Hickey as a basis for the persistent vector implementation in the Clojure's standard library \cite{the-clojure-programming-language}. 
+Radix Balanced Tree or \rbtree, is a wide tree data structure with a fixed number of children per node, which allows access to values using integer keys. It was first introduced by Rich Hickey as a basis for the persistent vector implementation in Clojure's standard library \cite{the-clojure-programming-language}. 
 
-Most data structures are tailored to specific use cases, with some operations being faster than others. For example, a persistent linked list can prepend elements and read the head in \bigo{1} time. However, random access is proportional to \bigo{n}, which is unacceptable in practical scenarios. 
+Most persistent data structures are tailored to specific use cases, with some operations being faster than others. For example, a persistent linked list can prepend elements and read the head in \bigo{1} time. However, random access is proportional to \bigo{n}, which is unacceptable in practical scenarios. 
 
-In comparison, the Clojure's vector implementation is delivering \emph{practically} \bigo{1} time on fundamental operations such as access, update, push, and pop, rivaling ephemeral vector in performance.
+In comparison, Clojure's vector implementation is delivering \emph{practically} \bigo{1} time on fundamental operations such as access, update, push, and pop, rivaling ephemeral vector in performance.
 
-This chapter introduces the inner workings of \rbtree{} and covers algorithms used in core operations. For more formal description of the persistent vector refer to \cite{improving-performance-through-transience}. 
+This chapter introduces the inner workings of \rbtree{} and covers algorithms used in the core operations. For a more formal description of the persistent vector, refer to \cite{improving-performance-through-transience}. 
 
 \section{Memory layout}
 \label{sec:rb-tree-memory-layout}
 
-\rbtree{} consists of nodes which contain references either to other sub-trees or values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of sub-trees and values in the node is configurable and will be denoted as \m{}, also known as \emph{branching factor}. 
+\rbtree{} consists of nodes which contain references to other subtrees or to values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of subtrees and values in the node is configurable and will be denoted as \m, also known as \emph{branching factor}. 
 
-When \m{} is set to a large value, \rbtree{} becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations, but technically this number can be any power of 2.
+When \m\ is set to a large value, the tree becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations, but this number can be any power of 2.
 
-From now and onwards the height of the tree will be referred to as \h{}. The upper bound of \h{} can be calculated using ${\log_m(n - 1) + 1}$, where $n$ is the total count of elements in the tree. If \m{} is 32 and the number of elements will never be larger than the maximum index representable with 32 bit signed integers, the maximum height of the tree won't exceed 7 levels. 
+From now on the height of the tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
 
-References to values are stored at the leaf nodes of the tree. If the count of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate, branch nodes, which contain references to other branches or leaves. 
+\begin{equation}
+    h_{max} = log_m(n).
+\end{equation}
+
+If \m{} is 32 and the number of elements will never be larger than the maximum index representable with 32 bit signed integers, the maximum height of the tree will not exceed 7 levels. 
+
+References to values are stored at the leaf nodes of the tree. If the count of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes. 
 
 \section{Radix search}
 
