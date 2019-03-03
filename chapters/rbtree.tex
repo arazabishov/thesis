@@ -27,15 +27,15 @@ References to values are stored at the leaf nodes of the tree. If the count of v
 
 \section{Radix search}
 
-Before trying to understand how primitive operations such as push, pop and update work, let's take a look at how to access the right element in \rbtree{}. The lookup mechanism is called \emph{radix search}, a fundamental operation which forms the basis for other primitives.
+Before trying to understand how operations such as push, pop, and update work, let's take a look at how to access values in \rbtree{}. The lookup mechanism is called \emph{radix search}, a fundamental algorithm which forms the basis for other operations.
 
-Conceptually, the idea behind search in a tree-like structure boils down to picking correct nodes based on the given key. If there is a value corresponding to the key, we stop searching and return the value. Otherwise, an empty value or error is returned.
+Conceptually, the idea behind the search in an ordered tree-like structure boils down to picking correct nodes based on the given key. If there is a value corresponding to the key, we stop searching and return the value. Otherwise, an empty value or error is returned.
 
-The lookup mechanism often depends on organization of nodes in the tree. Let's consider an example where each node can have at most two child nodes, called \emph{binary tree}. A binary tree where every node fits a specific ordering property is called \emph{binary search tree}. While searching, the key at each node is compared to the search key. All that is important is whether the key in the node is less than, equal to, or greater than the search key. The search is continued until an exact match or reaching leaf nodes.
+The lookup mechanism depends on organization of nodes in the tree. Let's consider an example where each node has at most two children, called \emph{binary tree}. A binary tree where every node fits a specific ordering property\footnote{For every node $n$, all left descendents must be less than or equal than $n$, and all right descendents must be strictly bigger than $n$.} is called \emph{binary search tree}. While searching, the key at each node is compared to the search key. All that is important is whether the key in the node is less than, equal to, or greater than the search key. The search is continued until an exact match or reaching a leaf node.
 
-Another tree-like data structure --- trie, also known as prefix tree, is interesting because its nodes do not store complete keys. Instead, each node stores only part of it. A trie is a variant of an n-ary tree in which characters are stored at each node. Each path down the tree may represent a word. A node in a trie could have anywhere from 0 through the size of the alphabet children. For example, English alphabet has 26 letters, meaning that each node in a trie might have up to 26 children.
+Another tree-like data structure known as trie, is interesting because its nodes do not store complete keys. Instead, each node stores only part of it. Since tries are often used for the prefix search of words, their nodes store characters. Each path down the tree may represent a word. A node in a trie could have anywhere from 0 through the size of the alphabet children. For example, the english alphabet has 26 letters, meaning that each node might have up to 26 children.
 
-The lookup procedure for tries involves breaking down the search key into multiple sub-keys, which are used to pick corresponding sub-tries. For example, the key "car" will be broken down into several smaller keys such as "c", "a", "r". If there is a value present at the last node of the path, it is returned. Otherwise, the search key is not present in the structure.
+The lookup procedure for tries involves breaking down the search key into multiple sub-keys, which are used to pick corresponding sub-tries. For example, the key "car" will be broken down into several smaller keys such as "c", "a", "r". If there is a value present at the last node of the path, it is returned. Otherwise, an empty value or error is returned. 
 
 \subsection*{Bit partitioning}
 
