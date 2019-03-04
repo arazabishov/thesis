@@ -35,36 +35,27 @@ The lookup mechanism depends on organization of nodes in the tree. Let's conside
 
 Another tree-like data structure known as trie, is interesting because its nodes do not store complete keys. Instead, each node stores only part of it. Since tries are often used for the prefix search of words, their nodes store characters. Each path down the tree may represent a word. A node in a trie could have anywhere from 0 through the size of the alphabet children. For example, the english alphabet has 26 letters, meaning that each node might have up to 26 children.
 
-The lookup procedure for tries involves breaking down the search key into multiple sub-keys, which are used to pick corresponding sub-tries. For example, the key "car" will be broken down into several smaller keys such as "c", "a", "r". If there is a value present at the last node of the path, it is returned. Otherwise, an empty value or error is returned. 
+The lookup procedure for tries involves breaking down the search key into multiple subkeys, which are used to pick corresponding sub-tries. For example, the key "car" will be broken down into several smaller keys such as "c", "a", "r". If there is a value present at the last node of the path, it is returned. Otherwise, an empty value or error is returned. 
 
 \subsection*{Bit partitioning}
+Radix search accepts a key of integer type as an argument. It can be viewed as a composite key, where each subkey is represented by a sequence of bits. The idea is to divide the key into blocks of bits, where each block forms an index specific to the tree node. The count of bits in each of those chunks can be derived from the branching factor and will be named as \emph{bits per level}.
 
-\rbtree{} is a variation of a trie, which is also known as \emph{persistent bit-partitioned vector trie}. So what does make it so special? 
-
-A search key in \rbtree{} is an integer, which can be viewed as a composite key, where each sub-key is represented by a sequence of bits. The idea is to divide the key into blocks of bits, where each block forms an index specific to the tree node. The count of bits in each of those chunks can be derived from the branching factor and will be called as \emph{bits per level}.
-
-The \emph{bits per level} or \x{} is the count of bits used to address \m{} nodes in the binary numeral system. The relationship between \m{} and \x{} can be represented as: 
-
-\begin{equation}
-    2^x = m
-\end{equation}
-
-This leads us to a formula which derives the count of \emph{bits per level} from \m{}: 
+The \emph{bits per level} or \x{} is the count of bits used to address \m{} nodes in the binary numeral system:
 
 \begin{equation}
     \label{eq:bits-per-level}
-    x = log_2(m)
+    x = log_2(m).
 \end{equation}
 
 For example, with \m{} equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m{} into \Cref{eq:bits-per-level}, we will get the same value. 
 
-\subsection*{Extracting sub-keys}
+\subsection*{Extracting subkeys}
 
-Now when the size of the sub-key is known, next step is to identify its location. The count of sub-keys within the search key depends on the heght of the tree. Each new level in \rbtree{} will use \x{} additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 sub-keys taking up 6 bits of space in total.
+Now when the size of the subkey is known, the next step is to identify its location. The count of subkeys within the search key depends on \h. Each new level in \rbtree{} will use \x{} additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 subkeys taking up 6 bits of space in total.
 
-Sub-keys are arranged in the order from the most to the least significant bits, where the most significant sequence is a key used to access child node of the root. Each following key is used to index into child node on the corresponding tree level.
+Subkeys are arranged in the order from the most to the least significant bits, where the most significant block of bits is a key used to access child node of the root. Each following key is used to find a child node on the corresponding tree level.
 
-Knowing the depth at which a node is located and the count of bits per level, the value of the key can be calculated using bitwise operations such as logical shift and masking. Let's take a look at mechanism used to extract the right sub-key. 
+Knowing the depth at which a node is located and the count of bits per level, the value of the key can be calculated using bitwise operations such as logical shift and masking. Let's take a look at a mechanism used to extract the correct subkey. 
 
 In the following example there is a byte which represents a key equal to 54. Let's assume that it belongs to the tree where \m{} is 4, \x{} is 2 and that height of the tree 3. 
 
@@ -72,44 +63,36 @@ In the following example there is a byte which represents a key equal to 54. Let
     54_{10} = 00110110_2    
 \end{equation}
 
-Since there are three levels, we have only three sub-keys: $11_2$, $01_2$ and $10_2$. Let's say that we are interested in extracting sub-key for the child node on the second level --- $01_2$. 
+Since there are three levels, we have only three subkeys: $11_2$, $01_2$ and $10_2$. Let's say that we are interested in extracting subkey for the child node on the second level or $01_2$. 
 
-First, let's get rid of the bits following the sub-key of our interest. Logical right shift operation --- $\ggg$, will push $(l - 1) * x$ 0s into key, where $l$ is the \emph{level} at which current node is located. 
-
-\begin{equation}
-    00110110 \ggg ((l - 1) * x)
-\end{equation}
-
-Since the node in the example is located at $l = 2$ and $x = 2$, the search key will be shifted by 2. The result of operation is $00001101_2$. As you can see, the "tail" of the key is truncated.
-
-The next step is to get rid of bits preceding the sub-key by masking them to 0. An operator used for this is known as bitwise "and" and it will be applied to the result of shifting operation. 
-
-A bitwise "and" takes two equal-length binary representations and performs the logical "and" operation on each pair of the corresponding bits. 
-
-Thus, if both bits in the compared position are 1, the bit in the resulting binary representation is 1; otherwise, the result is 0. Here is an example:
+First, let's get rid of the bits following the subkey of our interest. Logical right shift operation\footnote{A logical right shift is a bitwise operation that shifts all the bits of its first operand to the right by number of bits specified in the second operand.} denoted as $\ggg$, will push specified count of 0s into key $k$, where $l$ is the \emph{level} at which current node is located: 
 
 \begin{equation}
-    00001101 \ \& \ 00000011 = 00000001
+    k \ggg ((l - 1) * x).
 \end{equation}
-                                    
-The first and the second operands are the key and mask respectively. 
 
-Only the last two bits of the mask are set to 1, which means that all bits of the key except last two will be masked to 0. The result of the "and"-ing operation will be the value of the sub-key.
+The key $k$ will be shifted by 2 bits, because the node from the example is located at $l = 2$ in the tree of $x = 2$. The result of operation is $00001101_2$. As you can see, the "tail" of the key is truncated.
 
-Now the question is how to define a mask and what are the requirements to it. First of all, it has to be of the same type as the key, meaning that it must have the same count of bits in the binary representation. Secondly, the last \x bits must be set to 1.
+The next step is to get rid of bits preceding the subkey by masking them to 0. An operator used for this is known as bitwise "and" and it will be applied to the result of shifting operation. 
 
-The mask is equal to the maximum value of the sub-key, which can be calculated from the branching factor:
+A bitwise "and" takes two equal-length binary representations and performs the logical "and" operation on each pair of the corresponding bits. If both bits in the compared position are 1, the bit in the resulting binary representation is 1; otherwise, the result is 0. Here is an example, where the first and the second operands are the key and mask respectively: 
 
 \begin{equation}
-    mask = m - 1
+    00001101 \ \& \ 00000011 = 00000001.
+\end{equation}                        
+
+Only the last two bits of the mask are set to 1, which means that all bits of the key except last two will be masked to 0. The result of the "and"-ing operation will be the value of the subkey.
+
+A mask must be of the same type as a key and can be calculated from the branching factor \m:
+
+\begin{equation}
+    \mathit{mask} = m - 1.
 \end{equation}
 
-If \m{} is equal to 4 the maximum sub-key value will be 3, which equals to 00000011 in the binary representation.
-
-\subsection*{Summary}
+If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000011\textsubscript{2}.
 
 \begin{figure}        
-    \caption{Accessing element at index 104 in a tree of height 4. Empty nodes represent collapsed subtrees.}
+    \caption{Visualization of radix search.}
     \label{fig:rb-tree-example-1}
 
     \centering
@@ -199,11 +182,11 @@ If \m{} is equal to 4 the maximum sub-key value will be 3, which equals to 00000
 
 Let's put everything together and review the radix search step by step based on the concrete example. In \Cref{fig:rb-tree-example-1}, we can see a part of the \rbtree{} which represents elements of persistent vector in the range [92, 107].
 
-The branching factor of the tree is equal to 4, which means that 2 bits will be used for the sub-key representation. The mask is equal to 3 or 00000011 in the binary representation.
+The branching factor of the tree is equal to 4, which means that 2 bits will be used for the subkey representation. The mask is equal to 3 or 00000011 in the binary representation.
 
-The index type is \emph{unsigned byte}, which has a capacity of 256 \footnote{The capacity of any integer type can be calculated by taking the base of the system --- 2, to the power of bits available for its representation. For byte, it will be $2^8 = 256$.}. In practice, the index type is usually a 32 or a 64 bit integer, which has significantly bigger capacity.
+The index is of the \emph{unsigned byte} type, which has a capacity\footnote{The capacity of any integer type can be calculated by taking the base of the binary system to the power of bits available for its representation. For unsigned byte, it will be $2^8 = 256$.} of 256. In practice, the index type is usually a 32 or a 64 bit integer, which has significantly bigger capacity.
 
-The height of the tree in the given state is 4. The node at the top is root, while nodes at the bottom are leaves. The goal is to lookup the contents of an element corresponding to the key 104. 104 in binary representation is equal to 01101000. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm implementation. 
+The height of the tree in \Cref{fig:rb-tree-example-1} is 4. The goal is to lookup the contents of an element corresponding to the key 104, which is equal to 01101000\textsubscript{2}. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm implementation. 
 
 The search process starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node. 
 
