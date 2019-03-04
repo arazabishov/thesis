@@ -89,7 +89,7 @@ A mask must be of the same type as a key and can be calculated from the branchin
     \mathit{mask} = m - 1.
 \end{equation}
 
-If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000011\textsubscript{2}.
+If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000011\ts{2}.
 
 \begin{figure}        
     \caption{Visualization of radix search.}
@@ -186,25 +186,25 @@ The branching factor of the tree is equal to 4, which means that 2 bits will be 
 
 The index is of the \emph{unsigned byte} type, which has a capacity\footnote{The capacity of any integer type can be calculated by taking the base of the binary system to the power of bits available for its representation. For unsigned byte, it will be $2^8 = 256$.} of 256. In practice, the index type is usually a 32 or a 64 bit integer, which has significantly bigger capacity.
 
-The height of the tree in \Cref{fig:rb-tree-example-1} is 4. The goal is to lookup the contents of an element corresponding to the key 104, which is equal to 01101000\textsubscript{2}. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm implementation. 
+The height of the tree in \Cref{fig:rb-tree-example-1} is 4. The goal is to lookup the contents of an element corresponding to the key 104, which is equal to 01101000\ts{2}. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm implementation. 
 
-The search process starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node. 
+The search process starts by initializing the node and level variables to root and $h - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node. 
 
 \begin{listing}[ht!]        
-    \caption{Pseudocode for the RB-Tree's radix search implementation}
+    \caption{Radix search for RB-Tree.}
     \label{lst:rb-tree-radix-search}
 
     \begin{algorithmic}
         \Function{RadixSearch}{root, key}
-            \State $node \leftarrow root$
+            \State node \la\ root
 
-            \For{$level \leftarrow root_{height} - 1, 1$}
-                \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
-                \State $node  \leftarrow node[index]$
+            \For{level \la\ root\ts{h} - 1, 1}
+                \State index \la\ (key $\ggg$ (level * x)) \& mask
+                \State node \la\ node[index]
             \EndFor
 
-            \State $index \leftarrow key\ \&\ mask$
-            \State \Return ${node[index]}$
+            \State index \la\ key \& mask
+            \State \Return {node[index]}
         \EndFunction
     \end{algorithmic}
 \end{listing}
