@@ -191,7 +191,7 @@ The height of the tree in \Cref{fig:rb-tree-example-1} is 4. The goal is to look
 The search process starts by initializing the node and level variables to root and $h - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node. 
 
 \begin{listing}[ht!]        
-    \caption{Radix search for RB-Tree.}
+    \caption{Pseudocode for RB-Tree's radix search implementation.}
     \label{lst:rb-tree-radix-search}
 
     \begin{algorithmic}
@@ -210,49 +210,43 @@ The search process starts by initializing the node and level variables to root a
 \end{listing}
 
 \section{Update}
-The purpose of the update operation is to replace the value in the instance of \rbtree{} for the given search  key. 
+A function used for replacing values in \rbtree{} is called \emph{update}. \emph{Emphemeral} update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable. 
 
-\emph{Emphemeral} update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable. 
-
-\emph{Version} is something what differentiates one instance of the \rbtree{} from another. Instead using an explicit versioning such as assigning unique numbers to instances of \rbtree{}, we will rely on the memory address as unique identifier. 
-
-The update function accepts two arguments: a search key and a new value. If operation is successfully executed, It returns a new instance of \rbtree{}. If the search key is not present in the original version, new value is either ignored or error is returned. 
-
-There are a few challenges associated with the implementation. If radix search was only reading values without any modifications, update is supposed to both change the value for the given key and ensure that the original structure stays unmodified. 
+Version is something that differentiates one instance of the \rbtree{} from another. Instead of using explicit versioning such as assigning unique identifiers to instances of \rbtree{}, we will rely on a memory address as a unique identifier. 
 
 \subsection*{Path copying}
-Radix search will be used to find the value corresponding to the given key. In order to make sure that original data structure is not modified, each branch and leaf node on the way from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated. 
+Radix search is used to find the value corresponding to the given key. In order to ensure that the original version of \rbtree\ stays unmodified, each node on the way down from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated. 
 
 In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m{}. Then, the \m{} sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root.  
 
-To summarize, the update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{sec:rb-tree-memory-layout}, \h{} is bound by \bigo{log_m(n)}, which results in the {\bigo{m * log_m(n)}} complexity of the update operation. 
+To summarize, the update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{sec:rb-tree-memory-layout}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m * log_m(n)}} complexity of the update operation. 
 
-When branching factor \m{} is set to a large value such as 32, performance becomes \bigo{1} in practice. For example, if the tree was completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer —  2147483647, \h{} will be at most 7. Since both \h{} and \m{} are effectively constant factors, the resulting performance is proportional to \bigo{1}. 
+For large branching factoris \m\ such as 32, the performance becomes \bigo{1} in practice. For example, if the tree is completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7. 
 
 \begin{listing}[ht!]        
-    \caption{Pseudocode for the RB-Tree's update implementation}
+    \caption{Pseudocode for RB-Tree's update implementation.}
     \label{lst:rb-tree-update}
     
     \begin{algorithmic}
         \Function{Update}{root, key, value}
-            \State $newRoot \leftarrow clone(root)$
-            \State $node \leftarrow newRoot$
+            \State newRoot \la\ clone(root)
+            \State node \la\ newRoot
     
-            \For{$level \leftarrow root_{height} - 1, 1$}
-                \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
-                \State $newChildNode \leftarrow clone(node[index])$
-                \State $node[index] \leftarrow newChildNode$
-                \State $node \leftarrow newChildNode$
+            \For{level \la\ root\ts{h} - 1, 1}
+                \State index \la\ (key $\ggg$ (level * x)) \& mask
+                \State newChildNode \la\ clone(node[index])
+                \State node[index] \la\ newChildNode
+                \State node \la\ newChildNode
             \EndFor
     
-            \State $index \leftarrow key\ \&\ mask$
-            \State $node[index] \leftarrow value$            
-            \State \Return $newRoot$
+            \State index \la\ key \& mask
+            \State node[index] \la\ value
+            \State \Return newRoot
         \EndFunction
     \end{algorithmic}
 \end{listing}
 
-Based on \Cref{lst:rb-tree-update}, the update operation is very similar to radix search from the implementation standpoint. The main difference is that every visited node must be copied, including root. The return value is the root node to the new version of the tree. 
+From the implementation standpoint, the main difference between update and radix search is that every visited node must be copied, including root. The return value is the root node for the new version of the tree. 
 
 \section{Push} 
 The push operation is used to add new elements to the end of \rbtree{}. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree. 
