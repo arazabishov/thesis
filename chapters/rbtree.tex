@@ -221,7 +221,7 @@ In order to get a sense of how well path copying performs, let’s review the wh
 
 To summarize, the update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{sec:rb-tree-memory-layout}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m * log_m(n)}} complexity of the update operation. 
 
-For large branching factoris \m\ such as 32, the performance becomes \bigo{1} in practice. For example, if the tree is completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7. 
+For large branching factors \m\ such as 32, the performance becomes \bigo{1} in practice. For example, if the tree is completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7. 
 
 \begin{listing}[ht!]        
     \caption{Pseudocode for RB-Tree's update implementation.}
@@ -249,31 +249,31 @@ For large branching factoris \m\ such as 32, the performance becomes \bigo{1} in
 From the implementation standpoint, the main difference between update and radix search is that every visited node must be copied, including root. The return value is the root node for the new version of the tree. 
 
 \section{Push} 
-The push operation is used to add new elements to the end of \rbtree{}. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree. 
+The push operation is used to add new elements to the \rbtree{}. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree. 
 
-A key for the new element is equal to the count of elements in \rbtree{}, also known as \emph{size}. For example, if the size is equal to 9, the key for the new value will also be equal to 9. After operation is executed, the size will be incremented by 1. 
+A key for the new element is equal to the count of elements in \rbtree{}, also known as the \emph{size} of the tree. For example, if the size is 9, the key for the new value will also be 9. The size will be incremented after the operation is executed. 
 
 The main difference between the update and the push operation is that the latter one has to take care of allocating more space for new elements. If the rightmost leaf node has available slots, then behavior of push is very similar to update. Otherwise, there are two additional scenarios in which either the rightmost leaf is completely full or there is no more space left in the root node. 
 
-Solution for the first case flows from the radix search algorithm. Given a unique key, it calculates a path for the new value, which will never lead to a full leaf node. What might happen is that a path will include nodes which are not created yet. This can be solved by generating them on demand. 
+The solution for the first case comes from radix search. Given a unique key, radix search calculates a path that never leads to a full leaf node. What might happen is that a path will include nodes which are not created yet. This can be solved by generating them on demand. 
 
-The second case, also known as \emph{root overflow}, occurs when the \emph{size} of the tree exceeds its \emph{capacity}. \emph{Capacity} is the maximum number of elements a tree can accommodate, which can be calculated based on the height \h{} and the branching factor \m{} of \rbtree{}:
+The second case, also known as \emph{root overflow}, occurs when the \emph{size} of the tree exceeds its \emph{capacity}. Capacity is the maximum number of elements a tree can accommodate, which can be calculated based on the height \h{} and the branching factor \m{} of \rbtree{}:
 
 \begin{equation}
-	capacity = m^h.
+	c = m^h.
 \end{equation}
 
-The algorithm for this calculation is based on the left bit shift operation, described in \Cref{lst:rb-tree-capacity}. 
+The implementation of this calculation is based on the left bit shift operation, described in \Cref{lst:rb-tree-capacity}. 
 
-Root overflow can be solved by adding a new level to the tree. This is done by creating a new root node and setting the old root as the first child of the new root. The rest is handled by generating new nodes in the path to the new value. For more details, see \Cref{lst:rb-tree-push}. 
+The Root overflow can be solved by adding a new level to the tree. This is done by creating a new root node and setting the old root as the first child of the new root. The rest is handled by generating new nodes in the path to the new value. For more details, see \Cref{lst:rb-tree-push}. 
 
 \begin{listing}[ht!]        
-    \caption{Pseudocode for the RB-Tree's capacity implementation}
+    \caption{Pseudocode for RB-Tree's update implementation.}
     \label{lst:rb-tree-capacity}
     
     \begin{algorithmic}
         \Function{Capacity}{h}
-		\State \Return $m \ll ((h - 1) * x)$
+		\State \Return m $\ll$ ((h - 1) * x)
         \EndFunction
     \end{algorithmic}
 \end{listing}
