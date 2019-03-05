@@ -188,17 +188,17 @@ The index is of the \emph{unsigned byte} type, which has a capacity\footnote{The
 
 The height of the tree in \Cref{fig:rb-tree-example-1} is 4. The goal is to lookup the contents of an element corresponding to the key 104, which is equal to 01101000\ts{2}. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm implementation. 
 
-The search process starts by initializing the node and level variables to root and $h - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node. 
+The search process starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node. 
 
 \begin{listing}[ht!]        
     \caption{Pseudocode for RB-Tree's radix search implementation.}
     \label{lst:rb-tree-radix-search}
 
     \begin{algorithmic}
-        \Function{RadixSearch}{root, key}
+        \Function{RbTree-Radix-Search}{root, key}
             \State node \la\ root
 
-            \For{level \la\ root\ts{h} - 1, 1}
+            \For{level \la\ root\ts{height} - 1, 1}
                 \State index \la\ (key $\ggg$ (level * x)) \& mask
                 \State node \la\ node[index]
             \EndFor
@@ -228,13 +228,13 @@ For large branching factors \m\ such as 32, the performance becomes \bigo{1} in 
     \label{lst:rb-tree-update}
     
     \begin{algorithmic}
-        \Function{Update}{root, key, value}
+        \Function{RbTree-Update}{root, key, value}
             \State newRoot \la\ clone(root)
             \State node \la\ newRoot
     
             \For{level \la\ root\ts{h} - 1, 1}
                 \State index \la\ (key $\ggg$ (level * x)) \& mask
-                \State newChildNode \la\ clone(node[index])
+                \State newChildNode \la\ Clone(node[index])
                 \State node[index] \la\ newChildNode
                 \State node \la\ newChildNode
             \EndFor
@@ -268,147 +268,143 @@ The implementation of this calculation is based on the left bit shift operation,
 The Root overflow can be solved by adding a new level to the tree. This is done by creating a new root node and setting the old root as the first child of the new root. The rest is handled by generating new nodes in the path to the new value. For more details, see \Cref{lst:rb-tree-push}. 
 
 \begin{listing}[ht!]        
-    \caption{Pseudocode for RB-Tree's update implementation.}
+    \caption{Pseudocode for RB-Tree's capacity implementation.}
     \label{lst:rb-tree-capacity}
     
     \begin{algorithmic}
-        \Function{Capacity}{h}
-		\State \Return m $\ll$ ((h - 1) * x)
+        \Function{RbTree-Capacity}{height}
+		\State \Return m $\ll$ ((height - 1) * x)
         \EndFunction
     \end{algorithmic}
 \end{listing}
 
 \begin{listing}[ht!]        
-    \caption{Pseudocode for the RB-Tree's push implementation}
+    \caption{Pseudocode for RB-Tree's push implementation}
     \label{lst:rb-tree-push}
     
     \begin{algorithmic}
-        \Function{Push}{root, value}
-            \State $newRoot \leftarrow NIL$
+        \Function{Rb-Tree-Push}{root, value}
+            \State newRoot \la\ \nil{}
 
-            \If{$capacity(root_{height}) <= root_{size}$}                
-                \State $newRoot \leftarrow CreateNode()$
-                \State $newRoot[0] \leftarrow Clone(root)$
-                \State $newRoot_{height} \leftarrow root_{height} + 1$
+            \If{RbTree-Capacity(root\ts{height}) <= root\ts{size}}                
+                \State newRoot \la\ Create-Node()
+                \State newRoot[0] \la\ Clone(root)
+                \State newRoot\ts{height} \la\ root\ts{height} + 1
             \Else 
-                \State $newRoot \leftarrow Clone(root)$
+                \State newRoot \la\ Clone(root)
             \EndIf
                         
-            \State $node \leftarrow newRoot$
-            \State $key \leftarrow newRoot_{size}$
+            \State node \la\ newRoot
+            \State key \la\ newRoot\ts{size}
     
-            \For{$level \leftarrow newRoot_{height} - 1, 1$}
-                \State $index \leftarrow (key \ggg (level * x))\ \&\ mask$
+            \For{level \la\ newRoot\ts{height} - 1, 1}
+                \State index \la\ (key $\ggg$ (level * x)) \& mask
                 
-                \State $childNode \leftarrow node[index]$
-                \State $newChildNode \leftarrow NIL$
+                \State childNode \la\ node[index]
+                \State newChildNode \la\ \nil{}
 
-                \If{$childNode = NIL$}
-                    \State $newChildNode \leftarrow CreateNode()$
+                \If{childNode = \nil{}}
+                    \State newChildNode \la\ Create-Node()
                 \Else
-                    \State $newChildNode \leftarrow clone(childNode)$
+                    \State newChildNode \la\ Clone(childNode)
                 \EndIf
                 
-                \State $node[index] \leftarrow newChildNode$
-                \State $node \leftarrow newChildNode$
+                \State node[index] \la\ newChildNode
+                \State node \la\ newChildNode
             \EndFor        
     
-            \State $index \leftarrow key\ \&\ mask$
-            \State $node[index] \leftarrow value$ 
+            \State index \la\ key \& mask
+            \State node[index] \la\ value 
 
-            \State $newRoot_{size} \leftarrow newRoot_{size} + 1$
-            \State \Return $newRoot$
+            \State newRoot\ts{size} \la\ newRoot\ts{size} + 1
+            \State \Return newRoot
         \EndFunction
     \end{algorithmic}
 \end{listing}
 
 \section{Pop}
 
-Removing items from \rbtree{} is made possible by the pop operation. Together with push, it conforms to the LIFO \footnote{Last In First Out} principle which is typical for the stack abstract data type. It accepts root as input and returns both a popped value and a new version of a structure. 
+Pop is used to remove items from the \rbtree. Together with push, it conforms to the LIFO\footnote{Last In First Out} principle which is typical for the stack abstract data type. It accepts root as input and returns both a popped value and a new version of a structure. 
 
-Pop is responsible for reducing capacity of \rbtree{} when necessary, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm. 
+Pop is responsible for reducing capacity of the \rbtree{}, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm. 
 
 \begin{listing}[ht!]        
-    \caption{Pseudocode for the RB-Tree's pop implementation}
+    \caption{Pseudocode for RB-Tree's pop implementation}
     \label{lst:rb-tree-pop}
     
     \begin{algorithmic}
-        \Function{PopNode}{node, key}
-            \State $newNode \leftarrow Clone(node)$
-            \State $value \leftarrow NIL$
+        \Function{RbTree-Pop-Node}{node, key}
+            \State newNode \la\ Clone(node)
+            \State value \la\ \nil{}
 
-            \If{$node_{height} = 0$}                
-                \State $index \leftarrow key\ \&\ mask$
-                \State $value \leftarrow newNode[index]$
-                \State $newNode[index] \leftarrow NIL$
+            \If{node\ts{height} = 0}                
+                \State index \la\ key \& mask
+                \State value \la\ newNode[index]
+                \State newNode[index] \la\ \nil{}
             \Else                 
-                \State $index \leftarrow (key \ggg (newNode_{height} * x))\ \&\ mask$
-                \State $value, childNode \leftarrow PopNode(newNode[index], key)$                
-                \State $newNode[index] \leftarrow childNode$
+                \State index \la\ (key $\ggg$ (newNode\ts{height} * x)) \& mask
+                \State value, childNode \la\ RbTree-Pop-Node(newNode[index], key)
+                \State newNode[index] \la\ childNode
             \EndIf
             
-            \If{$newNode[0] = NIL$}
-                \State \Return $value, NIL$
+            \If{newNode[0] = \nil{}}
+                \State \Return value, \nil{}
             \Else
-                \State \Return $value, newNode$
+                \State \Return value, newNode
             \EndIf
         \EndFunction
         \State        
         \Function{Pop}{root}
-            \State $value, newRoot \leftarrow PopNode(root, root_{size} - 1)$
+            \State value, newRoot \la\ RbTree-Pop-Node(root, root\ts{size} - 1)
             
-            \If{$newRoot[1] = NIL)$}                                
-                \State $newRoot \leftarrow newRoot[0]$            
+            \If{newRoot[1] = \nil{})}                                
+                \State newRoot \la\ newRoot[0]
             \EndIf
 
-            \State \Return $value, newRoot$
+            \State \Return value, newRoot
         \EndFunction
     \end{algorithmic}
 \end{listing}
 
-Since \rbtree{} is a complete tree, it is true that all entries to the right of \emph{NIL} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, \emph{NIL} checking the 0th entry is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \emph{NIL} reference in the parent node. 
+Since the \rbtree{} is a complete\footnote{A complete n-ary tree is an n-ary tree which is maximally space efficient. It must be completely filled on every level except for the last level. However, if the last level is not complete, then all nodes of the tree must be "as far left as possible".} tree, all entries to the right of \nil{} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, checking if the first entry is \nil{} is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \nil{} reference in the parent node. 
 
-Lowering the height of the tree is crucial from both performance and memory consumption standpoints. A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \emph{NIL}.  The original root is demoted by replacing it with the first child node, which becomes the new root. 
+A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is demoted by replacing it with the first child node, which becomes the new root. 
 
 \section{Tail optimization for persistent vector}
 
-In practice, changes are often confined to the end or \emph{tail} of the data structure. Stack is specifically designed for such use cases, by offering constant performance for the push and pop operations. 
+In practice, changes are often applied to the end or \emph{tail} of the data structure. Stack is specifically optimized for such use cases, by offering the constant performance for the push and pop operations. Even though \rbtree\ has similar performance characteristics, its push and pop implementations include pesky constant factors in the form of \emph{radix search} and \emph{path copying} algorithms. 
 
-Even though \rbtree\ has similar performance characteristics in practice, its push and pop implementations include pesky constant factors in the form of \emph{radix search} and \emph{path copying} algorithms. 
-
-The \emph{tail} optimization is intended to offset this cost by reducing count of \rbtree\ accesses. Instead of adding or removing elements one by one, changes are batched in the array of size \m\. This array could be thought as of  a leaf node, which is attached to the tree only when it is full. 
-
-The following sections review changes in the core operations including the \emph{tail} optimization. 
+The \emph{tail} optimization is intended to offset this cost by reducing the count of the \rbtree\ accesses. Instead of adding or removing elements one by one, changes are batched in the array of size \m. This array could be thought of as a leaf node, which will be attached to the tree only when it is full. 
 
 \subsection*{Optimizing the push operation}
-As shown in \Cref{lst:pvec-push}, the value is set into a cloned tail at the position $tail_{size}$. Since \rbtree\ is a complete tree, the rightmost leaf node is the only node which can be empty or semi-full. As the rightmost leaf node is the tail, its size can be used as an index for the new value.
+As shown in \Cref{lst:pvec-push}, the value is set into a cloned tail at the position tail\ts{size}. Since \rbtree\ is a complete tree, the rightmost leaf node is the only node which can be empty or semi-full. As the tail is the rightmost leaf node, its size is as an index for the new value.
 
 If after update the tail is full, it will be pushed into a tree and replaced with an empty tail. 
 
 \begin{listing}[ht!]        
-    \caption{Tail optimization for persistent vector’s push implementation}
+    \caption{Tail optimization for persistent vector’s push implementation.}
     \label{lst:pvec-push}
     
     \begin{algorithmic}
         \Function{Pvec-Push}{vec, value}        
-        \State newTail \la Clone(vec\ts{tail})
-        \State newTail[tail\ts{size}] \la value
-        \State newTail\ts{size} \la tail\ts{size} + 1
-        \State newRoot \la vec\ts{root}
+        \State newTail \la\ Clone(vec\ts{tail})
+        \State newTail[tail\ts{size}] \la\ value
+        \State newTail\ts{size} \la\ tail\ts{size} + 1
+        \State newRoot \la\ vec\ts{root}
             
         \If{newTail\ts{size} = m}
-            \State newRoot \la RbTree-Push(vec\ts{root}, newTail)
-            \State newTail \la CreateNode()
+            \State newRoot \la\ RbTree-Push(vec\ts{root}, newTail)
+            \State newTail \la\ Create-Node()
         \EndIf
         
-        \State \Return CreateVec(newRoot, newTail)
+        \State \Return Create-Vec(newRoot, newTail)
         \EndFunction
     \end{algorithmic}
 \end{listing}
 
 \subsection*{Optimizing the pop operation}
 
-Now when the tail holds last elements, pop has to retrieve values from it instead of \rbtree. Removing values from the tail is trivial, but with an assumption that it is not empty. There are certain conditions which have to be met for this to be true. First, a vector has to contain at least one value. Second, every time the last element is removed from the tail, it has to be replaced with a new one by popping a leaf from \rbtree. See \Cref{lst:pvec-pop} for more details. 
+Since the tail might contain elements, pop has to remove them first before touching the \rbtree. If the tail is empty, it will be replaced with the rightmost leaf of \rbtree. See \Cref{lst:pvec-pop} for more details. 
 
 \begin{listing}[ht!]
     \caption{Tail optimization for persistent vector’s pop implementation}
@@ -417,27 +413,27 @@ Now when the tail holds last elements, pop has to retrieve values from it instea
     \begin{algorithmic}
         \Function{Pvec-Pop}{vec}
         
-        \State newTail \la Clone(vec\ts{tail})
-        \State newRoot \la NIL
+        \State newTail \la\ Clone(vec\ts{tail})
+        \State newRoot \la\ \nil{}
 
-        \State value \la newTail[newTail\ts{size} - 1]
-        \State newTail\ts{size} \la newTail\ts{size} - 1     
+        \State value \la\ newTail[newTail\ts{size} - 1]
+        \State newTail\ts{size} \la\ newTail\ts{size} - 1     
             
         \If{newTail\ts{size} = 0}
-            \State newRoot, newTail \la RbTree-Pop(vec\ts{root})            
+            \State newRoot, newTail \la\ RbTree-Pop(vec\ts{root})            
         \Else 
-            \State newRoot \la vec\ts{root}
+            \State newRoot \la\ vec\ts{root}
         \EndIf
         
-        \State \Return CreateVec(newRoot, newTail)
+        \State \Return Create-Vec(newRoot, newTail)
         \EndFunction
     \end{algorithmic}
 \end{listing}
 
 \subsection*{Adapting the update and radix search operations}
-Changes for both update and radix search are very similar, with difference that update has to ensure that original vector stays unmodified. 
+Changes for both update and radix search are very similar, with the difference that update has to ensure that the original version of vector stays unmodified. 
 
-Since values are residing both in \rbtree\ and tail, one has to check where the given search key is located. A value is located within the tree if the key is less than the tree size. In this case the search process is delegated to \rbtree. Otherwise, the index for value in the tail is calculated by subtracting the tree size from the key. 
+The radix search implementation has to take into account that some of the values can be in the tail. A value is located within the tree if the key is less than the tree size. In this case the search process is delegated to \rbtree. Otherwise, the index for value in the tail is calculated by subtracting the tree size from the key. 
 
 \begin{listing}[ht!]
     \caption{Adapting the update operation to support tail}
@@ -446,16 +442,16 @@ Since values are residing both in \rbtree\ and tail, one has to check where the 
     \begin{algorithmic}
         \Function{Pvec-Update}{vec, key, value}
 
-        \State root \la vec\ts{root}
-        \State tail \la vec\ts{tail}
+        \State root \la\ vec\ts{root}
+        \State tail \la\ vec\ts{tail}
 
         \If{key < root\ts{size}}
-            \State newRoot \la RbTree-Update(root, key, value)
-            \State \Return CreateVec(newRoot, tail)
+            \State newRoot \la\ RbTree-Update(root, key, value)
+            \State \Return Create-Vec(newRoot, tail)
         \Else
-            \State newTail \la Clone(tail)
-            \State newTail[key - root\ts{size}] \la value
-            \State \Return CreateVec(root, newTail)
+            \State newTail \la\ Clone(tail)
+            \State newTail[key - root\ts{size}] \la\ value
+            \State \Return Create-Vec(root, newTail)
         \EndIf        
         \EndFunction
     \end{algorithmic}
@@ -468,8 +464,8 @@ Since values are residing both in \rbtree\ and tail, one has to check where the 
     \begin{algorithmic}
         \Function{Pvec-Radix-Search}{vec, key}
         
-        \State root \la vec\ts{root}
-        \State tail \la vec\ts{tail}
+        \State root \la\ vec\ts{root}
+        \State tail \la\ vec\ts{tail}
 
         \If{key < root\ts{size}}
             \State \Return RbTree-Radix-Search(root, key)            
