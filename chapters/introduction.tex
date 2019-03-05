@@ -2,29 +2,29 @@
 
 \section{Persistent data structures}
 
-A vast majority of the modern programming languages are equipped with a standard library --- a set of constructs and utilities aimed to improve the developer productivity. 
+A vast majority of modern programming languages are equipped with a standard library --- a set of constructs and utilities aimed to improve the developer's productivity. 
 
-A significant part of the standard library consists of commonly used data structures such as lists, sets, and maps, which expose operations for reading and writing data. 
+A significant part of standard library consists of commonly used data structures such as lists, sets, and maps, which often provide operations for reading and writing data. 
 
 Modifying or \emph{mutating} an \emph{ephemeral} data structure implies that we no longer will have access to its older version. In contrast, a \emph{persistent} data structure allows access to any version, old or new, at any time \cite{making-data-structures-persistent}. 
 
-Different types of persistence could be classified based on the operations which they offer over their versions:
+Persistent data structures could be classified based on the operations which they offer over their versions:
 \begin{itemize}
     \item \textit{Partial persistence} --- In this persistence model, we can query any previous version of the data structure, but we can update only the newest version. The versions are linearly ordered. 
     \item \textit{Full persistence} --- Both access and updates are allowed on all versions. The versions can be visualized as a branching tree.
-    \item \textit{Confluent persistence} --- In addition to the previous operations, it offers combination operation to merge more than one previous versions to output a new single version. The versions form a directed acyclic graph \cite{fully-persistent-lists-with-catenation}.  
+    \item \textit{Confluent persistence} --- In addition to the previous operations, it offers combination operation to merge more than one previous version to output a new single version. The versions form a directed acyclic graph \cite{fully-persistent-lists-with-catenation}.  
     \item \textit{Functional persistence} --- This model takes its name from functional programming where objects are immutable. In comparison to the previous models, it prohibits change of the internal representation of the data structure \cite{purely-functional-data-structures}. 
 \end{itemize}
 
-While persistence can be achieved by simple copying, the performance of a modification operation quickly becomes unacceptable. This led to research and development of more efficient solutions, which were often designed to solve particular problem. A lack of general purpose collections, which guarantee uniformly good performance across different operations, results in challenges with software development. 
+While persistence can be achieved by simple copying, the performance of a modification operation quickly becomes unacceptable. This led to research and development of more efficient solutions, which were often designed to solve particular problems. A lack of general purpose collections, which guarantee uniformly good performance across different operations, results in challenges with software development. 
 
 A persistent \emph{vector}, also known as a one-dimensional growable array, is very inefficient if implemented naively. Each update operation will cause a full copy of the underlying array, consuming additional amount of memory and processor time. 
 
-Since most operations modify only some parts of data structures, a complete copy is redundant. A better approach is to exploit the similarity between the new and old versions by \emph{sharing} structure between them. For example, instead of representing a data structure as a single block of memory, it could be broken down into smaller pieces or \emph{nodes}, which are linked together in the form of a \emph{tree}. Since modifications only apply to some nodes, the rest of them still remain unchanged and can be shared without copying. 
+However most operations modify only some parts of data structures, a complete copy is redundant. A better approach is to exploit the similarity between the new and old versions by \emph{sharing} structure between them. For example, instead of representing a data structure as a single block of memory, it could be broken down into smaller pieces or \emph{nodes}, which are linked together in the form of a \emph{tree}. Since modifications only apply to some nodes, the rest of them still remain unchanged and can be shared without copying. 
 
-The first persistent vector implementation which offered good performance across a broad range of operations was introduced by Rich Hickey in the Clojure programming language. It was based on Phil Bagwell's Hash Array Mapped Trie \cite{ideal-hash-trees}, which offers practically constant runtime for the push, update, and access operations, and it is a \emph{fully} persistent data structure. 
+The first persistent vector implementation which offered good performance across a broad range of operations was introduced by Rich Hickey in the Clojure programming language. It was based on Phil Bagwell's Hash Array Mapped Trie \cite{ideal-hash-trees}, which offers practically constant runtime for push, update, and access operations, and it is a \emph{fully} persistent data structure. 
 
-Later Phill Bagwell introduced a confluently persistent vector based on Relaxed Radix Balanced Tree \cite{efficient-immutable-vectors}, which has improved performance of the concatenation operation significantly and became a foundation for the Scala's standard library vector implementation. 
+Later Phill Bagwell introduced a confluently persistent vector based on Relaxed Radix Balanced Tree \cite{efficient-immutable-vectors}, which has improved performance of the concatenation operation significantly and became a foundation for Scala's standard library vector implementation. 
 
 The project presented in the thesis contributes an efficient persistent vector implementation for Rust based on Relaxed Radix Balanced Tree, which takes advantage of the Rust's type system to improve performance, guarantee thread safety and provide an idiomatic application programming interface. In order to ensure the best possible average performance, its internal representation switches from standard vector to RRB-Tree during runtime. 
 
