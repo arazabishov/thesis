@@ -46,3 +46,105 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
         \EndFunction
     \end{algorithmic}
 \end{listing}
+
+\section{Update}
+\todo{RRB-Tree, Update}
+
+\section{Concatenation}
+
+\todo{Make sure that nodes are cloned where necessary}
+\begin{listing}[ht!]        
+    \caption{Pseudocode for concatenation implementation}
+    \label{lst:rrb-tree-concat}        
+
+    \begin{algorithmic}       
+        \Procedure{Node-Check-Subtree}{root, subtree}
+            \If{subtree\ts{len} = \m{}}
+                \State root[root\ts{len}] \la\ subtree
+                \State root\ts{len}++                
+            \EndIf
+        \EndProcedure
+
+        \Function{Node-Rebalance}{left, middle, right}
+            \State height \la\ Max(left\ts{height}, middle\ts{height}, right\ts{height})
+            \State merged \la\ left + middle + right
+            
+            \State newRoot \la\ Create-Node(height)            
+            \State newSubtree \la\ Create-Node(height)            
+            \State newNode \la\ Create-Node(height)
+
+            \For{node \In\ merged}
+                \If{newNode\ts{len} = 0 \And\ node\ts{len} == \m{}}
+                    \State Node-Check-Subtree(newRoot, newSubtree)
+                    \State newSubtree[newSubtree\ts[len]] \la\ node
+                    \State newSubtree\ts{len}++
+                \Else
+                    \For{childNode \In\ node} 
+                        \If{newNode\ts{len} = \m{}}
+                            \State Node-Check-Subtree(newRoot, newSubtree)
+                            \State newSubtree[newSubtree\ts[len]] \la\ newNode
+                            \State newSubtree\ts{len}++
+                        \EndIf
+                    \EndFor
+                \EndIf
+            \EndFor
+
+            \State Node-Check-Subtree(newRoot, newSubtree)
+
+            \If{newNode\ts{len} != 0}
+                \State newSubtree[newSubtree\ts[len]] \la\ newNode
+                \State newSubtree\ts{len}++
+            \EndIf
+
+            \If{newSubtree\ts{len} != 0}
+                \State newRoot[newRoot\ts[len]] \la\ newSubtree
+                \State newRoot\ts{len}++
+            \EndIf
+
+            \State \Return newRoot
+        \EndFunction
+
+        \Function{Node-Concat}{leftNode, rightNode}
+            \If{leftNode\ts{height} > rightNode\ts{height}}
+                \State mergedNode \la\ Node-Concat(leftNode\ts{last}, rightNode)                
+                \State \Return Node-Rebalance(leftNode\ts{init}, mergedNode, \nil{})
+            \ElsIf{leftNode\ts{height} < rightNode\ts{height}}
+                \State mergedNode \la\ Node-Concat(leftNode, rightNode\ts{first})                
+                \State \Return Node-Rebalance(\nil{}, mergedNode, rightNode\ts{tail})
+            \Else
+                \State mergedNode \la\ \nil{}
+
+                \If{leftNode\ts{height} = 0}
+                    \State mergedNode \la\ Leaf-Node-Concat(leftNode, rightNode)
+                \Else
+                    \If{leftNode\ts{height} = 1}
+                        \State mergedNode \la\ Leaf-Node-Concat(leftNode\ts{last}, rightNode\ts{first})
+                    \Else
+                        \State mergedNode \la\ Node-Concat(leftNode\ts{last}, rightNode\ts{first})
+                    \EndIf
+                \EndIf
+
+                \State \Return Node-Rebalance(leftNode\ts{init}, mergedNode, rightNode\ts{tail})
+            \EndIf
+
+            \State \Return \nil{}
+        \EndFunction
+
+        \State
+
+        \Function{RrbTree-Concat}{thisRoot, thatRoot}            
+            \State newRoot \la\ Node-Concat(thisRoot, thatRoot)
+            \State newRoot\ts{height} \la\ Max(thisRoot\ts{height}, thatRoot\ts{height})
+            \State newRoot\ts{len} \la newRoot\ts{len} + thatRoot\ts{len}
+
+            \If{newRoot\ts{len} = 1}
+                \State newRoot \la\ newRoot[0]
+            \Else
+                \State newRoot\ts{height}++
+            \EndIf        
+
+            \State \Return \nil{}
+        \EndFunction
+
+    \end{algorithmic}
+\end{listing}
