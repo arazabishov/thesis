@@ -1,6 +1,6 @@
 \chapter{Radix Balanced Tree}
 
-Radix Balanced Tree or \rbtree, is a wide tree data structure with a fixed number of children per node, which allows access to values using integer keys. It was first introduced by Rich Hickey as a basis for the persistent vector implementation in Clojure's standard library \cite{the-clojure-programming-language}. 
+Radix Balanced Tree or \rbtree, is a tree data structure with a fixed number of children per node, which allows access to values using integer keys. It was first introduced by Rich Hickey as a basis for a persistent vector implementation in Clojure's standard library \cite{the-clojure-programming-language}. 
 
 Most persistent data structures are tailored to specific use cases, with some operations being faster than others. For example, a persistent linked list can prepend elements and read the head in \bigo{1} time. However, random access is proportional to \bigo{n}, which is unacceptable in practical scenarios. 
 
@@ -13,9 +13,9 @@ This chapter introduces the inner workings of \rbtree{} and covers algorithms us
 
 \rbtree{} consists of nodes which contain references to other subtrees or to values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of subtrees and values in the node is configurable and will be denoted as \m, also known as \emph{branching factor}. 
 
-When \m\ is set to a large value, the tree becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations, but this number can be any power of 2.
+When \m\ is set to a large value\footnote{A branching factor can be any power of 2}, the tree becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations.
 
-From now on the height of the tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
+From now on the height of a tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
 
 \begin{equation}
     h_{max} = log_m(n).
@@ -23,7 +23,7 @@ From now on the height of the tree will be referred to as \h{}, where $h_{max}$ 
 
 If \m{} is 32 and the number of elements will never be larger than the maximum index representable with 32 bit signed integers, the maximum height of the tree will not exceed 7 levels. 
 
-References to values are stored at the leaf nodes of the tree. If the count of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes. 
+References to values are stored at the leaf nodes of the tree. If the number of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes. 
 
 \section{Radix search}
 
@@ -57,7 +57,7 @@ Subkeys are arranged in the order from the most to the least significant bits, w
 
 Knowing the depth at which a node is located and the count of bits per level, the value of the key can be calculated using bitwise operations such as logical shift and masking. Let's take a look at a mechanism used to extract the correct subkey. 
 
-In the following example there is a byte which represents a key equal to 54. Let's assume that it belongs to the tree where \m{} is 4, \x{} is 2 and that height of the tree 3. 
+In the following example there is a byte which represents a key equal to 54. Let's assume that it belongs to the tree where \m{} is 4, \x{} is 2 and \h\ is 3. 
 
 \begin{equation}
     54_{10} = 00110110_2    
@@ -71,11 +71,11 @@ First, let's get rid of the bits following the subkey of our interest. Logical r
     k \ggg ((l - 1) * x).
 \end{equation}
 
-The key $k$ will be shifted by 2 bits, because the node from the example is located at $l = 2$ in the tree of $x = 2$. The result of operation is $00001101_2$. As you can see, the "tail" of the key is truncated.
+The key $k$ will be shifted by 2 bits, because the node from the example is located at $l = 2$ in the tree of $x = 2$. The result of operation is $00001101_2$. As the result, the "tail" of the key is truncated.
 
 The next step is to get rid of bits preceding the subkey by masking them to 0. An operator used for this is known as bitwise "and" and it will be applied to the result of shifting operation. 
 
-A bitwise "and" takes two equal-length binary representations and performs the logical "and" operation on each pair of the corresponding bits. If both bits in the compared position are 1, the bit in the resulting binary representation is 1; otherwise, the result is 0. Here is an example, where the first and the second operands are the key and mask respectively: 
+A bitwise "and" takes two equal-length binary representations and executes the "and" operation for each pair of the corresponding bits. If both bits in the compared position are 1, the bit in the resulting binary representation is 1; otherwise, the result is 0. Here is an example, where the first and the second operands are the key and mask respectively: 
 
 \begin{equation}
     00001101 \ \& \ 00000011 = 00000001.
@@ -92,7 +92,7 @@ A mask must be of the same type as a key and can be calculated from the branchin
 If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000011\ts{2}.
 
 \begin{figure}        
-    \caption{Visualization of radix search.}
+    \caption{Visualization of the radix search algorithm.}
     \label{fig:rb-tree-example-1}
 
     \centering
@@ -210,7 +210,7 @@ The search process starts by initializing the node and level variables to root a
 \end{listing}
 
 \section{Update}
-A function used for replacing values in \rbtree{} is called \emph{update}. \emph{Emphemeral} update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable. 
+A function for replacing values in \rbtree{} is called \emph{update}. Emphemeral update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable. 
 
 Version is something that differentiates one instance of the \rbtree{} from another. Instead of using explicit versioning such as assigning unique identifiers to instances of \rbtree{}, we will rely on a memory address as a unique identifier. 
 
