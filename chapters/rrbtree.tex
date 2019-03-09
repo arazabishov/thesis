@@ -1,1 +1,48 @@
 \chapter{Relaxed Radix Balanced Tree}
+
+\section{Relaxed Radix Search}
+
+When \rbtree\ is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size tables}. Each entry of the size table is the accumulated count of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}. 
+
+\todo{Update RrbTree-Find-Index to use binary search}
+\begin{listing}[ht!]        
+    \caption{Pseudocode for the relaxed radix search implementation}
+    \label{lst:rrb-tree-relaxed-radix-search}        
+
+    \begin{algorithmic}        
+        \Function{RrbTree-Find-Index}{sizes, idx}
+            \State candidate \la 0
+
+            \If{candidate < \m\ - 1 \And\ sizes[candidate] <= idx}
+                \State candidate++
+            \EndIf
+
+            \State \Return candidate
+        \EndFunction
+
+        \State
+
+        \Function{RrbTree-Relaxed-Radix-Search}{root, key}
+            \State node \la\ root
+            \State idx \la\ key
+            
+            \For{level \la\ root\ts{height} - 1, 1}
+                \If{node\ts{sizes} = \nil{}}
+                    \State index \la\ (key $\ggg$ (level * x)) \& mask
+                    \State node \la\ node[index]
+                \Else
+                    \State sizes \la\ node\ts{sizes}
+                    \State index \la\ RrbTree-Find-Index(sizes, idx)
+                    \State node \la\ node[index]
+
+                    \If{index != 0}
+                        \State idx \la\ idx - sizes[index - 1]
+                    \EndIf                    
+                \EndIf            
+            \EndFor
+
+            \State index \la\ idx \& mask
+            \State \Return {node[index]}
+        \EndFunction
+    \end{algorithmic}
+\end{listing}

@@ -26,6 +26,7 @@ If \m{} is 32 and the number of elements will never be larger than the maximum i
 References to values are stored at the leaf nodes of the tree. If the number of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes. 
 
 \section{Radix search}
+\label{sec:rb-tree-radix-search}
 
 Before trying to understand how operations such as push, pop, and update work, let's take a look at how to access values in \rbtree{}. The lookup mechanism is called \emph{radix search}, a fundamental algorithm which forms the basis for other operations.
 
