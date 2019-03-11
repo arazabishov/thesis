@@ -1,1 +1,10 @@
 \chapter{Definition of RRB-Tree in Rust}
+
+- How can we represent a persistent vector (dag) in memory?
+    - Which type of memory are we going to use \& why? Is it possible to use only stack or heap?
+        - Is it possible to define a recursive type allocated on stack?
+        - Size of the data structure is not fixed, hence it is impossible to predetermine the size of the stack during compilation time
+- Why Arc<>?
+- Multiple owners
+- Copy-on-write semantics (see linked draft with diagrams))
+- Reference counting \& deallocation
