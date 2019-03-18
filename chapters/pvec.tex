@@ -1,10 +1,33 @@
 \chapter{Definition of RRB-Tree in Rust}
 
-- How can we represent a persistent vector (dag) in memory?
-    - Which type of memory are we going to use \& why? Is it possible to use only stack or heap?
-        - Is it possible to define a recursive type allocated on stack?
-        - Size of the data structure is not fixed, hence it is impossible to predetermine the size of the stack during compilation time
-- Why Arc<>?
-- Multiple owners
-- Copy-on-write semantics (see linked draft with diagrams))
-- Reference counting \& deallocation
+In order to define a persistent vector in Rust, we first need to understand how different parts of it are connected to each other in the computer memory, and which Rust constructs are the most suitable for their representation. 
+
+The backbone of a confluently persistent vector is \rrbtree, with auxiliary properties such as a tail, size, and height. \rrbtree\ consists of infinitely nested nodes, which form a directed acyclic graph in memory \todo{add figure}. 
+
+Since the data structure can be arbitrarily large, the Rust compiler is not able to reliably measure its size during compilation. Hence, the static memory allocation on the stack is not possible without additional constraints, such as fixed capacity. 
+
+In fact, the Rust compiler will abort the compilation if a \emph{recursive type} is encountered. A recursive type is a type, where a value can have as part of itself another value of the same type, such as a \rrbtree\ node. The solution is to use dynamic memory allocation instead of static. Rust provides a special type of pointers for this purpose, such as Box, Arc, etc. 
+
+As \rrbtree\ employs structural sharing, several tree instances might point to the same subtrees. In other words, one node might be referenced by several parent nodes simultaneously. Even though Box enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer which supports a notion of shared ownership is known as \emph{Rc} or reference counted pointer. 
+
+Even though Box enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer which supports a notion of shared ownership is known as \emph{Rc<T>} or reference counted pointer. 
+
+\todo{introduction: figure out a notation for talking about Rust types}
+\todo{introduction: define what is ownership in Rust}
+
+The standard library also offers an \emph{Arc<T>} type, which is very similar to Rc<T> with the difference that it uses atomic operations to synchronize accesses to its reference counts. This can make Arc<T> a little more expensive during run time, but it enables threads to share a value safely. 
+
+\todo{project: PVec does not seem to implement Send + Sync methods}
+\todo{performance: look into other perf measurement tools, such as alloc-counter}
+
+As a persistent vector is intended to be a part of a library, Arc would be a better choice as it creates a foundation for the data structure to be used in the multithreaded environment. 
+
+\todo{Maybe insert a diagram here of how arc looks \& works internally}
+
+In the nutshell, a reference counting pointer allows shared ownership of the object wrapped into it. Every time a potential owner needs a reference to the value, the pointer is cloned instead of the underlying object. On each clone the reference count is incremented, and decremented every time a pointer goes out of the scope. If reference count reaches 0, the underlying value is destroyed. 
+
+Rust’s Arc conforms to the ownership and borrowing rules as well, but they are enforced during run time rather than compile time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other reference do not exist. As reference count is expected to be more than 1, it features methods which copy the underlying value if there are other references. 
+
+\todo{Example of Arc::make\_mut}
+
+\todo{Transience as a language feature}
