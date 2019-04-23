@@ -1,11 +1,28 @@
 \chapter{Performance evaluation}
-\section{Introduction to microbenchmarking}
-\section{Criterion: its advantages and limitations}
-\section{Benchmarking method}
-\subsection{Impact of transience on performance}
-\subsection{Memory management policy}
-\subsubsection{Reference counting}
-\subsubsection{Atomic reference counting}
-\section{Performance in concurrent environment}
-\subsection{Rayon: data parallelism framework}
-\subsection{Parallel multiplication of matrices}
+This chapter is dedicated to the methods used for experimental performance evaluations of the persistent vector implementation explained in the previous chapters. 
+
+For the purpose of comparison, the measurements are taken against the standard vector, as well as the \rrbtree based persistent vector implementation from the third party library named \emph{im-rs}, which has been introduced at the time of writing this paper. The persistent vector presented in this work, has been evaluated using both non-atomic and atomic reference counted pointers, as well as with and without small sized vector based optimization. 
+
+All tests were executed on a computer with quad core Intel Core i5-6600 processor with hyper threading, 16GB of DDR4 RAM and 250GB solid state drive. The operating system of the choice is Ubuntu 18.04 with nightly Rust compiler version \todo{Rust version}. 
+
+
+\section{Effectivness of core operations in isolation}
+\begin{itemize}
+    \item Why?
+    \item Microbenchmarking
+    \item What are the pitfalls associated with the performance measurements?
+    \item How does microbenchmarking framework (criterion) helps to avoid them?
+    \item Detection of outliers
+    \item What is the test input data and how benchmarks are configured?
+    \item Transience through unique access in Rust
+\end{itemize}
+
+\section{Effectivness of persistent vector in concurrent environment}
+\begin{itemize}
+    \item Why?
+    \item Rc / Arc
+    \item Send + Sync
+\end{itemize}
+\subsection{Rayon: data parallelism framework for Rust}
+\subsection{Parallel matrix multiplication experiment}
+\section{Reproducing results}
