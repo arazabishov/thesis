@@ -1,28 +1,120 @@
 \chapter{Performance evaluation}
-This chapter is dedicated to the methods used for experimental performance evaluations of the persistent vector implementation explained in the previous chapters. 
 
-For the purpose of comparison, the measurements are taken against the standard vector, as well as the \rrbtree based persistent vector implementation from the third party library named \emph{im-rs}, which has been introduced at the time of writing this paper. The persistent vector presented in this work, has been evaluated using both non-atomic and atomic reference counted pointers, as well as with and without small sized vector based optimization. 
+In this chapter, I will introduce methodology for performance evaluation of \rrbvector{}, \pvec{} and their variants, in comparison to implementations from \imrs{} and the Rust's standard library. We will look at the details of these three stages:
 
-All tests were executed on a computer with quad core Intel Core i5-6600 processor with hyper threading, 16GB of DDR4 RAM and 250GB solid state drive. The operating system of the choice is Ubuntu 18.04 with nightly Rust compiler version \todo{Rust version}. 
-
-
-\section{Effectivness of core operations in isolation}
 \begin{itemize}
-    \item Why?
-    \item Microbenchmarking
-    \item What are the pitfalls associated with the performance measurements?
-    \item How does microbenchmarking framework (criterion) helps to avoid them?
-    \item Detection of outliers
-    \item What is the test input data and how benchmarks are configured?
-    \item Transience through unique access in Rust
+    \item First, methodology for collecting reliable measurements. 
+    \item Then identifying directions for performance comparisons. 
+    \item Finally, defining benchmarks. 
 \end{itemize}
 
-\section{Effectivness of persistent vector in concurrent environment}
+To begin with I will present a notion of benchmarking framework, before diving into details of specific profiling tests. 
+
+\section{Methodology}
+Even though \bigo{} \todo{Use a word representation of Big-O} is a useful tool for reasoning about performance in theory, it often is not accurate enough for evaluating real-world performance. First, it disregards constant factors as they are not significant for growth rate of functions. Second, it does not consider the architecture of CPU and memory \todo{ref}, which indeed influences performance. Furthermore, it also applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms which are expected to be equally fast based on \bigo{}, may differ substantially in real-world performance. 
+
+This leads us to a need for an experimental performance analysis approach, which would involve executing tests on the actual hardware and software. This, however, introduces another set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for high demanding tasks, by reducing runtime for others \todo{ref}. Such nondeterministic behavior may lead to profiling results which vary from run to run significantly, which defeats the purpose of having them. 
+
+Benchmarking frameworks were introduced to solve those problems. They are designed to get stable measurements by executing the same test thousands of times. Some of them, such as criterion \todo{ref} for Haskell and Rust, JMH \todo{ref} for Java, and ScalaMeter for Scala, introduce statistical methods for the detection and elimination of exceptionally different runs, known as outliers. 
+
+\subsection{Benchmarking frameworks for Rust}
+
+There are several benchmarking frameworks available for Rust, and unfortunately, none of them have reached a stable release yet. However, some of them are being actively used in the Rust community and proven to produce reliable results.  
+
+In our case, there are several criteria which a good framework has to meet:
+
 \begin{itemize}
-    \item Why?
-    \item Rc / Arc
-    \item Send + Sync
+    \item Collects multiple samples where each sample consists of multiple runs to ensure consistent resuts. 
+    \item Detection and elimination of outliers.     
+    \item A way for setting up a benchmark before each run. 
+    \item A way for preventing compiler optimizing benchmark code away.     
 \end{itemize}
-\subsection{Rayon: data parallelism framework for Rust}
-\subsection{Parallel matrix multiplication experiment}
+
+\subsubsection*{Rust's benchmark tests}
+The Rust's testing framework provides an experimental feature which enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. In addition, it provides a black box function \footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents compiler from optimizing the code which otherwise would be considered "dead" or unused.} which is opaque for the compiler. 
+
+However, it does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks which rely on certain preconditions.
+
+% ToDo: consider talking about measurement of time for dropping items
+\subsubsection*{Criterion for Rust}
+Criterion for Rust \todo{ref}, not to be confused with Criterion for Haskell \todo{ref}, is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable to generate graphs provided that gnuplot is installed \todo{ref}. it is available for the stable Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project. 
+
+\subsection{Execution environment}
+All benchmarks were executed on a computer \todo{table with hardware, software} with quad core Intel Core i5-6600 processor with hyper threading, 16GB of DDR4 RAM and 250GB solid state drive. The operating system of the choice is Ubuntu 18.04 with nightly Rust compiler version \todo{Rust version}.
+
+\subsection{Configuration and input size}
+\todo{section}
+
+\section{Benchmarking directions}
+% ToDo: you have completely forgotten about branching factor, and it being a standalone feature
+% ToDo: you haven't talked about input size and configuration of benchmarks (what will be the input size). You can steal input numbers from scala paper, and then tweak them to run for reasonable amount of time. 
+
+In order to understand how effective certain optimizations are, we need to evalute various configurations of persistent vector. Additionally, implementations from \imrs{} and the standard library will be tested too. All vector variants are specified in table \todo{ref}. 
+
+% ToDo: try to name types after the name of types in actual code, otherwise thins will get very confusing very fast. Also, I don't think it is important to show distinction between Rc / Arc flavors of implementations, because it just introduces more confusion. 
+\begin{center}
+\begin{tabular} { |l| p{10cm} | }
+    \hline
+    STD Vec & Vec from the Rust's standard library. \\ \hline
+    \rbvector{} & \rbtree{} based vector. \\ \hline
+    \rrbvector{} & \rrbtree{} based vector. \\ \hline
+    \pvec{} & \rrbtree{} based vector with dynamic internal representation. \\ \hline
+    \imrs{} & \rrbtree{} based vector from third party library \imrs{}. \\
+    \hline        
+\end{tabular}
+\end{center}
+
+% \begin{wip}
+    % For the purpose of comparison, the measurements are taken against the standard vector, as well as the \rrbtree based persistent vector implementation from the third party library named \emph{im-rs}, which has been introduced at the time of writing this paper. The persistent vector presented in this work, has been evaluated using both non-atomic and atomic reference counted pointers, as well as with and without small sized vector based optimization. 
+% \end{wip}
+
+In general, benchmarks described below could be categorized in two groups:
+
+\begin{itemize}
+    \item First, serial benchmarks for profiling core operations in serial environment. They will be executed both against threadsafe and non-threadsafe variants of vector. 
+    \item Second, concurrent benchmarks which will be executed against only threadsafe variants of vector. The goal is to check whether there are benefits of using fast split and combine operations of \rrbvector{}. 
+\end{itemize}
+
+
+\subsection{RB and RRB Vectors}
+As relaxed balanced tree is not perfectly balanced and involves use of size tables for the radix search, it is expected to be somewhat slower in all core operations. This, however, is not true from the perspective of asymptotic analysis, where constant factors are niglected. The goal of benchmarks, in this case, is to reveal the overhead induced by relaxed nodes. 
+
+Before each benchmark run, an instance of \rrbvector{} will be prepared by concatenating pseudo-random small vectors together. The amount of relaxed nodes is in part affected by the size of the vector. Both threadsafe and non-threadsafe variants will be compared. 
+
+% ToDo: how to consistenly generate RRB Vectors using pseudo randomly sized small vectors? Can you get access to benchmarks from paper anywhere? 
+% ToDo: add list of benchmarks which will be evaluating different core operations. 
+
+\subsection{Unique access or transience}
+While \rrbvector{} performs very well as a persistent data structure, it is not very optimal when properties of persistence are not required. An example is a function which creates and returns an instance of \rrbvector{}, where all versions except the returned one are disregarded.
+
+Luckily, the persistent vector presented in this project, takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is somewhat similar to transience in the Clojure's persistent vector, but not entirely identical \todo{see reference}. 
+
+In Rust, non-transient, persistent behavior can be enforced by cloning the object before performing a mutation. The goal is to measure the overhead of using clone operation in the persistent vector. 
+
+\subsection{Dynamic internal representation}
+As one of the suggested optimizations in \todo{ref to scala paper}, a standard vector can be used to improve performance of small sized \rrbvector{}. The size recommended for using the standard vector representation is 4096. However, dynamically switching representation during runtime comes at a cost, which potentially may offset the benefits. 
+
+The purpose of profiling this optimization is to understand whether it improves performance in practice, and in which use cases. The range of problem sizes will include small values. 
+
+\subsection{Parallel RRB Vector}
+One of the claims is that \rrbvector{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and combine operations are critical for good performance. 
+
+Results, however, also depend on several factors such as the count of threads in the underlying thread pool, count of CPU cores, as well as the problem size and split factor. To ensure that all cases are studied, benchmarks have been parameterized to be able to run in variety of configurations. 
+
+\todo{describe an experiment; i.e. how many threads, split factor, problem sizes, etc.}
+\todo{how number of threads is configured in rayon: 1, 2, 4, 8, 16, 32 and 64}
+\todo{which experiments will you run?}
+
+\subsection{Rc vs Arc}
+Since atomic reference-counted pointers are claimed to introduce additional overhead in comparison to their non-threadsafe counterpart, the goal is to check how significant is the difference. 
+
+As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
+
+\subsection{Memory overhead}
+\todo{tbd}
+
+\section{Presentation of results}
+\todo{section}
+
 \section{Reproducing results}
+\todo{tbd}
