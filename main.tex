@@ -33,6 +33,10 @@
 \usepackage{tikz}
 \usetikzlibrary{matrix,arrows,backgrounds,fit}
 
+\usepackage{pgfplots}
+\usepgfplotslibrary{units}
+\pgfplotsset{compat=1.16}
+
 \usepackage{minted}
 \newmintinline[ir]{rust}{}
 \newmintedfile[rustfile]{rust}{}
@@ -78,6 +82,11 @@
 
 \colorlet{color-path}{blue!30}
 \colorlet{color-node}{blue!10}
+
+\definecolor{morange}{HTML}{FF9800}
+\definecolor{mpurple}{HTML}{512DA8}
+\definecolor{mred}{HTML}{D32F2F}
+\definecolor{mgreen}{HTML}{689F38}
 
 \title{Efficient Persistent Vector Implementation for Rust}
 \author{Araz Abishov}

@@ -1,10 +1,133 @@
 \chapter{Results and discussion}
 \section{Performance of core operations}
-\subsection{Update time}
-\subsection{Push time}
-\subsection{Pop time}
-\subsection{Append time}
-\subsection{Slicing time}
-\subsection{Memory footprint}
-\section{Effectivness of size based optimization}
-\section{Effectivness in concurrent environment}
+
+\subsection{Indexing}
+%  - Benches for RbVec
+%  - Benches for RrbVec
+%  - Benches for PVec (based on RbVec or RrbVec?)
+
+%  Step 1: 
+%   - Prepare the benchmark plot  
+%     - How to extract numeric results from benchmarks: 
+%         See individiual benchmark result pages
+
+%     - How to extract sample count, and number of runs per sample
+%     - Output for different inputs
+%   - Prepare the review points
+%   - What kind of benchmarks are you presenting? Throughput or latency?    
+
+
+%   Notes from the criterion documentation: 
+%    - These two timing loops generate a batch of inputs and measure the time to execute the benchmark on all values in the batch. As with iter_with_large_drop they also collect the values returned from the benchmark into a Vec and drop it later without timing the drop. 
+%    - Keep in mind that this is only necessary if the benchmark modifies the input - if the input is constant then one input value can be reused and the benchmark should use iter instead.
+%    - Note that Criterion.rs does not measure each individual iteration, only the complete sample. The resulting samples are stored for use in later stages. 
+
+%    ToDo: 
+%     - You need to be careful here with Criterion occumuating old version of trees, especially with benchmarks which deal with clone
+%     - You need to be careful with using next words interchangeably: profile, measure, benchmark
+%     - What bootstrap sampling means?
+%     - Fill-in more details on how benchmarks are analyzed from Criterion's documentation
+%     - Re-introduce what is a black box, and update benchmarks to avoid misusing it. 
+
+
+
+\begin{tikzpicture} 
+    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rbtree.csv}\imrsrbtree;
+    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rrbtree.csv}\imrsrrbtree;
+    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rbtree.csv}\pvecrbtree;
+    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rrbtree.csv}\pvecrrbtree;
+    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rbvec.csv}\rbvec;
+    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rrbvec.csv}\rrbvec;
+    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/std.csv}\std;    
+    
+    % axis should present numbers in a more readable form (you can probably specify them yourself too)
+    % fonts used for axis and plot legengs (change the fonts, reduce their size)           
+    % consider moving out the legend to the side of plot
+
+    \begin{loglogaxis}[         
+        use units,         
+        y unit=s, y unit prefix=m, 
+        smooth,
+        % width=\textwidth, 
+        width=340pt,        
+        title={Index Sequentially},
+        xlabel={vector size (log scale)},
+        ylabel={mean time (log scale)},                
+        ymajorgrids=true, 
+        xmajorgrids=true,
+        grid style=dashed,
+        legend pos=north west, 
+        legend style={draw=none,fill=none, font=\footnotesize},
+        legend cell align=left        
+    ]
+        \addplot[ultra thin, color=morange, mark=*,] table {\std}; 
+        \addlegendentry{Vec}
+
+        \addplot[ultra thin, color=mred, mark=*,] table {\rbvec};
+        \addlegendentry{RbVec}
+
+        \addplot[ultra thin, color=mred, mark=pentagon,] table {\rrbvec}; 
+        \addlegendentry{RrbVec}
+
+        \addplot[ultra thin, color=mgreen, mark=+,] table {\pvecrbtree};
+        \addlegendentry{PVec RbTree}
+
+        \addplot[ultra thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};        
+        \addlegendentry{PVec RrbTree}
+
+        \addplot[ultra thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+        \addlegendentry{Vector RbTree (im-rs)}
+
+        \addplot[ultra thin, color=mpurple, mark=x,] table {\imrsrrbtree};                                
+        \addlegendentry{Vector RrbTree (im-rs)} 
+    \end{loglogaxis}     
+\end{tikzpicture} 
+
+
+\subsection{Updating}
+\subsection{Pushing}
+\subsection{Popping}
+\subsection{Concatenating}
+\subsection{Slicing}
+
+\section{Performance in parallel benchmarks}
+\section{Effectivness of optimizations}
+\subsection{Overhead of RRB Tree}
+\subsection{Unique access or transience}
+\subsection{Dynamic internal representation}
+\section{Memory footprint}
+
+% push,
+% unbalanced_push,
+% push_clone,
+% unbalanced_push_clone,
+% pop,
+% pop_clone,
+% index_sequentially,
+% index_randomly,
+% iterator_next,
+% iterator_next_back,
+% append,
+% append_clone,
+% append_push,
+% split_off
+
+% vec_i::with_collect_into_vec,
+% vec_i::with_collect,
+% vec_i::with_linked_list_collect_vec,
+% vec_i::with_fold_1,
+% vec_i::with_fold_2,
+% vec_i::with_fold_4,
+% vec_i::with_fold_8,
+% vec_i::with_fold_16,
+% vec_i::with_fold_32,
+% vec_i::with_fold_64,
+% vec_i_filtered::with_collect,
+% vec_i_filtered::with_linked_list_collect_vec,
+% vec_i_filtered::with_fold_1,
+% vec_i_filtered::with_fold_2,
+% vec_i_filtered::with_fold_4,
+% vec_i_filtered::with_fold_8,
+% vec_i_filtered::with_fold_16,
+% vec_i_filtered::with_fold_32,
+% vec_i_filtered::with_fold_64,
