@@ -7,6 +7,7 @@
 % - Note from Criterion: note that Criterion.rs does not measure each individual iteration, only the complete sample. The resulting samples are stored for use in later stages.
 % - These two timing loops generate a batch of inputs and measure the time to execute the benchmark on all values in the batch. As with iter_with_large_drop they also collect the values returned from the benchmark into a Vec and drop it later without timing the drop. 
 % - Keep in mind that this is only necessary if the benchmark modifies the input - if the input is constant then one input value can be reused and the benchmark should use iter instead.
+% - You should write about what is drop in Rust, and how it is relevant in Criterion benchmarks (whether it is being measured as well or not). 
 
 \chapter{Results and discussion}
 \section{Performance of core operations}
@@ -17,95 +18,194 @@
 %  - You need to be careful with using next words interchangeably: profile, measure, benchmark
 %  - What bootstrap sampling means?
 
+\subsection{Indexing}
+
+In this section we will look at the performance of the index operation in practice. The evaluation will include two common use cases, such as accessing elements sequentially and randomly. % ToDo: add more points here later
+
+\subsubsection*{Index Sequentially}
+
+Accessing elements sequentially is a common way of reading values from a vector. The following benchmark is dedicated to understanding the performance properties of \rbtree{} and \rrbtree{} based vector implementations in comparison to the vector from the Rust's standard library. 
+
+As the size influences the internal representation of a vector, it is critical to ensure that it performs well consistently over a wide range of inputs. The results will reveal whether the size based optimization is effective, and how sigfnicant the impact of the increasing height of \rbtree{} and \rrbtree{} is. 
+
+The problem size interval is [10, 1M]\todo{math notation}, with a number of values in between. \todo{ref to benchmark inputs in attachments} The average run time for the given problem size is recorded as the result in \ref{fig:index-sequentially}. 
+
+The benchmark consists of two parts: the setup routine and the actual test function. The setup routine, however, differs for the balanced and unbalanced flavors of vectors. 
+
+The balanced vector is created by pushing elements \footnote{The type of elements is a 64 bit unsigned integer. } into it, while unbalanced one is created by concatenating a number of small vectors together. The test function loops over the [0, N] \todo{math notation} interval retrieving corresponding values from a vector, where N is the problem size. 
+
+\begin{figure}        
+    \caption{Benchmarking results of indexing sequentially.}
+    \label{fig:index-sequentially}
+
+    \begin{tikzpicture} 
+        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rbtree.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rrbtree.csv}\imrsrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rbtree.csv}\pvecrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rrbtree.csv}\pvecrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rbvec.csv}\rbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rrbvec.csv}\rrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/std.csv}\std;    
+        
+        % ToDo:
+        %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
+        %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)    
+    
+        \begin{loglogaxis}[         
+            use units,         
+            y unit=s, y unit prefix=m, 
+            smooth,        
+            width=340pt, % width=\textwidth, 
+            title={Index Sequentially},
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},                
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left, 
+            yticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=5
+            },
+            yticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+            xticklabel style={/pgf/number format/fixed},		
+            xticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\std}; 
+            \addlegendentry{Vec}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvec};
+            \addlegendentry{Balanced RrbVec}
+    
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
+            \addlegendentry{Unbalanced RrbVec}
+    
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
+            \addlegendentry{Balanced PVec}
+    
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
+            \addlegendentry{Unbalanced PVec}
+    
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+            \addlegendentry{Balanced im-rs Vector}
+    
+            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addlegendentry{Unbalanced im-rs Vector} 
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+\end{figure}
+
+% - Discuss the results
+%   - Did PVec improve performance in comparison to other implementations?
+%     - For which input ranges and by how much?
+%     - Did it make things slower for other inputs?
+%   - How different is performance for balanced and unbalanced versions of vectors?
+%     - Where this difference become more apparent and why?
+%   - How Rc / Arc affects performance?
+%   - Compare results to Big-O
+
+% Say something about claimed perf guarantees in big-o notation
+% Say something about radix and relaxed radix search and their cost in terms of big-o
+
 % Writing points:
 %  - What is the performance difference between Rb and Rrb based vectors? Preferrably answer in factors (something like 2x, 3x, etc)
 %  - Role of transience in this benchmark
 %  - Dynamic internal representation optimization (you will need to find a better name)
 %  - Rc vs Arc (you will need to sub-merge results of that run into the plot?)
+%  - Benchmark iterator as well? Would you compare numbers between iterator and index-sequentially? 
 
-\subsection{Indexing}   
-\begin{tikzpicture} 
-    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rbtree.csv}\imrsrbtree;
-    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rrbtree.csv}\imrsrrbtree;
-    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rbtree.csv}\pvecrbtree;
-    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rrbtree.csv}\pvecrrbtree;
-    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rbvec.csv}\rbvec;
-    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rrbvec.csv}\rrbvec;
-    \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/std.csv}\std;    
-    
-    % ToDo:
-    %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
-    %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)
-    %  - Consider moving out the legend to the side of plot
+% I am not sure how much you're supposed to talk about the im-rs implementation? I don't really understand it completely, so it will be difficult to make any conclusions except just row numbers comparison. 
 
-    \begin{loglogaxis}[         
-        use units,         
-        y unit=s, y unit prefix=m, 
-        smooth,
-        % width=\textwidth, 
-        width=340pt,        
-        title={Index Sequentially},
-        xlabel={vector size (log scale)},
-        ylabel={mean time (log scale)},                
-        ymajorgrids=true, 
-        xmajorgrids=true,
-        grid style=dashed,
-        legend pos=north west, 
-        % legend pos=outer north east,
-        legend style={draw=none,fill=none,font=\footnotesize},
-        legend cell align=left, 
-        yticklabel style={
-            /pgf/number format/fixed, 
-            /pgf/number format/precision=5
-        },
-		yticklabel={%
-			\pgfmathfloatparsenumber{\tick}%
-			\pgfmathfloatexp{\pgfmathresult}%
-			\pgfmathprintnumber{\pgfmathresult}%
-        },
-        xticklabel style={/pgf/number format/fixed},		
-		xticklabel={%
-			\pgfmathfloatparsenumber{\tick}%
-			\pgfmathfloatexp{\pgfmathresult}%
-			\pgfmathprintnumber{\pgfmathresult}%
-		},
-    ]
-        \addplot[thin, color=morange, mark=*,] table {\std}; 
-        \addlegendentry{Vec}
-
-        \addplot[thin, color=mred, mark=*,] table {\rbvec};
-        \addlegendentry{RbVec}
-
-        \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
-        \addlegendentry{RrbVec}
-
-        \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-        \addlegendentry{PVec RbTree}
-
-        \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
-        \addlegendentry{PVec RrbTree}
-
-        \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-        \addlegendentry{Vector RbTree (im-rs)}
-
-        \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
-        \addlegendentry{Vector RrbTree (im-rs)} 
-    \end{loglogaxis}     
-\end{tikzpicture} 
-
-% In the background chapter you should mention that you haven't implemented focus optimization
-
-The purpose of this benchmark is to demostrate performance of index function when it is called sequentially. In this context, sequentially implies that each element is accessed one after another starting from 0 and up to the size of the vector.
-
-The benchmark is setup differently for RbTree and RrbTree based benchmarks. The RbTree based vectors are created using regular append (or push) operation. While RrbTree based vectors are generated using concat operation (you can explain a bit more about it). 
-
-The problem size varies from very small to a large value (from 10 to 1m). 
-
-The difference between RbVec and RrbVec is present, and becomes more noticeable after the size of the tree gets over 1000 elements. The reason why is because the rebalacing algorithm chosen in this paper manages to resolve to perfectly balanced tree on the first two levels of the tree, which have capacity of exactly 1024 elements. After that tipping point, the difference in performance starts to grow as the relaxed nodes are being created. 
+\paragraph{Dynamic internal representation}
 
 The dynamic internal representation has a positive impact on performance, up to the point where it reaches the threshold of 2048 (or some other threshold value). After that the internal representation is switched to RbTree \/ RrbTree, which is obvious from graphs. The reason why std vec is faster even when it is being used within PVec, is that there is an overhead of using enums, as well as acquiring a mutable reference to the Arc pointer which wraps it. 
 
-I am not sure how much you're supposed to talk about the im-rs implementation? I don't really understand it completely, so it will be difficult to make any conclusions except just row numbers comparison. 
+\paragraph{Balanced vs unbalanced vectors}
+The difference between RbVec and RrbVec is present, and becomes more noticeable after the size of the tree gets over 1000 elements. The reason why is because the rebalacing algorithm chosen in this paper manages to resolve to perfectly balanced tree on the first two levels of the tree, which have capacity of exactly 1024 elements. After that tipping point, the difference in performance starts to grow as the relaxed nodes are being created. 
+
+\subsubsection*{Index Randomly}
+
+\begin{figure}        
+    \caption{Benchmarking results of indexing randomly.}
+    \label{fig:index-randomly}
+
+    \begin{tikzpicture} 
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/im-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/im-vector-unbalanced.csv}\imrsrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/pvec-balanced.csv}\pvecrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/pvec-unbalanced.csv}\pvecrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/rrbvec-balanced.csv}\rbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/rrbvec-unbalanced.csv}\rrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/std.csv}\std1;    
+        
+        % ToDo:
+        %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
+        %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)    
+    
+        \begin{loglogaxis}[         
+            use units,         
+            y unit=s, y unit prefix=m, 
+            smooth,        
+            width=340pt, % width=\textwidth, 
+            title={Index Randomly},
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},                
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left, 
+            yticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=5
+            },
+            yticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+            xticklabel style={/pgf/number format/fixed},		
+            xticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\std}; 
+            \addlegendentry{Vec}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvec};
+            \addlegendentry{Balanced RrbVec}
+    
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
+            \addlegendentry{Unbalanced RrbVec}
+    
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
+            \addlegendentry{Balanced PVec}
+    
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
+            \addlegendentry{Unbalanced PVec}
+    
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+            \addlegendentry{Balanced im-rs Vector}
+    
+            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addlegendentry{Unbalanced im-rs Vector} 
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+\end{figure}
+
 
 \subsection{Updating}
 \subsection{Pushing}
