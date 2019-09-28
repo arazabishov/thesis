@@ -1,36 +1,29 @@
+% ToDo:
+%  - Reconsider if specifying the sample count and count of runs per sample is useful. 
+%  - Fill-in more details on how benchmarks are analyzed from Criterion's documentation
+%  - Re-introduce what is a black box, and update benchmarks to avoid misusing it. 
+
+% Notes from the criterion documentation: 
+% - Note from Criterion: note that Criterion.rs does not measure each individual iteration, only the complete sample. The resulting samples are stored for use in later stages.
+% - These two timing loops generate a batch of inputs and measure the time to execute the benchmark on all values in the batch. As with iter_with_large_drop they also collect the values returned from the benchmark into a Vec and drop it later without timing the drop. 
+% - Keep in mind that this is only necessary if the benchmark modifies the input - if the input is constant then one input value can be reused and the benchmark should use iter instead.
+
 \chapter{Results and discussion}
 \section{Performance of core operations}
 
-\subsection{Indexing}
-%  - Benches for RbVec
-%  - Benches for RrbVec
-%  - Benches for PVec (based on RbVec or RrbVec?)
+% Now: 
+%  - What kind of benchmarks are you presenting? Throughput or latency?
+%  - You need to be careful here with Criterion occumuating old version of trees, especially with benchmarks which deal with clone
+%  - You need to be careful with using next words interchangeably: profile, measure, benchmark
+%  - What bootstrap sampling means?
 
-%  Step 1: 
-%   - Prepare the benchmark plot  
-%     - How to extract numeric results from benchmarks: 
-%         See individiual benchmark result pages
+% Writing points:
+%  - What is the performance difference between Rb and Rrb based vectors? Preferrably answer in factors (something like 2x, 3x, etc)
+%  - Role of transience in this benchmark
+%  - Dynamic internal representation optimization (you will need to find a better name)
+%  - Rc vs Arc (you will need to sub-merge results of that run into the plot?)
 
-%     - How to extract sample count, and number of runs per sample
-%     - Output for different inputs
-%   - Prepare the review points
-%   - What kind of benchmarks are you presenting? Throughput or latency?    
-
-
-%   Notes from the criterion documentation: 
-%    - These two timing loops generate a batch of inputs and measure the time to execute the benchmark on all values in the batch. As with iter_with_large_drop they also collect the values returned from the benchmark into a Vec and drop it later without timing the drop. 
-%    - Keep in mind that this is only necessary if the benchmark modifies the input - if the input is constant then one input value can be reused and the benchmark should use iter instead.
-%    - Note that Criterion.rs does not measure each individual iteration, only the complete sample. The resulting samples are stored for use in later stages. 
-
-%    ToDo: 
-%     - You need to be careful here with Criterion occumuating old version of trees, especially with benchmarks which deal with clone
-%     - You need to be careful with using next words interchangeably: profile, measure, benchmark
-%     - What bootstrap sampling means?
-%     - Fill-in more details on how benchmarks are analyzed from Criterion's documentation
-%     - Re-introduce what is a black box, and update benchmarks to avoid misusing it. 
-
-
-
+\subsection{Indexing}   
 \begin{tikzpicture} 
     \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rbtree.csv}\imrsrbtree;
     \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rrbtree.csv}\imrsrrbtree;
@@ -40,9 +33,10 @@
     \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rrbvec.csv}\rrbvec;
     \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/std.csv}\std;    
     
-    % axis should present numbers in a more readable form (you can probably specify them yourself too)
-    % fonts used for axis and plot legengs (change the fonts, reduce their size)           
-    % consider moving out the legend to the side of plot
+    % ToDo:
+    %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
+    %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)
+    %  - Consider moving out the legend to the side of plot
 
     \begin{loglogaxis}[         
         use units,         
@@ -57,32 +51,61 @@
         xmajorgrids=true,
         grid style=dashed,
         legend pos=north west, 
-        legend style={draw=none,fill=none, font=\footnotesize},
-        legend cell align=left        
+        % legend pos=outer north east,
+        legend style={draw=none,fill=none,font=\footnotesize},
+        legend cell align=left, 
+        yticklabel style={
+            /pgf/number format/fixed, 
+            /pgf/number format/precision=5
+        },
+		yticklabel={%
+			\pgfmathfloatparsenumber{\tick}%
+			\pgfmathfloatexp{\pgfmathresult}%
+			\pgfmathprintnumber{\pgfmathresult}%
+        },
+        xticklabel style={/pgf/number format/fixed},		
+		xticklabel={%
+			\pgfmathfloatparsenumber{\tick}%
+			\pgfmathfloatexp{\pgfmathresult}%
+			\pgfmathprintnumber{\pgfmathresult}%
+		},
     ]
-        \addplot[ultra thin, color=morange, mark=*,] table {\std}; 
+        \addplot[thin, color=morange, mark=*,] table {\std}; 
         \addlegendentry{Vec}
 
-        \addplot[ultra thin, color=mred, mark=*,] table {\rbvec};
+        \addplot[thin, color=mred, mark=*,] table {\rbvec};
         \addlegendentry{RbVec}
 
-        \addplot[ultra thin, color=mred, mark=pentagon,] table {\rrbvec}; 
+        \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
         \addlegendentry{RrbVec}
 
-        \addplot[ultra thin, color=mgreen, mark=+,] table {\pvecrbtree};
+        \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
         \addlegendentry{PVec RbTree}
 
-        \addplot[ultra thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};        
+        \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
         \addlegendentry{PVec RrbTree}
 
-        \addplot[ultra thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+        \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
         \addlegendentry{Vector RbTree (im-rs)}
 
-        \addplot[ultra thin, color=mpurple, mark=x,] table {\imrsrrbtree};                                
+        \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
         \addlegendentry{Vector RrbTree (im-rs)} 
     \end{loglogaxis}     
 \end{tikzpicture} 
 
+% In the background chapter you should mention that you haven't implemented focus optimization
+
+The purpose of this benchmark is to demostrate performance of index function when it is called sequentially. In this context, sequentially implies that each element is accessed one after another starting from 0 and up to the size of the vector.
+
+The benchmark is setup differently for RbTree and RrbTree based benchmarks. The RbTree based vectors are created using regular append (or push) operation. While RrbTree based vectors are generated using concat operation (you can explain a bit more about it). 
+
+The problem size varies from very small to a large value (from 10 to 1m). 
+
+The difference between RbVec and RrbVec is present, and becomes more noticeable after the size of the tree gets over 1000 elements. The reason why is because the rebalacing algorithm chosen in this paper manages to resolve to perfectly balanced tree on the first two levels of the tree, which have capacity of exactly 1024 elements. After that tipping point, the difference in performance starts to grow as the relaxed nodes are being created. 
+
+The dynamic internal representation has a positive impact on performance, up to the point where it reaches the threshold of 2048 (or some other threshold value). After that the internal representation is switched to RbTree \/ RrbTree, which is obvious from graphs. The reason why std vec is faster even when it is being used within PVec, is that there is an overhead of using enums, as well as acquiring a mutable reference to the Arc pointer which wraps it. 
+
+I am not sure how much you're supposed to talk about the im-rs implementation? I don't really understand it completely, so it will be difficult to make any conclusions except just row numbers comparison. 
 
 \subsection{Updating}
 \subsection{Pushing}
@@ -96,38 +119,3 @@
 \subsection{Unique access or transience}
 \subsection{Dynamic internal representation}
 \section{Memory footprint}
-
-% push,
-% unbalanced_push,
-% push_clone,
-% unbalanced_push_clone,
-% pop,
-% pop_clone,
-% index_sequentially,
-% index_randomly,
-% iterator_next,
-% iterator_next_back,
-% append,
-% append_clone,
-% append_push,
-% split_off
-
-% vec_i::with_collect_into_vec,
-% vec_i::with_collect,
-% vec_i::with_linked_list_collect_vec,
-% vec_i::with_fold_1,
-% vec_i::with_fold_2,
-% vec_i::with_fold_4,
-% vec_i::with_fold_8,
-% vec_i::with_fold_16,
-% vec_i::with_fold_32,
-% vec_i::with_fold_64,
-% vec_i_filtered::with_collect,
-% vec_i_filtered::with_linked_list_collect_vec,
-% vec_i_filtered::with_fold_1,
-% vec_i_filtered::with_fold_2,
-% vec_i_filtered::with_fold_4,
-% vec_i_filtered::with_fold_8,
-% vec_i_filtered::with_fold_16,
-% vec_i_filtered::with_fold_32,
-% vec_i_filtered::with_fold_64,
