@@ -1,6 +1,6 @@
 \chapter{Performance evaluation}
 
-In this chapter, I will introduce a methodology for performance evaluation of \rrbvector{}, \pvec{} and their variants, in comparison to implementations from \imrs{} and the Rust's standard library. We will look at the details of these three stages:
+In this chapter, I will introduce a methodology for performance evaluation of \rrbvec{}, \pvec{} and their variants, in comparison to implementations from \imrsvec{} and the Rust's standard library. We will look at the details of these three stages:
 
 \begin{itemize}
     \item First, a methodology for collecting reliable measurements. 
@@ -49,17 +49,17 @@ All benchmarks were executed on a computer \todo{table with hardware, software} 
 % ToDo: you have completely forgotten about branching factor, and it being a standalone feature
 % ToDo: you haven't talked about input size and configuration of benchmarks (what will be the input size). You can steal input numbers from scala paper, and then tweak them to run for reasonable amount of time. 
 
-To understand how effective certain optimizations are, we need to evaluate various configurations of the persistent vector. Additionally, implementations from \imrs{} and the standard library will be tested too. All vector variants are specified in table \todo{ref}. 
+To understand how effective certain optimizations are, we need to evaluate various configurations of the persistent vector. Additionally, implementations from \imrsvec{} and the standard library will be tested too. All vector variants are specified in table \todo{ref}. 
 
 % ToDo: try to name types after the name of types in actual code, otherwise thins will get very confusing very fast. Also, I don't think it is important to show distinction between Rc / Arc flavors of implementations, because it just introduces more confusion. 
 \begin{center}
 \begin{tabular} { |l| p{10cm} | }
     \hline
     STD Vec & Vec from the Rust's standard library. \\ \hline
-    \rbvector{} & \rbtree{} based vector. \\ \hline
-    \rrbvector{} & \rrbtree{} based vector. \\ \hline
+    \rbvec{} & \rbtree{} based vector. \\ \hline
+    \rrbvec{} & \rrbtree{} based vector. \\ \hline
     \pvec{} & \rrbtree{} based vector with dynamic internal representation. \\ \hline
-    \imrs{} & \rrbtree{} based vector from third party library \imrs{}. \\
+    \imrsvec{} & \rrbtree{} based vector from third party library \imrsvec{}. \\
     \hline        
 \end{tabular}
 \end{center}
@@ -72,32 +72,32 @@ In general, benchmarks described below could be categorized into two groups:
 
 \begin{itemize}
     \item First, serial benchmarks for profiling core operations in a sequential environment. They will be executed both against threadsafe and non-threadsafe variants of the vector. 
-    \item Second, concurrent benchmarks which will be executed against only thread-safe variants of the vector. The goal is to check whether there are benefits of using fast split and combine operations of \rrbvector{}.
+    \item Second, concurrent benchmarks which will be executed against only thread-safe variants of the vector. The goal is to check whether there are benefits of using fast split and combine operations of \rrbvec{}.
 \end{itemize}
 
 
 \subsection{RB and RRB Vectors}
 As relaxed balanced tree is not perfectly balanced and involves the use of size tables for the radix search, it is expected to be somewhat slower in all core operations. This, however, is not true from the perspective of asymptotic analysis, where constant factors are neglected. The goal of benchmarks, in this case, is to reveal the overhead induced by relaxed nodes. 
 
-Before each benchmark run, an instance of \rrbvector{} will be prepared by concatenating pseudo-random small vectors together. The amount of relaxed nodes is in part affected by the size of the vector. Both threadsafe and non-threadsafe variants will be compared. 
+Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating pseudo-random small vectors together. The amount of relaxed nodes is in part affected by the size of the vector. Both threadsafe and non-threadsafe variants will be compared. 
 
 % ToDo: how to consistenly generate RRB Vectors using pseudo randomly sized small vectors? Can you get access to benchmarks from paper anywhere? 
 % ToDo: add list of benchmarks which will be evaluating different core operations. 
 
 \subsection{Unique access or transience}
-While \rrbvector{} performs very well as a persistent data structure, it is not very optimal when properties of persistence are not required. An example is a function which creates and returns an instance of \rrbvector{}, where all versions except the returned one are disregarded.
+While \rrbvec{} performs very well as a persistent data structure, it is not very optimal when properties of persistence are not required. An example is a function which creates and returns an instance of \rrbvec{}, where all versions except the returned one are disregarded.
 
 Luckily, the persistent vector presented in this project takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is somewhat similar to transience in the Clojure's persistent vector, but not entirely identical \todo{see reference}. 
 
 In Rust, non-transient, persistent behavior can be enforced by cloning the object before performing a mutation. The goal is to measure the overhead of using clone operation in the persistent vector. 
 
 \subsection{Dynamic internal representation}
-As one of the suggested optimizations in \todo{ref to scala paper}, a standard vector can be used to improve the performance of small-sized \rrbvector{}. The size recommended for using the standard vector representation is 4096. However, dynamically switching representation during runtime comes at a cost, which potentially may offset the benefits. 
+As one of the suggested optimizations in \todo{ref to scala paper}, a standard vector can be used to improve the performance of small-sized \rrbvec{}. The size recommended for using the standard vector representation is 4096. However, dynamically switching representation during runtime comes at a cost, which potentially may offset the benefits. 
 
 The purpose of profiling this optimization is to understand whether it improves performance in practice, and in which use cases. The range of problem sizes will include small values. 
 
 \subsection{Parallel RRB Vector}
-One of the claims is that \rrbvector{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and combine operations are critical for good performance. 
+One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and combine operations are critical for good performance. 
 
 Results, however, also depend on several factors such as the count of threads in the underlying thread pool, count of CPU cores, as well as the problem size and split factor. To ensure that all cases are studied, benchmarks have been parameterized to be able to run a variety of configurations. 
 

@@ -2,6 +2,9 @@
 %  - Reconsider if specifying the sample count and count of runs per sample is useful. 
 %  - Fill-in more details on how benchmarks are analyzed from Criterion's documentation
 %  - Re-introduce what is a black box, and update benchmarks to avoid misusing it. 
+%  - You need to be careful with using next words interchangeably: profile, measure, benchmark
+%  - What bootstrap sampling means?
+%  - What kind of benchmarks are you presenting? Throughput or latency?
 
 % Notes from the criterion documentation: 
 % - Note from Criterion: note that Criterion.rs does not measure each individual iteration, only the complete sample. The resulting samples are stored for use in later stages.
@@ -11,12 +14,6 @@
 
 \chapter{Results and discussion}
 \section{Performance of core operations}
-
-% Now: 
-%  - What kind of benchmarks are you presenting? Throughput or latency?
-%  - You need to be careful here with Criterion occumuating old version of trees, especially with benchmarks which deal with clone
-%  - You need to be careful with using next words interchangeably: profile, measure, benchmark
-%  - What bootstrap sampling means?
 
 \subsection{Indexing}
 
@@ -105,35 +102,110 @@ The balanced vector is created by pushing elements \footnote{The type of element
     \end{tikzpicture} 
 \end{figure}
 
-% - Discuss the results
-%   - Did PVec improve performance in comparison to other implementations?
-%     - For which input ranges and by how much?
-%     - Did it make things slower for other inputs?
-%   - How different is performance for balanced and unbalanced versions of vectors?
-%     - Where this difference become more apparent and why?
-%   - How Rc / Arc affects performance?
-%   - Compare results to Big-O
+\begin{figure}        
+    \caption{Benchmarking results of iterating through vector.}
+    \label{fig:iter-next}
 
-% Say something about claimed perf guarantees in big-o notation
-% Say something about radix and relaxed radix search and their cost in terms of big-o
+    \begin{tikzpicture} 
+        \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/im-rs-vector-unbalanced.csv}\imrsrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/pvec-balanced.csv}\pvecrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/pvec-unbalanced.csv}\pvecrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/rrbvec-balanced.csv}\rbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/rrbvec-unbalanced.csv}\rrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/std-vec.csv}\std;    
+        
+        % ToDo:
+        %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
+        %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)    
+    
+        \begin{loglogaxis}[         
+            use units,         
+            y unit=s, y unit prefix=m, 
+            smooth,        
+            width=340pt, % width=\textwidth, 
+            title={Iterator Next},
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},                
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left, 
+            yticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=5
+            },
+            yticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+            xticklabel style={/pgf/number format/fixed},		
+            xticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\std}; 
+            \addlegendentry{Vec}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvec};
+            \addlegendentry{Balanced RrbVec}
+    
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
+            \addlegendentry{Unbalanced RrbVec}
+    
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
+            \addlegendentry{Balanced PVec}
+    
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
+            \addlegendentry{Unbalanced PVec}
+    
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+            \addlegendentry{Balanced im-rs Vector}
+    
+            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addlegendentry{Unbalanced im-rs Vector} 
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+\end{figure}
 
-% Writing points:
-%  - What is the performance difference between Rb and Rrb based vectors? Preferrably answer in factors (something like 2x, 3x, etc)
+% TODO:
+%  - Insert the benchmarks for iterator_next
 %  - Role of transience in this benchmark
-%  - Dynamic internal representation optimization (you will need to find a better name)
 %  - Rc vs Arc (you will need to sub-merge results of that run into the plot?)
-%  - Benchmark iterator as well? Would you compare numbers between iterator and index-sequentially? 
+%  - Claimed perf guarantees in big-o notation
 
-% I am not sure how much you're supposed to talk about the im-rs implementation? I don't really understand it completely, so it will be difficult to make any conclusions except just row numbers comparison. 
+Unsuprisingly, the \stdvec{} shows the best results in this test. As it is backed by a contiguous chunk of memory, it takes full advantage of cache locality. In addition, its structure is not affected by the method used to build it, when \rbtree{} and \rrbtree{} based vectors are. 
 
 \paragraph{Dynamic internal representation}
 
-The dynamic internal representation has a positive impact on performance, up to the point where it reaches the threshold of 2048 (or some other threshold value). After that the internal representation is switched to RbTree \/ RrbTree, which is obvious from graphs. The reason why std vec is faster even when it is being used within PVec, is that there is an overhead of using enums, as well as acquiring a mutable reference to the Arc pointer which wraps it. 
+\pvec{} switches its internal representation from the standard vector to \rrbvec{}, when the count of elements surpasses a certain threshold, which was set to 4096 in this case. This is evident from the plot \ref{fig:index-sequentially}, where \pvec{} is ToDoX faster than balanced \rrbvec{}, but slower than \stdvec{} by a factor of ToDoX. It is slower because of the overhead induced by acquiring a mutable reference to \rc{} pointer. As soon as the threshold is passed, the difference in performance between \pvec{} and \rrbvec{} becomes negligible. % ToDo: should you check error margins, and use them as reference for negligible differences? 
 
-\paragraph{Balanced vs unbalanced vectors}
-The difference between RbVec and RrbVec is present, and becomes more noticeable after the size of the tree gets over 1000 elements. The reason why is because the rebalacing algorithm chosen in this paper manages to resolve to perfectly balanced tree on the first two levels of the tree, which have capacity of exactly 1024 elements. After that tipping point, the difference in performance starts to grow as the relaxed nodes are being created. 
+\paragraph{Balanced vs unbalanced variants}
+The difference between the balanced and unbalanced \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the unbalanced one by a factor of ToDoX in the [100, 1M] input range. This is expected, because the unbalanced variant introduces relaxed nodes, which rely on the size tables to compute the path to the value. 
+
+This, however, is not the case for small problem sizes in the [0, 100] range, for which the concatenating algorithm produces a well balanced tree. Hence, both balanced and unbalanced vectors have identical performance numbers in that range. 
+
+Both balanced and unbalanced \imrsvec{} variants tend to be slower in comparison to \rrbvec{} in the [100, 1M] input range] by a factor of ToDoX. However, for smaller inputs it is slightly faster with a difference of ToDoX. 
+
+\paragraph*{Rc vs Arc}
+\todo{Run benchmarks for Arc}
 
 \subsubsection*{Index Randomly}
+In this benchmark, rather than accessing consecuitive indices, we will get elements at random positions. From the algorithmic point of view, the implementation of the operation itself is exactly the same. The difference is mostly in the behavior of processor caches, which will be invalidated if the requested element is out of reach. This is quite likely to happen as indices are picked randomly. In addition, the results will clarify whether the performance degenerates with randomness, as it would with linked lists for example. 
+
+\paragraph*{Setup}
+The setup routine is identical to the one in the index sequentially benchmark. The difference is in the actual test routine itself, where the \todo{ref} \emph{rnd} library is used to generate indices randomly. 
+
+\paragraph*{Dynamic internal representation}
+It is clear that using \stdvec{} for internal representation of \pvec{} makes it faster by a factor of ToDoX up to N=4096, right after which it degenerates to being ToDoX slower. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at ToDoX. 
+
+\paragraph*{Balanced vs unbalanced variants}
+Both variants perform well, with the balanced \rrbvec{} being faster by ToDoX in [100, 1M] range. Both unbalanced \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
 
 \begin{figure}        
     \caption{Benchmarking results of indexing randomly.}
@@ -146,7 +218,7 @@ The difference between RbVec and RrbVec is present, and becomes more noticeable 
         \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/pvec-unbalanced.csv}\pvecrrbtree;
         \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/rrbvec-balanced.csv}\rbvec;
         \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/rrbvec-unbalanced.csv}\rrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/std.csv}\std1;    
+        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/std.csv}\std;    
         
         % ToDo:
         %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
