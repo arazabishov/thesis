@@ -285,7 +285,29 @@ Both variants perform well, with the balanced \rrbvec{} being faster by 1.36x in
 
 \subsection{Updating}
 \subsection{Pushing}
+
+The push operation allows to add new values at the end of the vector. In this benchmark, we are going to evaluate two use cases:
+
+\begin{itemize}
+    \item Building a vector from scratch by pushing values
+    \item Pushing values into a predefined, unbalanced vector
+\end{itemize}
+
+To evaluate how effective the path copying algorithm is, the use cases above will be extended with a clone operation following every push. 
+
+\begin{itemize}
+    \item Pushing values and cloning a balanced vector
+    \item Pushing values and cloning an unbalanced vector
+\end{itemize}
+
+\subsubsection*{Building a vector}
+The focus of the first benchmark is to measure how much time it takes to build a vector of different sizes. In general, the test was designed in a way that vectors cannot make assumptions of their own resulting sizes. Hence, optimizations for pre-allocating the space were not used. 
+
+In the second benchmark, tests are running against unbalanced variant of vector, which is pre-built in the setup routine. The results will show the overhead introduced by the relaxed nodes in the tree. 
+
 \subsection{Popping}
+% pop balanced / unbalanced
+
 \subsection{Concatenating}
 \subsection{Slicing}
 
