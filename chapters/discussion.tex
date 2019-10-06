@@ -284,29 +284,322 @@ Both variants perform well, with the balanced \rrbvec{} being faster by 1.36x in
 
 
 \subsection{Updating}
+
 \subsection{Pushing}
+\todo{move the description of benchmarks to the evaluation chapter} 
 
-The push operation allows to add new values at the end of the vector. In this benchmark, we are going to evaluate two use cases:
+The push operation is used to append a new value to the end of the vector. It is also responsible for managing the capacity and the internal representation of a vector as the size growth. For example, the \stdvec{} increases its capacity by moving values into a bigger chunk of memory, while \rrbvec{} allocates a new branch and leaf nodes if necessary. \pvec{}, in addition to that, also switches its internal representation depending on the size.
 
-\begin{itemize}
-    \item Building a vector from scratch by pushing values
-    \item Pushing values into a predefined, unbalanced vector
-\end{itemize}
-
-To evaluate how effective the path copying algorithm is, the use cases above will be extended with a clone operation following every push. 
+The following benchmarks evaluate how the size and internal representation affect the performance:
 
 \begin{itemize}
-    \item Pushing values and cloning a balanced vector
-    \item Pushing values and cloning an unbalanced vector
+    \item Building a new vector from scratch by pushing values into it. 
+    \item Pushing values into an existing vector, both balanced and unbalanced. 
 \end{itemize}
 
-\subsubsection*{Building a vector}
-The focus of the first benchmark is to measure how much time it takes to build a vector of different sizes. In general, the test was designed in a way that vectors cannot make assumptions of their own resulting sizes. Hence, optimizations for pre-allocating the space were not used. 
+To understand how vector cloning influences the performance, the use cases above will be extended with a clone operation following every push. 
 
-In the second benchmark, tests are running against unbalanced variant of vector, which is pre-built in the setup routine. The results will show the overhead introduced by the relaxed nodes in the tree. 
+\subsubsection*{Building a new vector}
+
+\begin{figure}[t]
+    \caption{Benchmarking results of push.}
+    \label{fig:push}
+    
+    \center    
+    \begin{tikzpicture} 
+        \pgfplotstableread[col sep=comma]{chapters/data/push/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push/pvec-balanced.csv}\pvecrbtree;        
+        \pgfplotstableread[col sep=comma]{chapters/data/push/rrbvec-balanced.csv}\rbvec;        
+        \pgfplotstableread[col sep=comma]{chapters/data/push/std-vec.csv}\std;                 
+    
+        \begin{loglogaxis}[         
+            use units,         
+            y unit=s, y unit prefix=m, 
+            smooth,        
+            width=300pt, % width=\textwidth, 
+            title={Push},
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},                
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left, 
+            yticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=5
+            },
+            yticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+            xticklabels={0, 10, 100, 1K, 10K, 100K, 1M},
+            % xticklabel style={/pgf/number format/fixed},		
+            % xticklabel={%
+            %     \pgfmathfloatparsenumber{\tick}%
+            %     \pgfmathfloatexp{\pgfmathresult}%
+            %     \pgfmathprintnumber{\pgfmathresult}%
+            % },
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\std}; 
+            \addlegendentry{Vec}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvec};
+            \addlegendentry{Balanced RrbVec}
+    
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
+            \addlegendentry{Balanced PVec}
+    
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+            \addlegendentry{Balanced im-rs Vector}
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+\end{figure}
+
+\begin{figure}[t]
+    \caption{Benchmarking results of push clone.}
+    \label{fig:push-clone}
+
+    \center
+    \begin{tikzpicture} 
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/pvec-balanced.csv}\pvecrbtree;        
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/rrbvec-balanced.csv}\rbvec;        
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/std-vec.csv}\std;                 
+    
+        \begin{loglogaxis}[         
+            use units,         
+            y unit=s, y unit prefix=m, 
+            smooth,        
+            width=300pt,
+            title={Push Clone},
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},                
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left, 
+            yticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=5
+            },
+            yticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+            xticklabel style={/pgf/number format/fixed},		
+            xticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\std}; 
+            \addlegendentry{Vec}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvec};
+            \addlegendentry{Balanced RrbVec}
+    
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
+            \addlegendentry{Balanced PVec}
+    
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+            \addlegendentry{Balanced im-rs Vector}
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+\end{figure}
+
+The goal is to measure how the vector size influences the push operation performance. The experiment is done by pushing N values into an empty vector, where N is the desired size. N is not used as a hint for predefining the capacity, as persistent implementations do not support it. 
+
+Both \rrbvec{} and \pvec{} will always remain balanced, because the push operation itself does not produce relaxed nodes.
+
+% The assumption is that pvec has similar performance compared to std vec
+
+\paragraph*{Dynamic internal representation}
+In the input range of [10, 100] \stdvec{} shows the slowest results. Since persistent vectors take advantage of the tail optimization, they do have a preallocated array of fixed size equal to the branching factor, which is set to 32. Since the tree is shallow, the tail push operation will also be relatively fast. On the other hand, \stdvec{} has to increase its capacity several times, which comes at a cost reflected in the results. 
+
+% TODO: check how math notation looks in doc
+After the tipping point of N = 100, the \stdvec{} takes the lead by outperforming \pvec{}, \rrbvec{} and \imrsvec{} by a factor of TODOX on average. It is interesting that \pvec{} does not outperform \rrbvec{}, even though it relies on \stdvec{} representation up to the 4096 size. 
+
+% TODO: check if you can reduce the count of times you jump to different parts of memory (such as calls to self.len(), which travels through flavor / arc / heap and back)
+This is caused by the overhead of selecting internal representation, which cancels out the benefits of using \stdvec{} for small sizes. The same overhead is apparent after surpassing the 4096 size, where \pvec{} is slightly slower by TODOX compared to \rrbvec{}. 
+
+The \imrsvec{} implementation showed the best results in the range [10, 100] range, but was slower on average by TODOX in comparison to \pvec{}, and by TODOX in comparison to \stdvec{}
+
+\paragraph*{Unique access or transience}
+Rust's compiler guarantees that mutable references are unique, which supposdely eliminates the possibility of a race condition. Essentially, it means that we can assume that it is safe to modify a vector, as we are the only ones who have a mutable access to it. 
+
+By leveraging this assumption, we can make persistent vector temporarily mutable or emphemeral. This comes with performance benefits, as there is no need to copy or clone the vector after each modification anymore. This behavior is somewhat similar to the transient behavior of the Clojure's persistent vector, even though not entirely the same. 
+
+In the benchmark \todo{ref}, we measure performance of the push operation followed by the explicit clone operation. By cloning a vector, we ensure that following modifications will not affect existing versions. In other words, we will get persistent behavior. 
+
+It is evident that the clone operation is expensive for \stdvec{}, as it simply copies the contents, while persistent vectors take advantage of the structural sharing to minimize the overhead. Balanced \rrbvec{} outperforms \stdvec{} by a factor of TODOX on average, with the performance difference growing proportionally to the size of the vector. 
+
+Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor of TODOX up to the size of 4096. It does have the same overhead for cloning as \stdvec{}, and has its own overhead for the push operation due to the internal representation logic. 
+
+\imrsvec{} is slower than balanced \rrbvec{} by TODOX, and faster than \pvec{} by TODOX on average. \stdvec{} outperforms it in the [20, 2000] range by, and then degenerates as the size grows. 
+
+\subsubsection*{Adding values to an existing vector}
+
+\begin{figure}[t]
+    \caption{Measurements of push for a predefined vector.}
+    \label{fig:push-unbalanced}
+
+    \center
+    \begin{tikzpicture} 
+        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/pvec-balanced.csv}\pvecrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/rrbvec-balanced.csv}\rbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/std-vec.csv}\std;    
+            
+        \begin{loglogaxis}[         
+            use units,         
+            y unit=s, y unit prefix=m, 
+            smooth,        
+            width=320pt,
+            title={Push for a predefined vector},
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},                
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left, 
+            yticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=5
+            },
+            yticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+            xticklabels={0, 10, 100, 1K, 10K, 100K},
+            % xticklabel style={/pgf/number format/fixed},		
+            % xticklabel={%
+            %     \pgfmathfloatparsenumber{\tick}%
+            %     \pgfmathfloatexp{\pgfmathresult}%
+            %     \pgfmathprintnumber{\pgfmathresult}%
+            % },
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\std}; 
+            \addlegendentry{Vec}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvec};
+            \addlegendentry{Balanced RrbVec}
+    
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
+            \addlegendentry{Unbalanced RrbVec}
+    
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
+            \addlegendentry{Balanced PVec}
+    
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
+            \addlegendentry{Unbalanced PVec}
+    
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+            \addlegendentry{Balanced im-rs Vector}
+    
+            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addlegendentry{Unbalanced im-rs Vector} 
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+\end{figure}
+
+\begin{figure}[t]
+    \caption{Measurements of push and clone for a predefined vector.}
+    \label{fig:push-clone-unbalanced}
+
+    \center
+    \begin{tikzpicture} 
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/pvec-balanced.csv}\pvecrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/rrbvec-balanced.csv}\rbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/std-vec.csv}\std;    
+            
+        \begin{loglogaxis}[         
+            use units,         
+            y unit=s, y unit prefix=m, 
+            smooth,        
+            width=320pt,
+            title={Push and clone for a predefined vector},
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},                
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left, 
+            yticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=5
+            },
+            yticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },
+            xticklabels={0, 10, 100, 1K, 10K},
+            % xticklabel style={/pgf/number format/fixed},		
+            % xticklabel={%
+            %     \pgfmathfloatparsenumber{\tick}%
+            %     \pgfmathfloatexp{\pgfmathresult}%
+            %     \pgfmathprintnumber{\pgfmathresult}%
+            % },
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\std}; 
+            \addlegendentry{Vec}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvec};
+            \addlegendentry{Balanced RrbVec}
+    
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
+            \addlegendentry{Unbalanced RrbVec}
+    
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
+            \addlegendentry{Balanced PVec}
+    
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
+            \addlegendentry{Unbalanced PVec}
+    
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
+            \addlegendentry{Balanced im-rs Vector}
+    
+            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addlegendentry{Unbalanced im-rs Vector}
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+\end{figure}
+
+To understand the effect of relaxed nodes on the push operation, the setup routine produces an unbalanced vector of size N, created by concatenating a number of small vectors together. 
+
+There are two variants of the test: the first one is pushing values onto provided vector, while the second one also performs clone. 
+
+\paragraph*{Balanced vs unbalanced} As shown in \ref{fig:push-unbalanced}, the difference in performance between balanced and unbalanced variants is negligible, mostly because pushing new values creates balanced nodes. 
+
+\paragraph*{Dynamic internal representation}
+As in case with \ref{fig:push}, dynamic internal representation of \pvec{} hardly makes any difference in performance. The benefits of using \stdvec{} for small sizes simply is cancelled out by the overhead of choosing the representation. 
+
+\paragraph*{Unique access or transience}
+% What do I right here? Maybe I don't really need to have this push_clone_unbalanced bench at all?
+
+\stdvec{} showed the best results in \ref{fig:push-unbalanced} test. It was TODOX faster on average in comparison to the fastest runner up, balanced \rrbvec{}. \imrsvec{} was marginally slower by TODOX in comparison to \pvec{}. 
 
 \subsection{Popping}
-% pop balanced / unbalanced
+% content
 
 \subsection{Concatenating}
 \subsection{Slicing}
