@@ -712,10 +712,40 @@ As in case with \ref{fig:push}, dynamic internal representation of \pvec{} hardl
 \stdvec{} showed the best results in \ref{fig:push-unbalanced} test. It was TODOX faster on average in comparison to the fastest runner up, balanced \rrbvec{}. \imrsvec{} was marginally slower by TODOX in comparison to \pvec{}. 
 
 \subsection{Popping}
+% What and why are we measuring?
+The pop operation is used to remove values at the end of the vector. As with push, it is responsible for managing the capacity of the underlying data structure. For \stdvec{} it means shrinking the array and copying elements over. As persistent vector is based on \rrbtree{}, it implies deallocating nodes and reducing the height of the tree when necessary. 
+
+% Which flavors of benchmarks are we going to have?
+Pop will be tested in two benchmarks, namely pop and pop clone. The first test implies calling pop continiously in the loop, until the vector is emptied. In the second benchmark, each pop operation will be followed by clone. Both benchmarks will be executed on balanced and unbalanced variants of vectors. 
+
+% Drawing conclusions from numbers
+
+\paragraph*{Dynamic internal representation}
+% content
+
+\paragraph*{Unique access and transience}
 % content
 
 \subsection{Concatenating}
+% What and why are we measuring?
+The concat operation takes another instance of vector and merges its contents into the former(?) vector. 
+
+Concatenation is one of the fundamental operations which make \rrbvec{} a confluently persistent data structure. We (?) claimed that performance of the concat operation is O(log(n)), in comparison to O(max(a,b)) for \stdvec{}. 
+
+One of the research questions was to check whether persistent concat beats the standard one in practice. The experiment is to simply concatenate several vectors of different size together. The benchmark is parameterized over the size of the resulting vector, which will be in the [10, 1M] range. 
+
+% Which flavors of benchmarks are we going to have?
+As the concat operation creates relaxed nodes, only unbalanced (or relaxed) variants of vectors will be evaluated. That implies \stdvec{}, \imrsvec{}, \rrbvec{} and \pvec{}. 
+
+% Drawing conclusions from numbers
+Suprisingly, the \stdvec{} beats the \rrbvec{} and \imrsvec up to the size of TODOX. It is evident that the cost of concatenating persistent vectors does not grow as fast as for the standard vector. Unfortunately, this happens only at the point where size is TODOX, which is a quite large value. 
+
+The dynamic internal representation of \pvec{} puts it into advantage by a factor of TODOX in comparison to \rrbvec{}, and by TODOX compared to \imrsvec{} implementation. It is clear that at the size of 4096, \pvec{} switches its internal representation to \rrbvec{}. 
+
+% TODO: consider adding append_clone back. It can put things into perspective of how expensive it would be to use stdvec as immutable (but is this really meaningful?)
+
 \subsection{Slicing}
+% TODO: the bug in the im-rs has to be fixed first
 
 \section{Performance in parallel benchmarks}
 \section{Effectivness of optimizations}
@@ -723,3 +753,4 @@ As in case with \ref{fig:push}, dynamic internal representation of \pvec{} hardl
 \subsection{Unique access or transience}
 \subsection{Dynamic internal representation}
 \section{Memory footprint}
+\section{Discussion}
