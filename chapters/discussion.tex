@@ -96,7 +96,7 @@ The balanced vector is created by pushing elements \footnote{The type of element
             \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
             \addlegendentry{Balanced im-rs Vector}
     
-            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
             \addlegendentry{Unbalanced im-rs Vector} 
         \end{loglogaxis}     
     \end{tikzpicture} 
@@ -167,7 +167,7 @@ The balanced vector is created by pushing elements \footnote{The type of element
 %             \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
 %             \addlegendentry{Balanced im-rs Vector}
     
-%             \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+%             \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
 %             \addlegendentry{Unbalanced im-rs Vector} 
 %         \end{loglogaxis}     
 %     \end{tikzpicture} 
@@ -276,14 +276,127 @@ Both variants perform well, with the balanced \rrbvec{} being faster by 1.36x in
             \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
             \addlegendentry{Balanced im-rs Vector}
     
-            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
             \addlegendentry{Unbalanced im-rs Vector} 
         \end{loglogaxis}     
     \end{tikzpicture} 
 \end{figure}
 
-
 \subsection{Updating}
+
+% TODO: extract common styles to avoid duplication
+% TODO: refine the tick labels for y axis
+\begin{figure}
+    \caption{Benchmarking results of updating values.}
+    \label{fig:update}
+    
+    \center
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tikzpicture}
+        \tikzstyle{every node}=[
+            font=\scriptsize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]        
+
+        \pgfplotstableread[col sep=comma]{chapters/data/update/im-rs-vector-balanced.csv}\upimrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update/im-rs-vector-unbalanced.csv}\upimrsrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update/pvec-balanced.csv}\uppvecrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update/pvec-unbalanced.csv}\uppvecrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update/rrbvec-balanced.csv}\uprbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/update/rrbvec-unbalanced.csv}\uprrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/update/std-vec.csv}\upstd;
+
+        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/im-rs-vector-balanced.csv}\upclimrsrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/im-rs-vector-unbalanced.csv}\upclimrsrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/pvec-balanced.csv}\upclpvecrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/pvec-unbalanced.csv}\upclpvecrrbtree;
+        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/rrbvec-balanced.csv}\upclrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/rrbvec-unbalanced.csv}\upclrrbvec;
+        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/std-vec.csv}\upclstd;
+        
+        \begin{groupplot}[
+            group style={group size=2 by 1, horizontal sep=56pt,}, 
+            use units, y unit=s, y unit prefix=m,             
+            xlabel={vector size (log scale)},
+            ylabel={mean time (log scale)},
+            yticklabels={0, 0.01us, 0.1us, 1us, 0.01, 0.1, 1, 10},
+            xticklabels={0, 10, 100, 1K, 10K, 100K},
+            ymajorgrids=true, 
+            xmajorgrids=true,         
+            grid style=dashed,  
+        ]
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Updating values},
+                legend columns=4,
+                legend style={
+                    at={(1.06,-0.2)},
+                    anchor=north
+                }
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upstd};            
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\uprbvec};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\uprrbvec};             
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\uppvecrbtree};            
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\uppvecrrbtree};            
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upimrsrbtree};            
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upimrsrrbtree};            
+            \legend{Vec, RrbVec (B), RrbVec (!B), PVec (B), PVec (!B), im-rs Vector (B), im-rs Vector (!B)}
+    
+            \nextgroupplot[xmode=log,ymode=log,title={Updating and cloning vector}]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upclstd};                     
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\upclrbvec};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\upclrrbvec}; 
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\upclpvecrbtree};
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\upclpvecrrbtree};
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upclimrsrbtree};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upclimrsrrbtree};                       
+        \end{groupplot}
+    
+    \end{tikzpicture} 
+    \end{adjustbox}
+\end{figure}
+
+
+% TODO: find a better structure for evaluating benchmarks. Dynamic internal representation and unique access paragraphs are usually not very relevant when it comes to comparison with std and im-rs vector implementations. 
+% TODO: consider providing examples of API
+
+% What does this benchmark is trying to reveal?
+% How this benchmark is implemented? Which pre conditions does it rely on?
+% How does dynamic internal representation behave? Any interesting points?
+% How does unique access / transience based optimization behave? 
+
+% TODO: consider adding bencmarks for random update operation
+The update operation is used to modify an existing value at a given position. Rust's \stdvec{} exposes an API similar to the index operation, except that it returns a mutable pointer, which can be used to update the value. 
+
+% TODO: provide an example of how API looks like? 
+
+In persistent vector, both \rrbvec{} and \pvec{}, the same radix search algoritm is used to find the value as in the index operation. As described in \todo{ref} section, the difference is that mutable references are acquired to each node on the path from the root to the leaf. If a node is shared with other instances of vector, then it will be cloned on attempt to acquire a mutable reference to it. 
+
+This brings us to the two interesting use cases:
+\begin{itemize}
+    \item Mutating a single instance of a vector
+    \item Mutating a cloned instance of a vector
+\end{itemize}
+
+% TODO: check out Jean's blog posts to get better understanding of transience.
+In the first scenario, the vector will behave as transient, which simply speaking means that it will temporarily behave as emphemeral for achieving better performance. In the second test, we explicitly clone a vector after each modification, to preserve the current version. 
+
+In case with \stdvec{}, the clone operation is naive and performs a simple copy. This, however, is very different for persistent vectors which take advantage of the structural sharing. Hence, the second benchmark will also reveal how effective it is in comparison to a naive approach. 
+
+\paragraph*{Dynamic internal representation}
+In the benchmark of updating a vector without cloning, \pvec{} is clearly faster than both variants of \rrbvec{} by a factor of TODOX in the [10, 4096] size range. After switching the internal representation, it aligns with \rrbvec{}. 
+
+When the clone operation is involved, it performs slightly better compared to \rrbvec{} in the [10, 1000] range by a factor of TODOX, and then degenerates up to the size of 4096. The reason for that is the costly clone operation of \stdvec{}. 
+
+\paragraph*{Unique access or transience}
+It is clear that all vector implementations are faster when the clone operation is not used. The \stdvec{} shows the best results in all sizes, with the runner up of \pvec{} being slower on average of TODOX. However, with the clone operation, the \stdvec{} is slightly faster only up to the size of 1000, after which it quickly degenerates due to very inefficient clone. 
+
+The interesting observation here is that clone has almost no effect on performance of \rrbvec{}, with the difference only of TODOX between two tests. This shows how effective the path copying algorithm is. 
+
+The \imrsvec{} showed the slowest results in the update benchmark, with the difference of TODOX in comparison to \rrbvec{}. However, it was faster than \rrbvec{} when cloned by a factor of TODOX. 
 
 \subsection{Pushing}
 \todo{move the description of benchmarks to the evaluation chapter} 
@@ -509,7 +622,7 @@ Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor 
             \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
             \addlegendentry{Balanced im-rs Vector}
     
-            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
             \addlegendentry{Unbalanced im-rs Vector} 
         \end{loglogaxis}     
     \end{tikzpicture} 
@@ -578,7 +691,7 @@ Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor 
             \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
             \addlegendentry{Balanced im-rs Vector}
     
-            \addplot[ultra thin, color=mpurple, mark=square,] table {\imrsrrbtree};
+            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
             \addlegendentry{Unbalanced im-rs Vector}
         \end{loglogaxis}     
     \end{tikzpicture} 

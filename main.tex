@@ -14,9 +14,10 @@
 \renewcommand{\sectionmark}[1]{ \markright{\thesection\ #1}{} }
 \fancyhead[RE,LO]{\rightmark}
 
+\usepackage{adjustbox}
 \usepackage{float}
-\floatstyle{boxed}
-\restylefloat{figure}
+% \floatstyle{boxed}
+% \restylefloat{figure}
 
 \usepackage[
   colorinlistoftodos,
@@ -35,6 +36,7 @@
 
 \usepackage{pgfplots}
 \usepgfplotslibrary{units}
+\usepgfplotslibrary{groupplots}
 \pgfplotsset{compat=1.16}
 
 \usepackage{minted}
