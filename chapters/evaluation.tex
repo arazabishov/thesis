@@ -96,22 +96,116 @@ As one of the suggested optimizations in \todo{ref to scala paper}, a standard v
 
 The purpose of profiling this optimization is to understand whether it improves performance in practice, and in which use cases. The range of problem sizes will include small values. 
 
-\subsection{Parallel RRB Vector}
-One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and combine operations are critical for good performance. 
-
-Results, however, also depend on several factors such as the count of threads in the underlying thread pool, count of CPU cores, as well as the problem size and split factor. To ensure that all cases are studied, benchmarks have been parameterized to be able to run a variety of configurations. 
-
 \todo{describe an experiment; i.e. how many threads, split factor, problem sizes, etc.}
 \todo{how number of threads is configured in rayon: 1, 2, 4, 8, 16, 32 and 64}
 \todo{which experiments will you run?}
+
+\subsection{Memory overhead}
+\todo{tbd}
 
 \subsection{Rc vs Arc}
 Since atomic reference-counted pointers are claimed to introduce additional overhead in comparison to their non-threadsafe counterpart, the goal is to check how significant is the difference. 
 
 As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
 
-\subsection{Memory overhead}
-\todo{tbd}
+\section{Parallel vector}
+One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for good performance. 
+
+To check whether efficient split and concat implementations of \rrbvec{} will have a positive impact on the overall performance, \rrbvec{}, \rbvec{} and \stdvec{} will be benchmarked in two tests:
+
+\begin{itemize}
+    \item Check if a word is a palindrome. 
+    \item Scalar product of two vectors.
+\end{itemize}
+
+\paragraph*{Check if a word is a palindrome}
+\todo{content}
+
+\paragraph*{Scalar product of two vectors}
+\todo{content}
+
+% TODO: decide whether this belongs here
+Results, however, also depend on several factors such as the count of threads in the underlying thread pool, count of CPU cores, as well as the problem size and split factor. To ensure that all cases are studied, benchmarks have been parameterized to be able to run several configurations. 
+
+
+% Rayon was inspired by Cilk \todo{ref}, the C programming language extension designed to simplify parallel programming at MIT. Scala, among other languages, also features parallel collection framework. 
+
+% Rayon consists of three major components, which depend on each other in the following order:
+% \begin{itemize}
+%     \item Parallel iterators
+%     \item The fork / join framework
+%     \item Threadpool
+% \end{itemize}
+
+% TODO: you should introduce the basic idea of iterators in the introduction
+% TODO: provide a basic example of using par_iter
+
+\subsection{Rayon}
+% TODO: there is a fair amount of duplication between introduction and rayon sections
+The idea of Rayon, a data parallelism library for Rust, is to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores when it is beneficial. 
+
+Data parallelism, however, is not applicable to algorithms which rely on the order of execution. The reason is that parallel iterators process values in non-deterministic order. 
+
+% TOOD: lazy evaluation of chains (when are they actually processed?)
+
+\paragraph*{Processing stages}
+
+% - parallel iterators is just a public api, doesn't perform actual split or load balancing
+%  - Parallel iterator says I have a big pool of work to do, here are all the vectors and numbers and words
+% - load balancing happens at the join or threadpool level (let's say rayon)
+
+% how the work is divided between threads?
+%  - what controls the count of threads?
+%    - how is that relevant to the potential parallelism of the join framework?
+%       - what is the join framework
+%  - how to control the split factor, is it possible?
+% how the results are combined back?
+%  - again, join framework
+%  - when it is necessary to concatenate the results
+
+To ensure optimal performance, Rayon keeps dividing the work between threads, until the resulting chunk of the work is sufficiently small to be executed on a single thread. 
+
+% TODO: static vs dynamic chunking
+% TODO: convert to a code snippet
+Rayon's parallel iterators provide methods for hinting the scheduler how large the chunk of work should be: 
+\begin{itemize}
+    \item with\_min\_len: sets the minimum size of the chunk
+    \item with\_max\_len: sets the maximum size of the chunk
+\end{itemize}
+
+
+
+\todo{Explain the effects of using those two methods}
+
+The count of threads in the underlying threadpool is equal to the count of CPU cores. On the systems with hyperthreading enabled this equals the number of logical cores and not the physical ones. 
+
+\paragraph*{Load balancing}
+
+
+% Where does actual chunking is happening? I wouldn't be able to answer that question. 
+% Actual chunking happens on the top level (?) 
+
+
+% - How does Rayon work on primitive level?
+    % - static chunking vs dynamic (?) chunking (or work stealing)
+
+    % Work distribution, known as static chunking (giving each processor N / P sized chunk), is optimal when the amount of work per element takes the same amount of time. NOTE: Rayon is using adaptive work stealing algorithm, which ensures better load balancing when it takes different amount of time to process each chunk. NOTE: provides a code snippet of how concatenation is implemented      
+
+    % - how does rayon split work between threads         
+    % - introduce split factor as mechanism to control chunking    
+% - Configuring thread count in the underlying threadpool
+% - Foundation of iter APIs: split / combine operations
+    % - Types such as ParallelIterator
+    % - Implementations for PVec and RrbVec
+
+% - Computation stages of the fold benchmark:    
+    % - splitting the work between P count of threads
+    % - describes how the results are reduced or combined. 
+    %     - Are results combined in particular order?
+    %     - Fold and reduce operations
+    % - using filter operator to force creating of new sequence
+    %     - check if it is possible to create your own *faster* filter operator
+
 
 \section{Presentation of results}
 \todo{section}
