@@ -108,25 +108,32 @@ Since atomic reference-counted pointers are claimed to introduce additional over
 
 As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
 
+% Benchmarks which make use of .clone() operation somehow? 
+
 \section{Parallel vector}
-One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for good performance. 
+One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for optimal performance. 
 
-To check whether efficient split and concat implementations of \rrbvec{} will have a positive impact on the overall performance, \rrbvec{}, \rbvec{} and \stdvec{} will be benchmarked in two tests:
+In this section, we will first take a look at how Rayon splits and distributes the work across threads, as well as available configuration parameters. Then, section \todo{} introduces tests for benchmarking the overall performance of persistent and standard vectors:
 
-\begin{itemize}
+\begin{itemize}    
     \item Check if a word is a palindrome. 
     \item Scalar product of two vectors.
+    \item Iterating over and incrementing a vector of integers.
 \end{itemize}
 
-\paragraph*{Check if a word is a palindrome}
-\todo{content}
+All the tests will be executed on 1, 2, 4, 8, and 16 threads. 
 
-\paragraph*{Scalar product of two vectors}
-\todo{content}
+Unlike the measurements presented from the sequential benchmarks, the parallel ones inlude the run time of both vector operations and Rayon. As the objective is the overall performance comparison, this is considered to be an acceptable tradeoff. 
 
-% TODO: decide whether this belongs here
-Results, however, also depend on several factors such as the count of threads in the underlying thread pool, count of CPU cores, as well as the problem size and split factor. To ensure that all cases are studied, benchmarks have been parameterized to be able to run several configurations. 
+The results will be used to evaluate the effectivness of following optimizations:
+\begin{itemize}
+    \item The effect of relaxed concat and split operations of \rrbvec{} on the overall performance. 
+    \item Dynamic internal representation of \pvec{}.     
+\end{itemize}
 
+% Results also depend on several factors such as the count of threads, count of CPU cores, as well as the problem size and work distribution mechanism. Benchmarks in this project have been parameterized to support various configurations. 
+
+% All of the aforementioned benchmarks are following the map-reduce pattern \todo{ref}. When executed in parallel, work is split into several independent chunks of work, which at later stage are reduced to a result. 
 
 % Rayon was inspired by Cilk \todo{ref}, the C programming language extension designed to simplify parallel programming at MIT. Scala, among other languages, also features parallel collection framework. 
 
@@ -181,10 +188,8 @@ The count of threads in the underlying threadpool is equal to the count of CPU c
 
 \paragraph*{Load balancing}
 
-
 % Where does actual chunking is happening? I wouldn't be able to answer that question. 
 % Actual chunking happens on the top level (?) 
-
 
 % - How does Rayon work on primitive level?
     % - static chunking vs dynamic (?) chunking (or work stealing)
@@ -206,6 +211,16 @@ The count of threads in the underlying threadpool is equal to the count of CPU c
     % - using filter operator to force creating of new sequence
     %     - check if it is possible to create your own *faster* filter operator
 
+\subsection{Benchmarks}
+
+\paragraph*{Check if a word is a palindrome}
+\todo{content}
+
+\paragraph*{Scalar product of two vectors}
+\todo{content}
+
+\paragraph*{Iterating over and incrementing a vector of integers}
+\todo{content}
 
 \section{Presentation of results}
 \todo{section}
