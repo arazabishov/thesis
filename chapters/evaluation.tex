@@ -108,7 +108,8 @@ Since atomic reference-counted pointers are claimed to introduce additional over
 
 As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
 
-% Benchmarks which make use of .clone() operation somehow? 
+% * benchmarks which make use of .clone() operation somehow? 
+% * assosiativity of combinators in iter and par_iter 
 
 \section{Parallel vector}
 One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for optimal performance. 
@@ -132,46 +133,41 @@ The results will be used to evaluate the effectivness of following optimizations
 \end{itemize}
 
 \subsection{Rayon}
-
-% * what do iterators and parallel iterators expose as API
-%  * what is a combinator?
-%    * assosiativity of combinators in iter and par_iter 
-
 The idea of Rayon, a data parallelism library for Rust, is to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores when it is considered to be beneficial. 
 
+\paragraph*{Parallel iterators}
 The power of iterators in Rust is in the operations which it provides over its elements. Structures which implement those operations are called combinators. They can be chained and the result of execution is passed from one combinator to another. 
 
-% * difference between behavior of iterators and par iterators
-%  * non deterministic order of execution
-%  * the types passed between threads have to be send + sync (? optional)
-
-Parallel iterators expose similar set of operators, even though not entirely. As iterators process values sequentially, there is a set of combinators which expect values to be emitted in particular order. As the parallel iterators are designed to process data in any order, inherentely sequential combinators are simply not applicable. 
+Parallel iterators expose similar set of operators, even though not entirely identical. As iterators process values sequentially, there is a set of combinators which expect values to be emitted in particular order. As the parallel iterators are designed to process data in any order, inherentely sequential combinators are simply not applicable. Thus, Rayon might be not suitable for algorithms relying on the sequential order of execution.
 
 Another limitation which parallel iterators impose, is that type of values which it works with have to implement the \emph{Send} trait. It means using non-threadsafe types such as \emph{Rc} in combination with Rayon is prohibited. 
 
-% * Example of iter and par_iter
+\begin{figure}        
+    \centering
 
-One of the Rayon's components, fork/join framework, is responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like vector, Rayon attempts to repeatedely divide the work into chunks among threads until the chunk is small enough for a single thread. 
+    \begin{minted}{rust}
+        // sequential iterator
+        vec![1, 2, 3]
+            .into_iter()
+            .for_each(|x| println!("{}", x));
 
-% Example of calls to the join
+        // rayon's parallel iterator
+        vec![1, 2, 3]
+            .into_par_iter()
+            .for_each(|x| println!("{}", x));
+    \end{minted}
 
-% * collection is converted to a parallel iterator
-% * how the work is split between threads
-%   * fundamental split / combine operations
-%   * connection between ParallelIterator and RrbVec
+    \caption{Example of using sequential and parallel iterators.}
+    \label{fig:par-iter-example}
+\end{figure}
 
-It is important to note that the \emph{rayon::join} function \emph{may} execute clojures in parallel. It decides whether it will be beneficial to parallelize the work, depending on the count of available threads and the work load. 
+\paragraph*{Work splitting}
 
-% * what controls the count of threads
-%   * Configuring thread count in the underlying threadpool
-
-The default count of threads used by Rayon is equal to the count of worker threads available in the system. Usually this is the number of cores available in CPU. Rayon provides mechanism for configuring the size of the underlying threadpool, which will be used in benchmarks to check how the threadcount affects results. 
+One of the Rayon's components, fork/join framework, is responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like vector, Rayon attempts to repeatedely divide the work into chunks among threads until the chunk is small enough for a single thread. See an example in figure \ref{fig:rayon-work-splitting}.
 
 \begin{figure}
-    \caption{Visualization of work splitting in Rayon.}
-    \label{fig:rayon-work-splitting}
+    \centering
 
-    \center
     \begin{tikzpicture}[
         font=\ttfamily,
         array/.style={
@@ -207,46 +203,32 @@ The default count of threads used by Rayon is equal to the count of worker threa
         \draw ([xshift=1mm]array-1-12.east)--++(0:3mm) node [right]{ Vector };
     \end{tikzpicture}
 
+    \caption{Visualization of work splitting in Rayon.}
+    \label{fig:rayon-work-splitting}
 \end{figure}
 
-% * the work distribution
-%   * static chunking vs dynamic chunking:
-%       Work distribution, known as static chunking (giving each processor N / P sized chunk), is optimal when the amount of work per element takes the same amount of time. NOTE: Rayon is using adaptive work stealing algorithm, which ensures better load balancing when it takes different amount of time to process each chunk. NOTE: provides a code snippet of how concatenation is implemented 
-%     * fork join framework
-%     * potential parallism
-%     * work stealing
+As demonstrated in figure \ref{fig:rayon-join}, the work is \emph{potentially} divided between two threads by calling \emph{rayon::join}, which accepts two clojures. Rayon decides whether it is beneficial to parallelize the work, depending on the count of available threads, the split factor and the work load. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided into smaller parts. When both clojures finish working, the results are combined and returned to the caller. 
 
-In perfect world the chunks of work split between threads take the same amount of time to process. In reality this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. In order to avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is know as work stealing and is used as the main mechnasim for work distribution in Rayon. 
+The size of the work chunk, or the \emph{split factor}, can be controlled by two operations available for \emph{IndexedParallelIterator}, namely \emph{with\_min\_len} and \emph{with\_max\_len}. The use of combinators which may affect the size of a collection, such as \emph{filter}, returns a \emph{ParallelIterator} which does not support configuration of the \emph{split factor}. 
 
-% * Example of a fork/join tree, which depicts work distribution. 
+\begin{figure}
+    \centering
 
-% * combining results
-%   * combinators used to aggregate results: reduce
-%   * process values individually, like for_each
+    \begin{minted}{rust}
+        rayon::join(
+            || do_something(...),
+            || do_something_else(...)
+        );
+    \end{minted}
+    
+    \caption{An example of using rayon's join.}
+    \label{fig:rayon-join}
+\end{figure}
 
-
-% Rayon can be divided into three layers:
-% \begin{itemize}
-%     \item Parallel iterators.
-%     \item The fork / join framework.
-%     \item Threadpool.
-% \end{itemize}
-
-Data parallelism, however, is not applicable to algorithms which rely on the order of execution. The reason is that parallel iterators process values in non-deterministic order. 
-
-To ensure optimal performance, Rayon keeps dividing the work between threads, until the resulting chunk of the work is sufficiently small to be executed on a single thread. 
-
-Rayon's parallel iterators provide methods for hinting the scheduler how large the chunk of work should be: 
-\begin{itemize}
-    \item with\_min\_len: sets the minimum size of the chunk
-    \item with\_max\_len: sets the maximum size of the chunk
-\end{itemize}
-
-\todo{Explain the effects of using those two methods}
-
-The count of threads in the underlying threadpool is equal to the count of CPU cores. On the systems with hyperthreading enabled this equals the number of logical cores and not the physical ones. 
+By default, the count of threads allocated by Rayon is equal to the number of cores available in the system. To observe how the thread count affects the performance, Rayon's threadpool will be configured to work with 2, 4, 8, and 16 threads. 
 
 \paragraph*{Load balancing}
+In perfect world the chunks of work split between threads take the same amount of time to process. In reality this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. In order to avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is know as work stealing and is used as the main mechnasim for work distribution in Rayon. 
 
 \subsection{Benchmarks}
 
