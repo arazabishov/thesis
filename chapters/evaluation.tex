@@ -108,9 +108,6 @@ Since atomic reference-counted pointers are claimed to introduce additional over
 
 As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
 
-% * benchmarks which make use of .clone() operation somehow? 
-% * assosiativity of combinators in iter and par_iter 
-
 \section{Parallel vector}
 One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for optimal performance. 
 
@@ -136,13 +133,8 @@ The results will be used to evaluate the effectivness of following optimizations
 The idea of Rayon, a data parallelism library for Rust, is to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores when it is considered to be beneficial. 
 
 \paragraph*{Parallel iterators}
-The power of iterators in Rust is in the operations which it provides over its elements. Structures which implement those operations are called combinators. They can be chained and the result of execution is passed from one combinator to another. 
 
-Parallel iterators expose similar set of operators, even though not entirely identical. As iterators process values sequentially, there is a set of combinators which expect values to be emitted in particular order. As the parallel iterators are designed to process data in any order, inherentely sequential combinators are simply not applicable. Thus, Rayon might be not suitable for algorithms relying on the sequential order of execution.
-
-Another limitation which parallel iterators impose, is that type of values which it works with have to implement the \emph{Send} trait. It means using non-threadsafe types such as \emph{Rc} in combination with Rayon is prohibited. 
-
-\begin{figure}        
+\begin{figure}[!htbp] 
     \centering
 
     \begin{minted}{rust}
@@ -161,11 +153,14 @@ Another limitation which parallel iterators impose, is that type of values which
     \label{fig:par-iter-example}
 \end{figure}
 
+The power of iterators in Rust is in the operations which it provides over its elements. Structures which implement those operations are called combinators. They can be chained and the result of execution is passed from one combinator to another. 
+
+Parallel iterators expose similar set of operators, even though not entirely identical. As iterators process values sequentially, there is a set of combinators which expect values to be emitted in particular order. As the parallel iterators are designed to process data in any order, inherentely sequential combinators are simply not applicable. Thus, Rayon might be not suitable for algorithms relying on the sequential order of execution.
+
+Another limitation which parallel iterators impose, is that type of values which it works with have to implement the \emph{Send} trait. It means using non-threadsafe types such as \emph{Rc} in combination with Rayon is prohibited. 
+
 \paragraph*{Work splitting}
-
-One of the Rayon's components, fork/join framework, is responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like vector, Rayon attempts to repeatedely divide the work into chunks among threads until the chunk is small enough for a single thread. See an example in figure \ref{fig:rayon-work-splitting}.
-
-\begin{figure}
+\begin{figure}[!htbp]
     \centering
 
     \begin{tikzpicture}[
@@ -207,11 +202,13 @@ One of the Rayon's components, fork/join framework, is responsible for dividing 
     \label{fig:rayon-work-splitting}
 \end{figure}
 
+One of the Rayon's components, fork/join framework, is responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like vector, Rayon attempts to repeatedely divide the work into chunks among threads until the chunk is small enough for a single thread. See an example in figure \ref{fig:rayon-work-splitting}.
+
 As demonstrated in figure \ref{fig:rayon-join}, the work is \emph{potentially} divided between two threads by calling \emph{rayon::join}, which accepts two clojures. Rayon decides whether it is beneficial to parallelize the work, depending on the count of available threads, the split factor and the work load. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided into smaller parts. When both clojures finish working, the results are combined and returned to the caller. 
 
 The size of the work chunk, or the \emph{split factor}, can be controlled by two operations available for \emph{IndexedParallelIterator}, namely \emph{with\_min\_len} and \emph{with\_max\_len}. The use of combinators which may affect the size of a collection, such as \emph{filter}, returns a \emph{ParallelIterator} which does not support configuration of the \emph{split factor}. 
 
-\begin{figure}
+\begin{figure}[!htbp]
     \centering
 
     \begin{minted}{rust}
