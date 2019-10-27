@@ -114,9 +114,8 @@ One of the claims is that \rrbvec{} is very efficient when it comes to split and
 In this section, we will first take a look at how Rayon splits and distributes the work across threads, as well as available configuration parameters. Then, section \todo{} introduces tests for benchmarking the overall performance of persistent and standard vectors:
 
 \begin{itemize}    
-    \item Check if a word is a palindrome. 
-    \item Scalar product of two vectors.
-    \item Iterating over and incrementing a vector of integers.
+    \item Processing a vector of integers.    
+    \item Check if a word is a palindrome.         
 \end{itemize}
 
 All the tests will be executed on 1, 2, 4, 8, and 16 threads. 
@@ -227,19 +226,111 @@ By default, the count of threads allocated by Rayon is equal to the number of co
 \paragraph*{Load balancing}
 In perfect world the chunks of work split between threads take the same amount of time to process. In reality this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. In order to avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is know as work stealing and is used as the main mechnasim for work distribution in Rayon. 
 
+\paragraph*{Computation stages}
+Computation stages of both "Processing a vector of integers" and "Check if a word is a palindrome" benchmarks, could be described in three steps. 
+\begin{itemize}
+    \item First, split the work between threads. 
+    \item Then process the chunk of work sequentially. 
+    \item Finally, combine and return the results:    
+\end{itemize}
+
+The final step can be subdivided further:
+\begin{itemize}
+    \item Collect individual items into a vector using the parallel \emph{Fold} combinator. 
+    \item Reduce emitted vectors into a single one using the \emph{Reduce} combinator. 
+\end{itemize}
+
+% Explain a little bit further what fold and reduce operators do, and what is the difference between them
+
+\begin{figure}[!htbp]
+    \centering
+
+    \begin{minted}{rust}
+        let result = parallel_iterator
+            .fold(Vec::new, |mut vec, x| {
+                vec.push(x);
+                vec
+            })
+            .reduce(Vec::new, |mut vec1, mut vec2| {
+                vec1.append(&mut vec2);
+                vec1
+            });
+    \end{minted}
+    
+    \caption{Collecting items of parallel iterator.}
+    \label{fig:fold-reduce}
+\end{figure}
+
+% You can depict this part as a tree (you already have an example)
+
+%   Thread 1       Thread 2       Thread 3       Thread 4 
+% |1| |2| |3|     |4| |5| |6|    |7| |8| |9|   |10| |11| |12|
+
+% increment all values 
+% |2| |3| |4|     |5| |6| |7|    |8| |9| |10|  |11| |12| |13|
+
+% fold
+%  |2, 3, 4|       |5, 6, 7|      |8, 9, 10|    |11, 12, 13|
+
+% reduce
+% |1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12|
+
+
 \subsection{Benchmarks}
+The benchmarks were executed against following vector implementations: Vec, RbVec, RrbVec, and PVec, where RbVec, RrbVec, and PVec are based on the threadsafe reference-counted pointer -- \emph{Arc}. The \imrsvec{} is not included because it does not implement the Rayon's \emph{IntoParallelIterator} trait, which makes its evaluation irrelevant. 
+
+Benchmarks have been parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation executed on a single thread. 
+
+\subsubsection*{Processing a vector of integers}
+This benchmark is subdivided into two separate tests: 
+\begin{itemize}
+    \item Incrementing each item of a vector.
+    \item Filtering out odd integers. 
+\end{itemize}
+
+The setup routine of this benchmark is identical for both tests, which generates a vector of [0, N] integers, where \emph{N} is the problem size. As soon as processing is complete, parallel iterator is reduced to a vector. 
 
 \paragraph*{Check if a word is a palindrome}
-\todo{content}
+For each word in the given file, check if it is a palindrome. Words are provided in a text file separated by spaces. The result of execution is a list of pairs, where the first item is the word and the second is a flag indicating whether it is a palindrome or not. 
 
-\paragraph*{Scalar product of two vectors}
-\todo{content}
+% how the file is loaded and what is the setup routine
+The contents of the file are loaded into memory once, and then before each run they are copied over to a new vector within the setup routine. A vector is later passed to the test routine, which in a turn, converts it to a parallel iterator. 
 
-\paragraph*{Iterating over and incrementing a vector of integers}
-\todo{content}
+% what is the range of problem sizes 
+The total count of words in the file is 370103. Even though all words are available, the setup routine only returns N words, where N is the problem size. The range of problems for this benchmark is [10000, 370103]. 
 
 \section{Presentation of results}
-\todo{section}
+The results show the mean measured time for each function as the input increases. 
 
 \section{Reproducing results}
-\todo{tbd}
+To execute sequential benchmarks do this. In order to execute sequential benchmarks using \emph{Arc} use this. If you want to run parallel benchmarks, do this and this. Criterion can as well generate reports with charts using gnuplot, but you need to make sure that it is installed on the system. You need to be located in the root directory of the project. 
+
+Executing sequential benchmarks:
+\begin{figure}[!htbp]
+    \centering
+
+    \begin{minted}{bash}
+        # benches of the non-threadsafe implementation
+        cargo bench
+
+        # benches of the threadsafe implementation
+        cargo bench --features=arc
+    \end{minted}
+    
+    \caption{Example 1.}
+    \label{fig:sequential-benches}
+\end{figure}
+
+Executing parallel benchmarks:
+\begin{figure}[!htbp]
+    \centering
+
+    \begin{minted}{bash}
+        cargo bench --features=arc,rayon-iter
+    \end{minted}
+    
+    \caption{Example 2.}
+    \label{fig:parallel-benches}
+\end{figure}
+
+You can find the results in the next directory: project/target/criterion/. If you had gnuplot installed, then the report with generated charts can be found here: project/target/criterion/report/index.html. 
