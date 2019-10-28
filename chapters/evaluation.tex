@@ -303,9 +303,9 @@ The total count of words in the file is 370103. Even though all words are availa
 The results show the mean measured time for each function as the input increases. 
 
 \section{Reproducing results}
-To execute sequential benchmarks do this. In order to execute sequential benchmarks using \emph{Arc} use this. If you want to run parallel benchmarks, do this and this. Criterion can as well generate reports with charts using gnuplot, but you need to make sure that it is installed on the system. You need to be located in the root directory of the project. 
+Benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of the persistent vector. To select the threadsafe variant, user can pass the \emph{arc} feature flag as demonstrated in the figure \ref{fig:sequential-benches}. To run a particular benchmark, specify its name as an argument to cargo. 
 
-Executing sequential benchmarks:
+\floatstyle{boxed}
 \begin{figure}[!htbp]
     \centering
 
@@ -314,14 +314,18 @@ Executing sequential benchmarks:
         cargo bench
 
         # benches of the threadsafe implementation
-        cargo bench --features=arc
+        cargo bench --features=arc 
+
+        # run a particular benchmark
+        cargo bench index_randomly
     \end{minted}
     
     \caption{Example 1.}
     \label{fig:sequential-benches}
 \end{figure}
 
-Executing parallel benchmarks:
+To execute parallel benchmarks, user needs to pass both the \emph{arc} and \emph{rayon-iter} feature flags: 
+
 \begin{figure}[!htbp]
     \centering
 
@@ -333,4 +337,6 @@ Executing parallel benchmarks:
     \label{fig:parallel-benches}
 \end{figure}
 
-You can find the results in the next directory: project/target/criterion/. If you had gnuplot installed, then the report with generated charts can be found here: project/target/criterion/report/index.html. 
+Criterion is also capable of generating HTML reports with charts, given that gnuplot \footnote{http://www.gnuplot.info/} is installed on the system. Results can be found in the \emph{pvec-rs/target/criterion} directory, and if gnuplot is installed, the report will be available at \emph{pvec-rs/target/criterion/report/index.html}. 
+
+For more information on available options and parameters for Criterion, please consult the library documentation \footnote{https://docs.rs/criterion/0.3.0/criterion/}.
