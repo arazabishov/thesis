@@ -748,9 +748,83 @@ The dynamic internal representation of \pvec{} puts it into advantage by a facto
 % TODO: the bug in the im-rs has to be fixed first
 
 \section{Performance in parallel benchmarks}
-% content
+% * assumption is that increase in threads used should improve perf
+% * mention that resuls are presented in three dimensions, not two, because of thread count difference
 
+\subsection{Incrementing each element of a vector.}
+% * benefits of parallelism
+%   * single thread performance
+%   * correlation of perf improvements with thread count increase
+% * rb vs rrb vector
+%   * difference becomes more apparent for large values
+% * pvec and dynamic internal representation
 
+\begin{figure}[t]    
+
+    \center
+    \begin{tikzpicture} 
+        \tikzstyle{every node}=[
+            font=\footnotesize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]        
+
+        \begin{loglogaxis}[         
+            use units,         
+            z unit=s, z unit prefix=m,
+            smooth,        
+            width=280pt,            
+            title style={align=center},
+            title={Time comparison of incrementing numbers of the N sized vector\\ parallelised on K number of threads.},
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            zmajorgrids=true,
+            xlabel={vector size (log scale)},
+            ylabel={number of threads (log scale)},           
+            zlabel={mean time (log scale)},                               
+            grid style=dashed,
+            legend pos=outer north east,        
+            legend style={fill=none,font=\footnotesize},
+            legend cell align=left,            
+            ytick={1, 2, 4, 8, 16},       
+            xticklabels={10, 100, 1K, 10K},          
+            yticklabels={1, 2, 4, 8, 16},         
+            zticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=2
+            },   
+            zticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },            
+            view={-45}{8},
+        ]            
+            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/std-vec.csv}; 
+            \addlegendentry{Vec}
+
+            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/rrbvec-balanced.csv}; 
+            \addlegendentry{RbVec}
+
+            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/rrbvec-unbalanced.csv}; 
+            \addlegendentry{RrbVec}
+
+            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/pvec-unbalanced.csv}; 
+            \addlegendentry{PVec}
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+
+    \label{fig:map-fold}
+    \caption{Incrementing each element of a vector on multiple threads.}    
+\end{figure}
+
+\subsection{Filtering out odd integers.}
+% * benefits of parallelism
+%   * single thread performance
+%   * correlation of perf improvements with thread count increase
+% * rb vs rrb vector
+%   * difference becomes more apparent for large values
+% * pvec and dynamic internal representation
 
 \section{Memory footprint (?)}
 \section{Discussion}

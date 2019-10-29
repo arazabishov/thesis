@@ -284,11 +284,17 @@ Benchmarks have been parameterized over two dimensions: the vector size and the 
 \subsubsection*{Processing a vector of integers}
 This benchmark is subdivided into two separate tests: 
 \begin{itemize}
-    \item Incrementing each item of a vector.
+    \item Incrementing each integer element of a vector.
     \item Filtering out odd integers. 
 \end{itemize}
 
-The setup routine of this benchmark is identical for both tests, which generates a vector of [0, N] integers, where \emph{N} is the problem size. As soon as processing is complete, parallel iterator is reduced to a vector. 
+The setup routine of this benchmark is identical for both tests, which generates a vector of [0, N] integers, where \emph{N} is the problem size. 
+
+The first test for incrementing numbers is implemented using the \emph{Map} combinator. It receives individual integers as argument, increments and returns the value back. 
+
+The second test relies on the \emph{Fold} combinator, which essentially is a predicate checking whether the number is odd or not. If it is odd, it keeps the value. Otherwise, it is filtered out. 
+
+As soon as processing is complete, parallel iterator is reduced to a vector. 
 
 \paragraph*{Check if a word is a palindrome}
 For each word in the given file, check if it is a palindrome. Words are provided in a text file separated by spaces. The result of execution is a list of pairs, where the first item is the word and the second is a flag indicating whether it is a palindrome or not. 
