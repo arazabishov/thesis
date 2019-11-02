@@ -748,18 +748,17 @@ The dynamic internal representation of \pvec{} puts it into advantage by a facto
 % TODO: the bug in the im-rs has to be fixed first
 
 \section{Performance in parallel benchmarks}
-% * assumption is that increase in threads used should improve perf
-% * mention that resuls are presented in three dimensions, not two, because of thread count difference
+The expectation from parallel benchmarks is to reveal whether proposed optimisations were effective in the parallel context. 
+
+First, if confluent concatenation and split operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic internal representation has positive impact on the overall performance of \pvec{}. 
+
+At last, we will evaluate the impact of increasing number of threads on the performance. 
+
+The results are presented in the form of three-dimensional graph, where x and y axis correspond to the problem size and number of threads used, while z is used for the mean run time. 
 
 \subsection{Incrementing each element of a vector.}
-% * benefits of parallelism
-%   * single thread performance
-%   * correlation of perf improvements with thread count increase
-% * rb vs rrb vector
-%   * difference becomes more apparent for large values
-% * pvec and dynamic internal representation
 
-\begin{figure}[t]    
+\begin{figure}[!htbp]
 
     \center
     \begin{tikzpicture} 
@@ -786,9 +785,9 @@ The dynamic internal representation of \pvec{} puts it into advantage by a facto
             legend pos=outer north east,        
             legend style={fill=none,font=\footnotesize},
             legend cell align=left,            
-            ytick={1, 2, 4, 8, 16},       
+            ytick={1, 2, 4, 8},       
             xticklabels={10, 100, 1K, 10K},          
-            yticklabels={1, 2, 4, 8, 16},         
+            yticklabels={1, 2, 4, 8},         
             zticklabel style={
                 /pgf/number format/fixed, 
                 /pgf/number format/precision=2
@@ -800,16 +799,16 @@ The dynamic internal representation of \pvec{} puts it into advantage by a facto
             },            
             view={-45}{8},
         ]            
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/std-vec.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/std-vec.csv}; 
             \addlegendentry{Vec}
 
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/rrbvec-balanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/rrbvec-balanced.csv}; 
             \addlegendentry{RbVec}
 
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/rrbvec-unbalanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/rrbvec-unbalanced.csv}; 
             \addlegendentry{RrbVec}
 
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/map_fold/pvec-unbalanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/pvec-unbalanced.csv}; 
             \addlegendentry{PVec}
         \end{loglogaxis}     
     \end{tikzpicture} 
@@ -818,72 +817,28 @@ The dynamic internal representation of \pvec{} puts it into advantage by a facto
     \caption{Incrementing each element of a vector on multiple threads.}    
 \end{figure}
 
-\begin{figure}[t]    
+\paragraph*{Balanced vs unbalanced}
+\rbvec{} and \rrbvec{} produce identical results in the single thread test. This is expected, because sequential benchmark does not use concatenation or splitting, the operations which create unbalanced nodes. 
 
-    \center
-    \begin{tikzpicture}         
-        \tikzstyle{every node}=[
-            font=\footnotesize, 
-            inner sep=2pt,
-            outer sep=0pt            
-        ]        
+The difference quickly becomes apparent with parallelisation of work on 2 and 4 threads. \rbvec{} demonstrates TODOX slower results compared to \rrbvec{}, due to the naive concat and split operations.
 
-        \begin{loglogaxis}[         
-            use units,         
-            z unit=s, z unit prefix=m,
-            smooth,        
-            width=320pt,            
-            title style={align=center},
-            title={Time comparison of filtering out odd numbers of the N sized vector\\ parallelised on K number of threads.},
-            ymajorgrids=true, 
-            xmajorgrids=true,
-            zmajorgrids=true,
-            xlabel={vector size (log scale)},
-            ylabel={number of threads (log scale)},           
-            zlabel={mean time (log scale)},                               
-            grid style=dashed,
-            legend pos=outer north east,        
-            legend style={fill=none,font=\footnotesize},
-            legend cell align=left,            
-            ytick={1, 2, 4, 8, 16},       
-            xticklabels={10, 100, 1K, 10K},          
-            yticklabels={1, 2, 4, 8, 16},         
-            zticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=2
-            },   
-            zticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },            
-            view={-45}{8},
-        ]            
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/filter_fold/std-vec.csv}; 
-            \addlegendentry{Vec}
+\paragraph*{Dynamic internal representation}
 
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/filter_fold/rrbvec-balanced.csv}; 
-            \addlegendentry{RbVec}
+Performance for 2, 4 cores is different compared to 8. Probably because of internal representation, which changes as well as more splitting / appending which happens in between. 
 
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/filter_fold/rrbvec-unbalanced.csv}; 
-            \addlegendentry{RrbVec}
+% * pvec and dynamic internal representation
 
-            \addplot3[surf, mesh/rows=5, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/filter_fold/pvec-unbalanced.csv}; 
-            \addlegendentry{PVec}
-        \end{loglogaxis}     
-    \end{tikzpicture} 
-
-    \label{fig:filter-fold}
-    \caption{Filtering out odd numbers of a vector on multiple threads.}    
-\end{figure}
-
-\subsection{Filtering out odd integers.}
+\paragraph*{Effect of parallelism}
 % * benefits of parallelism
 %   * single thread performance
 %   * correlation of perf improvements with thread count increase
-% * rb vs rrb vector
-%   * difference becomes more apparent for large values
-% * pvec and dynamic internal representation
+
+In the test with 8 threads, the difference becomes even more noticeable at the factor of TODOX. As the number of available threads increases, Rayon breaks down the work into smaller chunks to keep all threads busy.
+
+This can be explained by the fact that with increased count of threads, Rayon breaks down the work into smaller chunks, which implies increased use of the concat and split operations. 
+
+Performance in fact degenerates, for all vector implementations at 8 threads. Provide a possible explanation. 
+
 
 \section{Memory footprint (?)}
 \section{Discussion}

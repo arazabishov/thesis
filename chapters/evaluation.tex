@@ -109,27 +109,27 @@ Since atomic reference-counted pointers are claimed to introduce additional over
 As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
 
 \section{Parallel vector}
-One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for optimal performance. 
+One of the claims is that \rrbvec{} is very efficient when it comes to the split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for the optimal performance. 
 
 In this section, we will first take a look at how Rayon splits and distributes the work across threads, as well as available configuration parameters. Then, section \todo{} introduces tests for benchmarking the overall performance of persistent and standard vectors:
 
 \begin{itemize}    
-    \item Processing a vector of integers.    
+    \item Add elements of two vectors.    
     \item Check if a word is a palindrome.         
 \end{itemize}
 
-All the tests will be executed on 1, 2, 4, 8, and 16 threads. 
+All the tests will be executed on 1, 2, 4, and 8 threads. 
 
 Unlike the measurements presented from the sequential benchmarks, the parallel ones inlude the run time of both vector operations and Rayon. As the objective is the overall performance comparison, this is considered to be an acceptable tradeoff. 
 
-The results will be used to evaluate the effectivness of following optimizations:
+The results will be used to evaluate the effectivness of the following optimizations:
 \begin{itemize}
     \item The effect of relaxed concat and split operations of \rrbvec{} on the overall performance. 
     \item Dynamic internal representation of \pvec{}.     
 \end{itemize}
 
 \subsection{Rayon}
-The idea of Rayon, a data parallelism library for Rust, is to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores when it is considered to be beneficial. 
+The idea of Rayon, a data parallelism library for Rust, is to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon, on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores when it is considered to be beneficial. 
 
 \paragraph*{Parallel iterators}
 
@@ -224,14 +224,14 @@ The size of the work chunk, or the \emph{split factor}, can be controlled by two
 By default, the count of threads allocated by Rayon is equal to the number of cores available in the system. To observe how the thread count affects the performance, Rayon's threadpool will be configured to work with 2, 4, 8, and 16 threads. 
 
 \paragraph*{Load balancing}
-In perfect world the chunks of work split between threads take the same amount of time to process. In reality this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. In order to avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is know as work stealing and is used as the main mechnasim for work distribution in Rayon. 
+In the perfect world, the chunks of work split between threads take the same amount of time to process. In reality, this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. To avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is known as work-stealing and is used as the main mechanism for work distribution in Rayon. 
 
 \paragraph*{Computation stages}
-Computation stages of both "Processing a vector of integers" and "Check if a word is a palindrome" benchmarks, could be described in three steps. 
+Computation stages of both "Add elements of two vectors" and "Check if a word is a palindrome" benchmarks, could be described in three steps. 
 \begin{itemize}
     \item First, split the work between threads. 
     \item Then process the chunk of work sequentially. 
-    \item Finally, combine and return the results:    
+    \item Finally, combine and return the results.    
 \end{itemize}
 
 The final step can be subdivided further:
@@ -281,20 +281,22 @@ The benchmarks were executed against following vector implementations: Vec, RbVe
 
 Benchmarks have been parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation executed on a single thread. 
 
-\subsubsection*{Processing a vector of integers}
-This benchmark is subdivided into two separate tests: 
-\begin{itemize}
-    \item Incrementing each integer element of a vector.
-    \item Filtering out odd integers. 
-\end{itemize}
+\subsubsection*{Add elements of two vectors}
+\todo{}
+% The benchmark has a strange name, it is not descriptive enough
 
-The setup routine of this benchmark is identical for both tests, which generates a vector of [0, N] integers, where \emph{N} is the problem size. 
+% The test function is expected to add items at the same index from of integer vectors, and collect the results into a new vector. Two vectors are combined into a sequence of pairs of integers using the \emph{Zip} operator,
 
-The first test for incrementing numbers is implemented using the \emph{Map} combinator. It receives individual integers as argument, increments and returns the value back. 
+% The test function uses the \emph{Zip} combinator to combine two vectors into a single sequence of pairs, where
+% The idea behind this benchmark is to add integers of two vectors at corresponding indices and to collect the results into a third vector. 
 
-The second test relies on the \emph{Fold} combinator, which essentially is a predicate checking whether the number is odd or not. If it is odd, it keeps the value. Otherwise, it is filtered out. 
+% The setup routine of this benchmark is identical for both tests, which generates a vector of [0, N] integers, where \emph{N} is the problem size. 
 
-As soon as processing is complete, parallel iterator is reduced to a vector. 
+% The first test for incrementing numbers is implemented using the \emph{Map} combinator. It receives individual integers as argument, increments and returns the value back. 
+
+% The second test relies on the \emph{Fold} combinator, which essentially is a predicate checking whether the number is odd or not. If it is odd, it keeps the value. Otherwise, it is filtered out. 
+
+% As soon as processing is complete, parallel iterator is reduced to a vector. 
 
 \paragraph*{Check if a word is a palindrome}
 For each word in the given file, check if it is a palindrome. Words are provided in a text file separated by spaces. The result of execution is a list of pairs, where the first item is the word and the second is a flag indicating whether it is a palindrome or not. 
@@ -321,9 +323,6 @@ Benchmarks can be compiled and executed using Rust's package manager named \emph
 
         # benches of the threadsafe implementation
         cargo bench --features=arc 
-
-        # run a particular benchmark
-        cargo bench index_randomly
     \end{minted}
     
     \caption{Example 1.}
