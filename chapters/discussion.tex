@@ -748,7 +748,7 @@ The dynamic internal representation of \pvec{} puts it into advantage by a facto
 % TODO: the bug in the im-rs has to be fixed first
 
 \section{Performance in parallel benchmarks}
-The expectation from parallel benchmarks is to reveal whether proposed optimisations were effective in the parallel context. 
+The expectation from parallel benchmarks is to reveal whether proposed optimizations were effective in the parallel context. 
 
 First, if confluent concatenation and split operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic internal representation has positive impact on the overall performance of \pvec{}. 
 
@@ -756,7 +756,15 @@ At last, we will evaluate the impact of increasing number of threads on the perf
 
 The results are presented in the form of three-dimensional graph, where x and y axis correspond to the problem size and number of threads used, while z is used for the mean run time. 
 
-\subsection{Incrementing each element of a vector.}
+\subsection{Adding elements of two vectors.} 
+
+ - In sequential benchmark, both RbVec and RrbVec show identical performance results. This is due to the RrbTree being balanced in both cases, as the split and append operations are not used. 
+ - std vector shows the best results. PVec is todox slower, while RbVec and RrbVec are the slowest with todox difference. 
+ - With addition of parallelism, difference in performance between RbVec and RrbVec becomes noticeable at 2000 and up. This is due to a more efficient append / split implementation of RrbVec. The diff in performance becomes more apparent between pvec and stdvec at 2000 (that's when cache misses start happening?)
+  * When does pvec upgrade from stdvec? Specifically, when using split / append operations? 
+ - The difference between rbvec and rrbvec becomes even more significant with addition of more threads. Again, this is connected to the fact that append / split are faster for rrbvec. The interesting point here is that perf difference between std / pvec becomes less noticeable.
+  * Again, when does pvec upgrade / downgrade? Is it connected to the ref count? 
+ - What is interesting, is that parallel implementation is slower than a sequential one. This can be explained by the fact that operation which we perform in the benchmark is very fast. Thus, single thread performance wins over parallel implementation due to the overhead of parallelisation. 
 
 \begin{figure}[!htbp]
 
@@ -839,6 +847,127 @@ This can be explained by the fact that with increased count of threads, Rayon br
 
 Performance in fact degenerates, for all vector implementations at 8 threads. Provide a possible explanation. 
 
+\subsection{Check if a word is a palindrome}
+
+\begin{figure}[!htbp]
+
+    \center
+    \begin{tikzpicture} 
+        \tikzstyle{every node}=[
+            font=\footnotesize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]        
+
+        \begin{loglogaxis}[         
+            use units,         
+            z unit=s, z unit prefix=m,
+            smooth,        
+            width=320pt,            
+            title style={align=center},
+            title={Time comparison of incrementing numbers of the N sized vector\\ parallelised on K number of threads.},
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            zmajorgrids=true,
+            xlabel={vector size (log scale)},
+            ylabel={number of threads (log scale)},           
+            zlabel={mean time (log scale)},                               
+            grid style=dashed,
+            legend pos=outer north east,        
+            legend style={fill=none,font=\footnotesize},
+            legend cell align=left,            
+            ytick={1, 2, 4, 8},       
+            xticklabels={10, 100, 1K, 10K},          
+            yticklabels={1, 2, 4, 8},         
+            zticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=2
+            },   
+            zticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },            
+            view={-45}{8},
+        ]            
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/std-vec.csv}; 
+            \addlegendentry{Vec}
+
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/rrbvec-balanced.csv}; 
+            \addlegendentry{RbVec}
+
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/rrbvec-unbalanced.csv}; 
+            \addlegendentry{RrbVec}
+
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/pvec-unbalanced.csv}; 
+            \addlegendentry{PVec}
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+
+    \label{fig:map-fold}
+    \caption{Incrementing each element of a vector on multiple threads.}    
+\end{figure}
+
+% map
+
+\begin{figure}[!htbp]
+
+    \center
+    \begin{tikzpicture} 
+        \tikzstyle{every node}=[
+            font=\footnotesize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]        
+
+        \begin{loglogaxis}[         
+            use units,         
+            z unit=s, z unit prefix=m,
+            smooth,        
+            width=320pt,            
+            title style={align=center},
+            title={Time comparison of incrementing numbers of the N sized vector\\ parallelised on K number of threads.},
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            zmajorgrids=true,
+            xlabel={vector size (log scale)},
+            ylabel={number of threads (log scale)},           
+            zlabel={mean time (log scale)},                               
+            grid style=dashed,
+            legend pos=outer north east,        
+            legend style={fill=none,font=\footnotesize},
+            legend cell align=left,            
+            ytick={1, 2, 4, 8},       
+            xticklabels={10, 100, 1K, 10K},          
+            yticklabels={1, 2, 4, 8},         
+            zticklabel style={
+                /pgf/number format/fixed, 
+                /pgf/number format/precision=2
+            },   
+            zticklabel={%
+                \pgfmathfloatparsenumber{\tick}%
+                \pgfmathfloatexp{\pgfmathresult}%
+                \pgfmathprintnumber{\pgfmathresult}%
+            },            
+            view={-45}{8},
+        ]            
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/std-vec.csv}; 
+            \addlegendentry{Vec}
+
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/rrbvec-balanced.csv}; 
+            \addlegendentry{RbVec}
+
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/rrbvec-unbalanced.csv}; 
+            \addlegendentry{RrbVec}
+
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/pvec-unbalanced.csv}; 
+            \addlegendentry{PVec}
+        \end{loglogaxis}     
+    \end{tikzpicture} 
+
+    \label{fig:map-fold}
+    \caption{Incrementing each element of a vector on multiple threads.}    
+\end{figure}
 
 \section{Memory footprint (?)}
 \section{Discussion}
