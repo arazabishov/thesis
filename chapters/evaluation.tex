@@ -281,31 +281,48 @@ The benchmarks were executed against following vector implementations: Vec, RbVe
 
 Benchmarks have been parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation executed on a single thread. 
 
-\subsubsection*{Add elements of two vectors}
-\todo{}
-% The benchmark has a strange name, it is not descriptive enough
+\subsubsection*{Sum of elements of two vectors}
+Given two equally sized vectors of integers, the test function adds values at the corresponding indices, and returns a new instance of a vector with results. The benchmark is subdivided into three steps:
 
-% The test function is expected to add items at the same index from of integer vectors, and collect the results into a new vector. Two vectors are combined into a sequence of pairs of integers using the \emph{Zip} operator,
+\begin{enumerate}
+    \item Transform each vector into a parallel iterator, and merge them into a single sequence of value pairs. 
+    \item Add items of the emitted tuple of two integers into a single value.
+    \item Reduce individual sums into a vector of results.
+\end{enumerate}
 
-% The test function uses the \emph{Zip} combinator to combine two vectors into a single sequence of pairs, where
-% The idea behind this benchmark is to add integers of two vectors at corresponding indices and to collect the results into a third vector. 
+The setup routine prepares two vectors of integers from 0 to N, where N is the problem size. 
 
-% The setup routine of this benchmark is identical for both tests, which generates a vector of [0, N] integers, where \emph{N} is the problem size. 
+\subsubsection*{Check if a word is a palindrome}
+The benchmark checks whether a word is a palindrome. As the input, we are using a list of english words consisting of only alphabetic characters. The benchmark consists of two variants:
+\begin{itemize}
+    \item Annotating every word with a boolean which indicates if the word is a palindrome. 
+    \item Collecting palindromes into a new vector. 
+\end{itemize}
 
-% The first test for incrementing numbers is implemented using the \emph{Map} combinator. It receives individual integers as argument, increments and returns the value back. 
+The computation stages of both tests are very similar code wise, with the difference present in the operators used to process each individual word:
 
-% The second test relies on the \emph{Fold} combinator, which essentially is a predicate checking whether the number is odd or not. If it is odd, it keeps the value. Otherwise, it is filtered out. 
+\begin{enumerate}
+    \item Transform the given vector of words into a parallel iterator. 
+    \item A word processing step for two tests correspondingly:
+    \begin{enumerate}
+        \item Return a tuple containing the word and the flag which indicates whether the word is a palindrome. 
+        \item Filter out all words which are not palindromes. 
+    \end{enumerate}
+    \item Reduce the results to a new instance of a vector.  
+\end{enumerate}
 
-% As soon as processing is complete, parallel iterator is reduced to a vector. 
+Essentially, the difference comes down to the operators used. For the first test, each word is processed by the \emph{Map} combinator. It takes a string as an argument, and returns a tuple of a string and boolean. 
 
-\paragraph*{Check if a word is a palindrome}
-For each word in the given file, check if it is a palindrome. Words are provided in a text file separated by spaces. The result of execution is a list of pairs, where the first item is the word and the second is a flag indicating whether it is a palindrome or not. 
+The second test relies on the \emph{Filter} combinator, which takes a predicate as an argument. The predicate, in this case, is the function checking if the word is a palindrome. 
 
-% how the file is loaded and what is the setup routine
+An important difference in behavior between two tests, is that filter alters the length of the resulting vector, while the map combinator does not. 
+
+Hence, the difference in performance between standard and persistent vector might become more apparent in the second test, as Rayon will not be able to make optimizations based on the assumptions made about the size of resulting vector. 
+
+\paragraph*{The benchmark setup}
+The total count of words stored in the file is 370103. As benchmark is parameterized over the size of a vector, which in this case is equal to the number of words, the setup routine caps the count of words by \emph{N}. 
+
 The contents of the file are loaded into memory once, and then before each run they are copied over to a new vector within the setup routine. A vector is later passed to the test routine, which in a turn, converts it to a parallel iterator. 
-
-% what is the range of problem sizes 
-The total count of words in the file is 370103. Even though all words are available, the setup routine only returns N words, where N is the problem size. The range of problems for this benchmark is [10000, 370103]. 
 
 \section{Presentation of results}
 The results show the mean measured time for each function as the input increases. 

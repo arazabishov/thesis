@@ -1,1 +1,4 @@
 # thesis
+
+## Dependencies
+ - pygmentize
