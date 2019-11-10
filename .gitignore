@@ -244,3 +244,6 @@ TSWLatexianTemp*
 
 # latex-workshop
 __*.tex
+
+# vscode
+.vscode/
