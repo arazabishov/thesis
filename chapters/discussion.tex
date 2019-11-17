@@ -758,14 +758,6 @@ The results are presented in the form of three-dimensional graph, where x and y 
 
 \subsection{Adding elements of two vectors.} 
 
- - In sequential benchmark, both RbVec and RrbVec show identical performance results. This is due to the RrbTree being balanced in both cases, as the split and append operations are not used. 
- - std vector shows the best results. PVec is todox slower, while RbVec and RrbVec are the slowest with todox difference. 
- - With addition of parallelism, difference in performance between RbVec and RrbVec becomes noticeable at 2000 and up. This is due to a more efficient append / split implementation of RrbVec. The diff in performance becomes more apparent between pvec and stdvec at 2000 (that's when cache misses start happening?)
-  * When does pvec upgrade from stdvec? Specifically, when using split / append operations? 
- - The difference between rbvec and rrbvec becomes even more significant with addition of more threads. Again, this is connected to the fact that append / split are faster for rrbvec. The interesting point here is that perf difference between std / pvec becomes less noticeable.
-  * Again, when does pvec upgrade / downgrade? Is it connected to the ref count? 
- - What is interesting, is that parallel implementation is slower than a sequential one. This can be explained by the fact that operation which we perform in the benchmark is very fast. Thus, single thread performance wins over parallel implementation due to the overhead of parallelisation. 
-
 \begin{figure}[!htbp]
 
     \center
@@ -825,27 +817,29 @@ The results are presented in the form of three-dimensional graph, where x and y 
     \caption{Incrementing each element of a vector on multiple threads.}    
 \end{figure}
 
-\paragraph*{Balanced vs unbalanced}
-\rbvec{} and \rrbvec{} produce identical results in the single thread test. This is expected, because sequential benchmark does not use concatenation or splitting, the operations which create unbalanced nodes. 
+% NOTE: you can justify this by the goal of minimizing the overhead of the actual computation, to have a simpler way to compare different vector implementations. 
 
-The difference quickly becomes apparent with parallelisation of work on 2 and 4 threads. \rbvec{} demonstrates TODOX slower results compared to \rrbvec{}, due to the naive concat and split operations.
+% TODO: 
+%  - Fill in the actual numbers instead of TODOX
+%   - Check if you can use averages (check what other papers are doing)
+%  - Typesetting and style
+
+\paragraph*{Balanced vs unbalanced}
+\rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as concat and split operations which create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{} with a difference of todox on average. 
+
+When executed in parallel, \rrbvec{} starts outperforming \rbvec{} at the size of 1024 elements. The reason why difference becomes apparent after surpassing that size, is because concatenation algorithm used in this project, produces balanced \rbtree{} when the height of the tree does not exceed two levels. With branching factor of 32, capacity of the tree of two levels is equal to 1024. 
+
+As the vector size growth, Rayon performs more splits to achieve optimal vector size per a single thread. This, in a turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has naive implementation of concat and split, its performance degrades with the input size growth. 
+
+To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{}, as split and concat are used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of todox correspondingly. 
 
 \paragraph*{Dynamic internal representation}
+\pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the test with 8 threads, \pvec{} was by todox faster on average. 
 
-Performance for 2, 4 cores is different compared to 8. Probably because of internal representation, which changes as well as more splitting / appending which happens in between. 
-
-% * pvec and dynamic internal representation
+Even though \rrbvec{}'s concat and split operations are faster for large sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concats and splits substitute only a small portion of all operations used in this test. Operations such as read and push, which were extensively used in this benchmark, are faster for \stdvec{}. 
 
 \paragraph*{Effect of parallelism}
-% * benefits of parallelism
-%   * single thread performance
-%   * correlation of perf improvements with thread count increase
-
-In the test with 8 threads, the difference becomes even more noticeable at the factor of TODOX. As the number of available threads increases, Rayon breaks down the work into smaller chunks to keep all threads busy.
-
-This can be explained by the fact that with increased count of threads, Rayon breaks down the work into smaller chunks, which implies increased use of the concat and split operations. 
-
-Performance in fact degenerates, for all vector implementations at 8 threads. Provide a possible explanation. 
+Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel. The sequential run of \stdvec{} was on average faster by todox compared to \pvec{}. 
 
 \subsection{Check if a word is a palindrome}
 
@@ -908,6 +902,9 @@ Performance in fact degenerates, for all vector implementations at 8 threads. Pr
     \caption{Incrementing each element of a vector on multiple threads.}    
 \end{figure}
 
+ - Focus on the fact that FilterIterator is not sized. The problem with this bench is that count of 
+ append / splits is almost constant in relation to the input size. You might as well change the parameter? 
+
 % map
 
 \begin{figure}[!htbp]
@@ -968,6 +965,17 @@ Performance in fact degenerates, for all vector implementations at 8 threads. Pr
     \label{fig:map-fold}
     \caption{Incrementing each element of a vector on multiple threads.}    
 \end{figure}
+
+- As expected, performance of RbTree and RrbTree is the same in single thread environment as we don't take advantage of split / append operations. Std vec wins by todox.
+ - Strangely enough, PVec shows the same results as RbVec. Why?
+
+- 2 threads. The difference starts to become noticeable with addition of threads. RrbVec is faster than RbVec by todox on average. PVec is faster than both RrbVec and RbVec, as it uses stdvec underneath. At size of 371000, difference in perf between stdvec and pvec becomes very small at a factor of todox, which can be explained by the fact that stdvec's append / split operations are slower in comparison to the ones of RrbVec. In comparison to the single thread performance, addition of threads actually degrades performance for all vectors by x percent. 
+ - When does PVec change its internal representation?
+ - Why it becomes almost as fast as stdvec?
+
+- 4 threads. With addition of threads, the split factor becomes smaller and the count of append / split invocations grows proportionally. As the result, RrbTree based implementations, i.e. RrbVec and PVec, show better results in comparison to RbVec. PVec surpasses stdvec in performance at 150000 words, due to append / split invocation ratio. Still slower on average than stdvec by todox, and slower than sequential implementation. 
+
+- 8 threads: same points as for 4 threads.
 
 \section{Memory footprint (?)}
 \section{Discussion}
