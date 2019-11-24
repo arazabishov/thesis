@@ -819,93 +819,28 @@ The results are presented in the form of three-dimensional graph, where x and y 
 
 % NOTE: you can justify this by the goal of minimizing the overhead of the actual computation, to have a simpler way to compare different vector implementations. 
 
-% TODO: 
-%  - Fill in the actual numbers instead of TODOX
-%   - Check if you can use averages (check what other papers are doing)
-%  - Typesetting and style
+% TODO:
+%  - Consider using tables with runtime numbers
 
 \paragraph*{Balanced vs unbalanced}
-\rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as concat and split operations which create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{} with a difference of todox on average. 
+\rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as concat and split operations which create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{} with a difference of 3.2-3.5x on average. 
 
 When executed in parallel, \rrbvec{} starts outperforming \rbvec{} at the size of 1024 elements. The reason why difference becomes apparent after surpassing that size, is because concatenation algorithm used in this project, produces balanced \rbtree{} when the height of the tree does not exceed two levels. With branching factor of 32, capacity of the tree of two levels is equal to 1024. 
 
-As the vector size growth, Rayon performs more splits to achieve optimal vector size per a single thread. This, in a turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has naive implementation of concat and split, its performance degrades with the input size growth. 
+As the vector size growth, Rayon performs more splits to achieve optimal vector size per a single thread. This, in a turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has naive implementation of concat and split, its performance degrades with the input size growth. The difference in execution time depending on size falls into the 1.0-2.3x range. 
 
-To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{}, as split and concat are used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of todox correspondingly. 
+To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as split and concat are used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3x, 1.0-2.8x, and 1.1-2.12x correspondingly. 
 
 \paragraph*{Dynamic internal representation}
-\pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the test with 8 threads, \pvec{} was by todox faster on average. 
+\pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the sequential benchmark, \pvec{} is faster compared to \rrbvec{} by 1.7-2.0x. When parallelised on 4 threads, \rrbvec{} becomes slightly more efficient due to the higher count of concats and splits, with the difference at 1.3-1.8x. 
 
-Even though \rrbvec{}'s concat and split operations are faster for large sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concats and splits substitute only a small portion of all operations used in this test. Operations such as read and push, which were extensively used in this benchmark, are faster for \stdvec{}. 
+Even though \rrbvec{}'s concat and split operations are faster for the large sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concats and splits substitute only a small portion of all operations used in this test. Operations such as get and push, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9x and 1.6-1.7x in the sequential and 4-threaded parallel benchmarks correspondingly. 
 
 \paragraph*{Effect of parallelism}
-Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel. The sequential run of \stdvec{} was on average faster by todox compared to \pvec{}. 
+% TODO: this is not entirely true, because 4 threads benchmark runs slightly faster for large datasets compared to sequential bench.  
+Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
 \subsection{Check if a word is a palindrome}
-
-\begin{figure}[!htbp]
-
-    \center
-    \begin{tikzpicture} 
-        \tikzstyle{every node}=[
-            font=\footnotesize, 
-            inner sep=2pt,
-            outer sep=0pt            
-        ]        
-
-        \begin{loglogaxis}[         
-            use units,         
-            z unit=s, z unit prefix=m,
-            smooth,        
-            width=320pt,            
-            title style={align=center},
-            title={Time comparison of incrementing numbers of the N sized vector\\ parallelised on K number of threads.},
-            ymajorgrids=true, 
-            xmajorgrids=true,
-            zmajorgrids=true,
-            xlabel={vector size (log scale)},
-            ylabel={number of threads (log scale)},           
-            zlabel={mean time (log scale)},                               
-            grid style=dashed,
-            legend pos=outer north east,        
-            legend style={fill=none,font=\footnotesize},
-            legend cell align=left,            
-            ytick={1, 2, 4, 8},       
-            xticklabels={10, 100, 1K, 10K},          
-            yticklabels={1, 2, 4, 8},         
-            zticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=2
-            },   
-            zticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },            
-            view={-45}{8},
-        ]            
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/std-vec.csv}; 
-            \addlegendentry{Vec}
-
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/rrbvec-balanced.csv}; 
-            \addlegendentry{RbVec}
-
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/rrbvec-unbalanced.csv}; 
-            \addlegendentry{RrbVec}
-
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_filter/pvec-unbalanced.csv}; 
-            \addlegendentry{PVec}
-        \end{loglogaxis}     
-    \end{tikzpicture} 
-
-    \label{fig:map-fold}
-    \caption{Incrementing each element of a vector on multiple threads.}    
-\end{figure}
-
- - Focus on the fact that FilterIterator is not sized. The problem with this bench is that count of 
- append / splits is almost constant in relation to the input size. You might as well change the parameter? 
-
-% map
 
 \begin{figure}[!htbp]
 
@@ -966,19 +901,21 @@ Interestingly enough, the sequential variant of the benchmark outperformed all s
     \caption{Incrementing each element of a vector on multiple threads.}    
 \end{figure}
 
-- As expected, performance of RbTree and RrbTree is the same in single thread environment as we don't take advantage of split / append operations. Std vec wins by todox.
- - Strangely enough, PVec shows the same results as RbVec. Why?
+\paragraph*{Balanced vs unbalanced}
+As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test as both of them are backed by a balanced \rbtree{}. When benchmark is parallelised, \rrbvec{} gains advantage due to its efficient split and concat operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0x for the test run with 2 threads, and 1.7-2.5x for 4 threads.
 
-- 2 threads. The difference starts to become noticeable with addition of threads. RrbVec is faster than RbVec by todox on average. PVec is faster than both RrbVec and RbVec, as it uses stdvec underneath. At size of 371000, difference in perf between stdvec and pvec becomes very small at a factor of todox, which can be explained by the fact that stdvec's append / split operations are slower in comparison to the ones of RrbVec. In comparison to the single thread performance, addition of threads actually degrades performance for all vectors by x percent. 
- - When does PVec change its internal representation?
- - Why it becomes almost as fast as stdvec?
+\paragraph*{Dynamic internal representation}
+Results show that \pvec{} outperforms \rbvec{} and \rrbvec{} for all vector sizes and thread configurations. When it comes to \stdvec{}, \pvec{} shows 1.4x slower run time at the input size of 10000 words, after which it catches up and surpasses \stdvec{} at the mark of 200000 words. For the biggest problem size of 370103 words, \pvec{} outperforms \stdvec{} with a difference of 1.1x. 
 
-- 4 threads. With addition of threads, the split factor becomes smaller and the count of append / split invocations grows proportionally. As the result, RrbTree based implementations, i.e. RrbVec and PVec, show better results in comparison to RbVec. PVec surpasses stdvec in performance at 150000 words, due to append / split invocation ratio. Still slower on average than stdvec by todox, and slower than sequential implementation. 
+The increase in the thread count, causes higher count of vector splits and concats. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparables to \stdvec{}. 
 
-- 8 threads: same points as for 4 threads.
+\paragraph*{Effect of parallelism}
+Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
 \section{Memory footprint (?)}
 \section{Discussion}
 \subsection{Overhead of RRB Tree}
 \subsection{Unique access or transience}
 \subsection{Dynamic internal representation}
+
+% NOTE: as the size of the vector values increases, persistent version starts gaining advantage compared to \stdvec{}, as \stdvec{}'s split and append operations are relying on memory copying / allocation. 
