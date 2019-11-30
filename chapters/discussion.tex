@@ -13,6 +13,18 @@
 % - You should write about what is drop in Rust, and how it is relevant in Criterion benchmarks (whether it is being measured as well or not). 
 
 \chapter{Results and discussion}
+
+In this chapter, we will take a look at the results of the sequential and parallel benchmarks, and discuss whether proposed performance optimizations are effective. Presentation of results of sequential benchmarks is listed under the "Performance of core operations" section, which is divided into subsections each of which corresponds to a benchmark of the core operation. 
+
+The parallel benchmarks are discussed under the "Performance of parallel benchmarks" section, as they do not have a strong focus on a particular operation, but rather on the overall performance comparison of vector implementation variants. 
+
+The results of both benchmark groups are discussed to address the following points:
+\begin{itemize}
+    \item Effectiveness of \rrbtree{} relaxation on concatenation, splitting, and other operations of \rrbvec{}. 
+    \item The impact of the unique access optimization on performance of persistent and emphemeral vector implementations.
+    \item Effectiveness of the dynamic internal representation.         
+\end{itemize}
+
 \section{Performance of core operations}
 
 \subsection{Indexing}
@@ -23,7 +35,7 @@ In this section we will look at the performance of the index operation in practi
 
 Accessing elements sequentially is a common way of reading values from a vector. The following benchmark is dedicated to understanding the performance properties of \rbtree{} and \rrbtree{} based vector implementations in comparison to the vector from the Rust's standard library. 
 
-As the size influences the internal representation of a vector, it is critical to ensure that it performs well consistently over a wide range of inputs. The results will reveal whether the size based optimization is effective, and how sigfnicant the impact of the increasing height of \rbtree{} and \rrbtree{} is. 
+As the size influences the internal representation of a vector, it is critical to ensure that it performs well consistently over a wide range of inputs. The results will reveal whether the size based optimization is effective, and how significant the impact of the increasing height of \rbtree{} and \rrbtree{} is. 
 
 The problem size interval is [10, 1M]\todo{typesetting?}, with a number of values in between. The average run time for each given problem size is recorded as the result in \ref{fig:index-sequentially}. 
 
