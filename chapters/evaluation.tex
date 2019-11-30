@@ -52,17 +52,21 @@ All benchmarks were executed on a computer \todo{table with hardware, software} 
 To understand how effective certain optimizations are, we need to evaluate various configurations of the persistent vector. Additionally, implementations from \imrsvec{} and the standard library will be tested too. All vector variants are specified in table \todo{ref}. 
 
 % ToDo: try to name types after the name of types in actual code, otherwise thins will get very confusing very fast. Also, I don't think it is important to show distinction between Rc / Arc flavors of implementations, because it just introduces more confusion. 
-\begin{center}
-\begin{tabular} { |l| p{10cm} | }
-    \hline
-    STD Vec & Vec from the Rust's standard library. \\ \hline
-    \rbvec{} & \rbtree{} based vector. \\ \hline
-    \rrbvec{} & \rrbtree{} based vector. \\ \hline
-    \pvec{} & \rrbtree{} based vector with dynamic internal representation. \\ \hline
-    \imrsvec{} & \rrbtree{} based vector from third party library \imrsvec{}. \\
-    \hline        
-\end{tabular}
-\end{center}
+\begin{table}
+    \centering
+
+    \begin{tabular} { |l| p{10cm} | }
+        \hline
+        STD Vec & Vec from the Rust's standard library. \\ \hline
+        \rbvec{} & \rbtree{} based vector. \\ \hline
+        \rrbvec{} & \rrbtree{} based vector. \\ \hline
+        \pvec{} & \rrbtree{} based vector with dynamic internal representation. \\ \hline
+        \imrsvec{} & \rrbtree{} based vector from third party library \imrsvec{}. \\ \hline        
+    \end{tabular}
+    
+    \label{tab:vec-implementations}
+    \caption{A table of vector implementations.}
+\end{table}
 
 % \begin{wip}
     % For the purpose of comparison, the measurements are taken against the standard vector, as well as the \rrbtree based persistent vector implementation from the third party library named \emph{im-rs}, which has been introduced at the time of writing this paper. The persistent vector presented in this work, has been evaluated using both non-atomic and atomic reference counted pointers, as well as with and without small sized vector based optimization. 
@@ -107,6 +111,82 @@ The purpose of profiling this optimization is to understand whether it improves 
 Since atomic reference-counted pointers are claimed to introduce additional overhead in comparison to their non-threadsafe counterpart, the goal is to check how significant is the difference. 
 
 As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
+
+\section{Core operations}
+Each benchmark described in this section has a focus on a particular core operation of vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations which modify vector, such as push, will have a complementary version of benchmark which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in tree based and standard vectors correspondingly. 
+
+The following core operations were evaluated for vector implementations in \ref{tab:vec-implementations}:
+
+\begin{table}[!htbp]
+    \centering
+
+    \begin{tabular} { |l| p{10cm} | }
+        \hline 
+        Indexing & Accessing vector values. \\ \hline
+        Updating & Updating existing values. \\ \hline
+        Pushing & Adding new values to the end of vector. \\ \hline
+        Popping & Removing values at the end of vector. \\ \hline
+        Concatenating & Appending values of one vector to another. \\ \hline
+        Slicing & Diving one vector into at a given position. \\ \hline        
+    \end{tabular}
+    
+    \label{tab:vec-core-operations}
+    \caption{A table of core operations.}
+\end{table}
+
+\paragraph*{Benchmark structure}
+Some benchmarks depend on certain preconditions. For example, in order to test indexing, we first need to create a vector with values. Since building a vector instance should not be measured as a part of that test, it happens in the setup routine. Hence, benchmarks with preconditions are executed in two steps: setup and the actual test. 
+
+\paragraph*{Benchmarking dimensions}
+Every core operation benchmark is parameterized over the vector size. By providing different arguments, we can observe how performance of vectors is affected in response. This is especially insightful for the tree based implementations, where the size of vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean run time in \todo{ms}. 
+
+\subsection{Indexing}
+
+In this section we will define benchmarks for evaluating performance of accessing vector values, both sequentially and randomly. There are three use cases which will be tested:
+
+\begin{itemize}
+    \item Accessing an element at a given position by the index operation:
+    \begin{itemize}
+        \item Sequentially.
+        \item Randomly.
+    \end{itemize}
+    \item Accessing elements sequentially using iterator. 
+\end{itemize}
+
+\subsubsection*{Index sequentially}
+
+Accessing elements sequentially is a common pattern of reading values from a vector. 
+
+The following benchmark is dedicated to understanding the performance properties of \rbtree{} and \rrbtree{} based vector implementations in comparison to the vector from the Rust's standard library. 
+
+As the size influences the internal representation of a vector, it is critical to ensure that it performs well consistently over a wide range of inputs. The results will reveal whether the size based optimization is effective, and how significant the impact of the increasing height of \rbtree{} and \rrbtree{} is. 
+
+The problem size interval is [10, 1M]\todo{typesetting?}, with a number of values in between. The average run time for each given problem size is recorded as the result in \ref{fig:index-sequentially}. 
+
+% What is the benchmark:
+%  - What are we trying to understand in this benchmark.
+%  - Does it depend on any preconditions? If yes, what are those preconditions and how they were satisfied? 
+%  - What does the benchmark function does
+% What is the input size range? 
+% 
+The benchmark consists of two parts: the setup routine and the actual test function. The setup routine, however, differs for the balanced and unbalanced flavors of vectors. 
+
+The balanced vector is created by pushing elements \footnote{The type of elements is a 64-bit unsigned integer.} into it, while an unbalanced one is created by concatenating several small vectors together. The test function loops over the [0, N] interval retrieving corresponding values from a vector, where N \todo{typesetting?} is the problem size. 
+
+\subsubsection*{Index randomly}
+In this benchmark, rather than accessing consecutive indices, we will get elements at random positions. From the algorithmic point of view, the implementation of the operation itself is the same. The difference is mostly in the behavior of processor caches, which will be invalidated if the requested element is out of reach. This is quite likely to happen as indices are picked randomly. In addition, the results will clarify whether the performance degenerates with randomness, as it would with linked lists for example. 
+
+\paragraph*{Setup}
+The setup routine is identical to the one in the index sequentially benchmark. The difference is in the actual test routine itself, where the \todo{ref} \emph{rnd} library is used to generate indices randomly. 
+
+\subsubsection*{Iterating}
+
+\subsection{Updating}
+\subsection{Pushing}
+\subsection{Popping}
+\subsection{Concatenating}
+\subsection{Splitting}
+
 
 \section{Parallel vector}
 One of the claims is that \rrbvec{} is very efficient when it comes to the split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for the optimal performance. 

@@ -29,19 +29,10 @@ The results of both benchmark groups are discussed to address the following poin
 
 \subsection{Indexing}
 
-In this section we will look at the performance of the index operation in practice. The evaluation will include two common use cases, such as accessing elements sequentially and randomly. % ToDo: add more points here later
 
 \subsubsection*{Index Sequentially}
 
-Accessing elements sequentially is a common way of reading values from a vector. The following benchmark is dedicated to understanding the performance properties of \rbtree{} and \rrbtree{} based vector implementations in comparison to the vector from the Rust's standard library. 
 
-As the size influences the internal representation of a vector, it is critical to ensure that it performs well consistently over a wide range of inputs. The results will reveal whether the size based optimization is effective, and how significant the impact of the increasing height of \rbtree{} and \rrbtree{} is. 
-
-The problem size interval is [10, 1M]\todo{typesetting?}, with a number of values in between. The average run time for each given problem size is recorded as the result in \ref{fig:index-sequentially}. 
-
-The benchmark consists of two parts: the setup routine and the actual test function. The setup routine, however, differs for the balanced and unbalanced flavors of vectors. 
-
-The balanced vector is created by pushing elements \footnote{The type of elements is a 64-bit unsigned integer.} into it, while an unbalanced one is created by concatenating several small vectors together. The test function loops over the [0, N] interval retrieving corresponding values from a vector, where N \todo{typesetting?} is the problem size. 
 
 \begin{figure}        
     \caption{Benchmarking results of indexing sequentially.}
@@ -212,10 +203,7 @@ Both balanced and unbalanced \imrsvec{} variants tend to be slower in comparison
 \todo{Run benchmarks for Arc}
 
 \subsubsection*{Index Randomly}
-In this benchmark, rather than accessing consecutive indices, we will get elements at random positions. From the algorithmic point of view, the implementation of the operation itself is the same. The difference is mostly in the behavior of processor caches, which will be invalidated if the requested element is out of reach. This is quite likely to happen as indices are picked randomly. In addition, the results will clarify whether the performance degenerates with randomness, as it would with linked lists for example. 
 
-\paragraph*{Setup}
-The setup routine is identical to the one in the index sequentially benchmark. The difference is in the actual test routine itself, where the \todo{ref} \emph{rnd} library is used to generate indices randomly. 
 
 \paragraph*{Dynamic internal representation}
 It is clear that \pvec{} is as fast as \stdvec{} up to the size of 4096, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 2.7x. 
