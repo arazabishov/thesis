@@ -169,6 +169,45 @@ In this benchmark, rather than accessing values consecutively, they will be read
 The test function contains a loop, which is executed N times. In the loop body, a value is accessed at random index, which is generated within the [0, N) range by using the \emph{\textbf{rand}} crate\footnote{A Rust library for random number generation: \url{https://crates.io/crates/rand}}. According to the \emph{\textbf{rand}} documentation, generated indices are uniformly distributed. The number generator is explicitly seeded to produce the same stream of randomness multiple times.
 
 \subsection{Updating}
+
+% What
+% * Sequential updates to vector:
+%  - Updating a value in vector sequentially
+%  - Updating a value in cloned vector sequentially
+% * Random updates to vector:
+%  - Updating a value in vector randomly
+%  - Updating a value in cloned vector randomly
+
+% Why
+% * The cost of sequential and random updates to a vector
+% * Comparison of updating and cloning the vector (path copying algorithm)
+% * The difference between updates to balanced / unbalanced vectors
+% * The efficiency of dynamic internal representation
+%  - Especially in combination with mutation and cloning
+% * The efficiency of transient updates
+
+% How
+% * Four different benchmarks. All of them share the same setup routine.
+%  - One that creates a balanced version, and one which creates an unbalanced version. 
+% * Sequential benchmark
+% * Random benchmark
+% * Addition of clone operation and its semantics. 
+
+The update operation is used to modify an existing value at a given position. Rust's \stdvec{} exposes an API similar to the index operation, except that it returns a mutable pointer, which can be used to update the value. 
+
+In persistent vector, both \rrbvec{} and \pvec{}, the same radix search algoritm is used to find the value as in the index operation. As described in \todo{ref} section, the difference is that mutable references are acquired to each node on the path from the root to the leaf. If a node is shared with other instances of vector, then it will be cloned on attempt to acquire a mutable reference to it. 
+
+This brings us to the two interesting use cases:
+\begin{itemize}
+    \item Mutating a single instance of a vector
+    \item Mutating a cloned instance of a vector
+\end{itemize}
+
+% TODO: check out Jean's blog posts to get better understanding of transience.
+In the first scenario, the vector will behave as transient, which simply speaking means that it will temporarily behave as emphemeral for achieving better performance. In the second test, we explicitly clone a vector after each modification, to preserve the current version. 
+
+In case with \stdvec{}, the clone operation is naive and performs a simple copy. This, however, is very different for persistent vectors which take advantage of the structural sharing. Hence, the second benchmark will also reveal how effective it is in comparison to a naive approach. 
+
 \subsection{Pushing}
 \subsection{Popping}
 \subsection{Concatenating}
