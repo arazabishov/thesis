@@ -113,9 +113,9 @@ Since atomic reference-counted pointers are claimed to introduce additional over
 As a part of all sequential benchmarks, both threadsafe and non-threadsafe variants will be evaluated. Rc based flavor will not be present in parallel benchmarks, as the Rust's compiler prevents non-threadsafe types being used across threads. 
 
 \section{Core operations}
-Each benchmark described in this section has a focus on a particular core operation of vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations which modify vector, such as push, will have a complementary version of benchmark which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in tree based and standard vectors correspondingly. 
+Each benchmark described in this section has a focus on a particular core operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify vector, such as push, will have a complementary version of the benchmark which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in the tree based and standard vectors correspondingly. 
 
-The following core operations were evaluated for vector implementations in \ref{tab:vec-implementations}:
+The following operations were evaluated for vector implementations in \ref{tab:vec-implementations}:
 
 \begin{table}[!htbp]
     \centering
@@ -124,10 +124,10 @@ The following core operations were evaluated for vector implementations in \ref{
         \hline 
         Indexing & Accessing vector values. \\ \hline
         Updating & Updating existing values. \\ \hline
-        Pushing & Adding new values to the end of vector. \\ \hline
-        Popping & Removing values at the end of vector. \\ \hline
+        Pushing & Adding new values to the end of a vector. \\ \hline
+        Popping & Removing values at the end of a vector. \\ \hline
         Concatenating & Appending values of one vector to another. \\ \hline
-        Slicing & Diving one vector into at a given position. \\ \hline        
+        Slicing & Dividing one vector into at a given position. \\ \hline        
     \end{tabular}
     
     \label{tab:vec-core-operations}
@@ -135,10 +135,10 @@ The following core operations were evaluated for vector implementations in \ref{
 \end{table}
 
 \paragraph*{Benchmark structure}
-Some benchmarks depend on certain preconditions. For example, in order to test indexing, we first need to create a vector with values. Since building a vector instance should not be measured as a part of that test, it happens in the setup routine. Hence, benchmarks with preconditions are executed in two steps: setup and the actual test. 
+Some benchmarks depend on certain preconditions. For example, to test indexing, we first need to create a vector with values. Since building a vector instance should not be measured as a part of that test, it happens in the setup routine. Hence, benchmarks with preconditions are executed in two steps: setup and the actual test. 
 
 \paragraph*{Benchmarking dimensions}
-Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how performance of vectors is affected in response. This is especially insightful for the tree based implementations, where the size of vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean run time in \todo{ms}. 
+Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean run time in \todo{ms}. 
 
 \subsection{Indexing}
 In this section, we will define benchmarks for accessing values in three different settings, which model the most common patterns of working with vector: 
@@ -146,27 +146,27 @@ In this section, we will define benchmarks for accessing values in three differe
 \begin{itemize}
     \item Sequentially accessing values by:    
     \begin{itemize}
-        \item The index operation which accepts position as an argument. 
+        \item The index operation which accepts a position as an argument. 
         \item The use of iterator. 
     \end{itemize}
     \item Accessing values at randomly generated positions using the index operation. 
 \end{itemize}
 
-In addition to the specific goal, use cases listed above address two objectives: first, how much overhead relaxed nodes of \rrbtree{} introduce in comparison to \rbtree{}, and second, efficiency of the dynamic internal representation in \pvec{} in comparison to \stdvec{}. 
+In addition to the specific goal, use cases listed above address two objectives: first, how much overhead relaxed nodes of \rrbtree{} introduce in comparison to \rbtree{}, and second, the efficiency of the dynamic internal representation in \pvec{} in comparison to \stdvec{}.
 
-The benchmarks share the same setup routine, which is responsible for generating a vector with values. In order to generate balanced and relaxed variants of \rbtree{} based vectors, the setup routine follows two different approaches. \rbvec{}, or balanced \rbtree{} based vector, is created by simply pushing integer values \footnote{The type of value is a 64-bit unsigned integer.} into it. On the other hand, the relaxed variants, such as \rrbvec{} and \pvec{}, are generated by concatenating multiple small instances of themselves together.
+The benchmarks share the same setup routine, which is responsible for generating a vector with values. To generate balanced and relaxed variants of \rbtree{} based vectors, the setup routine follows two different approaches. \rbvec{}, or balanced \rbtree{} based vector, is created by simply pushing integer values \footnote{The type of value is a 64-bit unsigned integer.} into it. On the other hand, the relaxed variants, such as \rrbvec{} and \pvec{}, are generated by concatenating multiple small instances of themselves together.
 
 The size of the generated vector is determined by the problem size passed as a benchmark argument. The problem size domain in this test is [10, 1M]. 
 
 \subsubsection*{Index sequentially and iterating}
-In the benchmark variant with access by index, the test function loops over the array of [0, N) indices, reading values from a vector at corresponding positions. N \todo{typesetting} is the problems size passed to the benchmark as an argument. It is important to emphasize, that in this benchmark, values are read through immutable, read-only references. In Rust, it means that values are not moved \footnote{todo: see introduction section} and still belong to a vector. 
+In the benchmark variant with access by index, the test function loops over the array of [0, N) indices, reading values from a vector at corresponding positions. N \todo{typesetting} is the problem sizes passed to the benchmark as an argument. It is important to emphasize, that in this benchmark, values are read through immutable, read-only references. In Rust, it means that values are not moved \footnote{todo: see introduction section} and still, belong to a vector. 
 
-The second benchmark, based on iterators, reads contents of the vector from the beginning to the end, without accessing values by index. By leveraging this knowledge, the iterator implementations of \rbvec{}, \rrbvec{}, and \pvec{}, read values from the tree by chunks, rather than by individual values. However, the mechanism of reading values is different compared to the first benchmark. Instead of immutably borrowing values, iterator takes ownership of them. This implies a different memory reclamation behavior, which makes the direct comparison to the first benchmark irrelevant. Hence, the results of this benchmark will be evaluated independently. 
+The second benchmark, based on iterators, reads the contents of the vector from the beginning to the end, without accessing values by index. By leveraging this knowledge, the iterator implementations of \rbvec{}, \rrbvec{}, and \pvec{}, read values from the tree by chunks, rather than by individual values. However, the mechanism of reading values is different compared to the first benchmark. Instead of immutably borrowing values, iterator takes ownership of them. This implies a different memory reclamation behavior, which makes the direct comparison to the first benchmark irrelevant. Hence, the results of this benchmark will be evaluated independently. 
 
 \subsubsection*{Index randomly}
 In this benchmark, rather than accessing values consecutively, they will be read at random positions. From the algorithmic point of view, the implementation of the operation itself is the same. As indices are picked randomly, it is quite likely that desired values will be located far apart in memory, which causes a cache invalidation. Additionally, results will show whether the performance degenerates with randomness, as it would with linked lists for example. 
 
-The test function contains a loop, which is executed N times. In the loop body, a value is accessed at random index, which is generated within the [0, N) range by using the \emph{\textbf{rnd}} crate\footnote{todo: brief description of this crate and why it was chosen}. According to the \emph{\textbf{rnd}} documentation, generated indices are expected to be uniformly distributed. 
+The test function contains a loop, which is executed N times. In the loop body, a value is accessed at random index, which is generated within the [0, N) range by using the \emph{\textbf{rand}} crate\footnote{A Rust library for random number generation.}. According to the \emph{\textbf{rand}} documentation, generated indices are uniformly distributed. The number generator is explicitly seeded to produce the same stream of randomness multiple times. 
 
 \subsection{Updating}
 \subsection{Pushing}
