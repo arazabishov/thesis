@@ -173,16 +173,14 @@ There are two dimensions in which the update operation will be evaluated. The fi
 
 Here is the resulting list of benchmarks:
 \begin{itemize}
-    \item Sequential updates:
-    \begin{itemize}
-        \item Updating a single vector instance. 
-        \item Updating and \emph{cloning} a vector.
+    \item Updating a vector instance sequentially:
+    \begin{itemize}        
+        \item With and without using \emph{clone}.
     \end{itemize}
-    \item Updates at random positions:
+    \item Updating a vector at random positions:
     \begin{itemize}
-        \item Updating a single vector instance. 
-        \item Updating and \emph{cloning} a vector.
-    \end{itemize}    
+        \item With and without using \emph{clone}.
+    \end{itemize}  
 \end{itemize}
 
 The setup routine for all benchmarks is identical. As for the index benchmarks, it generates both balanced and relaxed variants of the tree-based vectors. The type of generated values is an unsigned 64-bit integer. 
@@ -209,29 +207,29 @@ The test function contains a loop, which is executed \emph{N} times. In the loop
 Both benchmarks are extended with the clone operation. The test variant with clone introduces an additional variable for keeping track of the cloned vector. This is done to ensure that at least two vector instances exist at the time when the update is executed. This is necessary because \emph{rc} pointers used to implement \rbtree{}, clone the underlying value on mutation only when the reference count is bigger than one. Thus, by having a cloned instance of vector present in the scope, we enforce the path copying algorithm to be used when updating a vector. 
 
 \subsection{Pushing}
-% What
-% * Sequential updates to vector:
-%  - Updating a value in vector sequentially
-%  - Updating a value in cloned vector sequentially
-% * Random updates to vector:
-%  - Updating a value in vector randomly
-%  - Updating a value in cloned vector randomly
+A common operation used to add values at the end of vector is called push. In this benchmark, we will focus on building a vector from the empty state, as well as pushing values into a prebuilt vector of different types. Additionally, aforementioned benchmarks will be extended with the clone operation to evaluate the efficiency of \pvec{}'s dynamic internal representation:
+\begin{itemize}
+    \item Building a vector from the empty state.    
+    \begin{itemize}
+        \item With and without \emph{clone}. 
+    \end{itemize}
+    \item Pushing values on top of the existing vector.
+    \begin{itemize}
+        \item With and without \emph{clone}. 
+    \end{itemize}
+\end{itemize}
 
-% Why
-% * Comparison of updating and cloning the vector (path copying algorithm)
-% * The difference between updates to balanced / unbalanced vectors
-% * The efficiency of dynamic internal representation
-%  - Especially in combination with mutation and cloning
-%  - The cost of clone for stdvec and rbvec representations of pvec
-% * The cost of sequential and random updates to a vector
-% * The efficiency of transient updates
+\paragraph*{The overhead of relaxed nodes in \rrbtree{}}
+The push operation is responsible for increasing the capacity of a vector. While the push operation of \rrbtree{} heavily relies on the size tables for calculating the capacity of nodes, for \rbtree{} it is sufficient to have the level of the node and the branching factor to perform the same calculation. Additionally, constructing new relaxed nodes requires allocating size tables. All these factors combined are expected to make \rrbtree{}'s push slower compared to \rbtree{}. Thus, there is a dedicated benchmark that uses prebuilt, \rrbtree{} and \rbtree{} based vectors to evaluate the difference.  
 
-% How
-% * Four different benchmarks. All of them share the same setup routine.
-%  - One that creates a balanced version, and one which creates an unbalanced version. 
-% * Sequential benchmark
-% * Random benchmark
-% * Addition of clone operation and its semantics. 
+\paragraph*{Building a vector}
+As vector is built from scratch in this benchmark, there is no need for a setup routine. The test function runs a loop over the [0, N) range of indices, and pushes the index as a value into a vector. The problem size range is [10, 1m]. 
+
+\paragraph*{Pushing values onto existing vector}
+This benchmark requires an existing vector. Hence, the setup routine generates a vector of fixed size of \todo{N}, and passes it to the test function. The balanced, \rbtree{} based vector is created by pushing values directly into it, while the \rrbtree{} based one, is created by concatenating several vectors together. Once a vector is created, the test function pushes \emph{N} values onto it. 
+
+\paragraph*{Extending benchmarks with the clone operation}
+To force \pvec{} to switch from \stdvec{} to \rrbvec{}, several preconditions have to be met, including the reference count being bigger than 1. Hence, the benchmarks above are extended to use clone, in the same way as for benchmarks of the update operation. Beyond the evaluation of \pvec{}, the results are expected to reveal how tree-based vectors stack up to \stdvec{}. The input range for benchmarks using clone is [10, 20k]. 
 
 \subsection{Popping}
 \subsection{Concatenating}
