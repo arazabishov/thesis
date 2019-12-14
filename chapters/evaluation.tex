@@ -237,7 +237,9 @@ To force \pvec{} to switch from \stdvec{} to \rrbvec{}, several preconditions ha
 \subsection{Popping}
 The pop operation is used to remove values at the end of the vector. As with push, it is responsible for managing the capacity of the underlying data structure. For \stdvec{} it means shrinking the array and copying elements over. For tree-based vectors, it implies deallocating nodes and reducing the height of the tree when necessary. 
 
-The benchmark is divided into two tests, namely pop and pop clone. The first test implies calling pop continuously in the loop until the vector is emptied. In the second benchmark, each pop operation will be followed by clone. Both benchmarks will be executed against relaxed and balanced vector variants, which are prepared in the setup routine.
+The benchmark is divided into two tests, namely pop and pop clone. The first test implies calling pop continuously in the loop until the vector is emptied, with the problem size of [10, 60000]. 
+
+In the second benchmark, each pop operation will be followed by a clone. Both benchmarks will be executed against relaxed and balanced vector variants, which are prepared in the setup routine. The problem size range is [10, 20000].
 
 \paragraph*{The overhead of relaxed nodes in \rrbtree{}}
 Lowering the height of \rrbtree{} involves the calculation of tree capacity using size tables, which comes at an additional cost. Thus, one of the goals is to measure and compare the cost of pop for both balanced and relaxed variants of vectors. 
@@ -246,6 +248,21 @@ Lowering the height of \rrbtree{} involves the calculation of tree capacity usin
 The pop operation is responsible for switching the internal representation of \pvec{} from \rrbvec{} to \stdvec{} when the size gets smaller than 1024. Hence, one of the objectives is to evaluate how is that reflected on performance. 
 
 \subsection{Concatenating}
+The concatenation operation merges contents of one vector into another. One of the claimed advantages of \rrbtree{} is the relatively low cost of concat operation, that is \bigo{(log(n)} \todo{verify the big-o statement}, in comparison to \bigo{max(a,b)} of \stdvec{}. The objective of this benchmark is to validate performance properties of the concat operation experimentally. 
+
+\paragraph*{\rbtree{} vs \rrbtree{}}
+\rbtree{} based vector uses a naive concatenation algorithm, that essentially is moving values from one vector to another. \rrbtree on the other hand merges and rebalances two trees, which theoretically is faster. Due to the hardware design specifics, this might not be true for all vector sizes. Thus, benchmarks will reveal how different algorithms perform depending on the size of concatenated vectors. 
+
+\paragraph*{Dynamic internal representation}
+Evaluating whether the \stdvec{} optimization used in \pvec{} positively impacts performance during concatenation, as well as the cost of switching the representation to \rrbvec{} representation. 
+
+\paragraph*{Concatenating vectors}
+The setup routine prepares a collection of vectors, where each consecutive vector bigger than the previous. The total size of all prepared vectors adds up to the problem size. The benchmark is parameterized over the vector size, which will be in the [10, 1M] range. 
+
+Each vector is created by a combination of concatenation and push operations. This way \pvec{} and \rrbvec{} will be forced to use \rrbtree{} for internal representation, while \rbvec{} will remain balanced. \stdvec{} remains flat and does not depend on the type of operation used to add values to it. 
+
+The benchmark function iterates over generated vectors and concatenates them into a vector defined as a local variable. 
+
 \subsection{Slicing}
 
 \section{Parallel vector}
