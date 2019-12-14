@@ -231,7 +231,20 @@ This benchmark requires an existing vector. Hence, the setup routine generates a
 \paragraph*{Extending benchmarks with the clone operation}
 To force \pvec{} to switch from \stdvec{} to \rrbvec{}, several preconditions have to be met, including the reference count being bigger than 1. Hence, the benchmarks above are extended to use clone, in the same way as for benchmarks of the update operation. Beyond the evaluation of \pvec{}, the results are expected to reveal how tree-based vectors stack up to \stdvec{}. The input range for benchmarks using clone is [10, 20k]. 
 
+% TODO: generalize the argument for evaluating the cost of clone operation
+% TODO: think about thresholds for different branching factors
+
 \subsection{Popping}
+The pop operation is used to remove values at the end of the vector. As with push, it is responsible for managing the capacity of the underlying data structure. For \stdvec{} it means shrinking the array and copying elements over. For tree-based vectors, it implies deallocating nodes and reducing the height of the tree when necessary. 
+
+The benchmark is divided into two tests, namely pop and pop clone. The first test implies calling pop continuously in the loop until the vector is emptied. In the second benchmark, each pop operation will be followed by clone. Both benchmarks will be executed against relaxed and balanced vector variants, which are prepared in the setup routine.
+
+\paragraph*{The overhead of relaxed nodes in \rrbtree{}}
+Lowering the height of \rrbtree{} involves the calculation of tree capacity using size tables, which comes at an additional cost. Thus, one of the goals is to measure and compare the cost of pop for both balanced and relaxed variants of vectors. 
+
+\paragraph*{Dynamic internal representation}
+The pop operation is responsible for switching the internal representation of \pvec{} from \rrbvec{} to \stdvec{} when the size gets smaller than 1024. Hence, one of the objectives is to evaluate how is that reflected on performance. 
+
 \subsection{Concatenating}
 \subsection{Slicing}
 
