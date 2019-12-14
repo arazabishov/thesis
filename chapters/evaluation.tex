@@ -257,13 +257,32 @@ The concatenation operation merges contents of one vector into another. One of t
 Evaluating whether the \stdvec{} optimization used in \pvec{} positively impacts performance during concatenation, as well as the cost of switching the representation to \rrbvec{} representation. 
 
 \paragraph*{Concatenating vectors}
-The setup routine prepares a collection of vectors, where each consecutive vector bigger than the previous. The total size of all prepared vectors adds up to the problem size. The benchmark is parameterized over the vector size, which will be in the [10, 1M] range. 
+The setup routine prepares a collection of vectors, where each consecutive vector is bigger than the previous. The total size of all prepared vectors adds up to the problem size. The benchmark is parameterized over the vector size, which will be in the [10, 1M] range. 
 
 Each vector is created by a combination of concatenation and push operations. This way \pvec{} and \rrbvec{} will be forced to use \rrbtree{} for internal representation, while \rbvec{} will remain balanced. \stdvec{} remains flat and does not depend on the type of operation used to add values to it. 
 
 The benchmark function iterates over generated vectors and concatenates them into a vector defined as a local variable. 
 
 \subsection{Slicing}
+% What 
+%  * Dividing vector into two vectors at the given index
+
+The slice operation splits a vector into two parts at the given index. The \rrbtree{}'s algorithm theoretically can achieve good performance by avoiding unnecessary copying. However, due to its complexity it might be outperformed by naive copying for small sized vectors. 
+
+% Why
+%  * Efficiency of slicing algorithm of rrbtree vs rbtree vs stdvec
+%  * Efficiency of dynamic internal representation
+
+This benchmark is aimed to compare \rrbvec{}'s slice algorithm to \stdvec{}'s and \rbvec{}'s naive copying. For \pvec{}, on the other hand, we will evaluate whether using different representations gives any advantage in performance. 
+
+% How
+%  * Slicing vector by 64 sized chunks
+%  * The setup routine prepares both balanced and relaxed version of vectors
+%   * The problem range size
+
+The test itself anticipates a prepared vector, which is generated in the setup routine. To evaluate both balanced and relaxed variants of vectors, it generates them differently by either using concatenation or simple pushing. The vector sizes are varying in the [128, 40000]. 
+
+Once vector is generated, the benchmark function enters the loop with a condition that vector needs to contains more than 64 elements. In the loop, vector is split at index 64, the result of which is assigned back to a vector variable. Essentially, a vector is being truncated at the front by 64 elements, until it is small enough for the loop to exit. 
 
 \section{Parallel vector}
 One of the claims is that \rrbvec{} is very efficient when it comes to the split and concatenate operations. The data parallelism frameworks, such as Rayon \todo{ref}, Cilk \todo{ref}, and Scala's parallel collections \todo{ref}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concat operations are critical for the optimal performance. 
