@@ -19,34 +19,58 @@ Benchmarking frameworks were introduced to solve those problems. They are design
 \subsection{Benchmarking frameworks for Rust}
 There are several benchmarking frameworks available for Rust, and unfortunately, none of them have reached a stable release yet. However, some of them are being actively used in the Rust community and proven to produce reliable results.  
 
-In our case, there are several criteria which a good framework has to meet:
+In our case, there are several criteria which a suitable framework has to meet:
 \begin{itemize}
     \item Collects multiple samples where each sample consists of multiple runs to ensure consistent results. 
     \item Detection and elimination of outliers.     
     \item A way for setting up a benchmark before each run. 
     \item A way for preventing compiler optimizing benchmark code away.     
+    \item Measuring run time with and without execution of \emph{drop}\footnote{Used to run some code when a value goes out of scope. In other languages, it is sometimes referred to as a destructor.}.
 \end{itemize}
 
 \subsubsection*{Rust's benchmark tests}
-The Rust's testing framework provides an experimental feature which enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function \footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code which otherwise would be considered "dead" or unused.} which is opaque for the compiler. 
+Rust's testing framework provides an experimental feature that enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function\footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code which otherwise would be considered "dead" or unused.} which is opaque for the compiler. 
 
-However, it does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks which rely on certain preconditions.
+However, it does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks that rely on certain preconditions.
 
-% ToDo: consider talking about measurement of time for dropping items
 \subsubsection*{Criterion for Rust}
-Criterion for Rust \todo{ref}, not to be confused with Criterion for Haskell \todo{ref}, is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable to generate graphs provided that gnuplot is installed \todo{ref}. it is available for the stable Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project. 
+Criterion for Rust, not to be confused with Criterion for Haskell, is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable of generating graphs provided that gnuplot is installed\footnote{http://www.gnuplot.info/}. At the moment of writing, it is the only framework that has an option to avoid measuring the execution time of \emph{drop}. 
 
-\subsection{Execution environment}
-All benchmarks were executed on a computer \todo{table with hardware, software} with a quad-core Intel Core i5-6600 processor with hyperthreading, 16GB of DDR4 RAM and 250GB solid-state drive. The operating system of the choice is Ubuntu 18.04 with nightly Rust compiler version \todo{Rust version}.
+It is compatible with the stable release of the Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project. 
+
+\subsubsection*{Alternatives}
+Other less popular frameworks, such as \emph{bencher}\footnote{https://crates.io/crates/bencher} and \emph{easybench}\footnote{https://crates.io/crates/easybench}, were not considered due to the lack of features necessary for the experiment, such as setup routines, optional measurement of \emph{drop} outlier detection, et cetera. 
 
 \subsection{Configuration and input size}
-\todo{section}
+All tree-based vector implementations, such as \rbvec{}, \rrbvec{}, \pvec{}, and \imrsvec{}, were configured to use a branching factor of 32, as it provides the best tradeoff for the performance of both read and write operations \cite{efficient-immutable-vectors}. 
+
+Each benchmark was executed against an increasing range of input arguments. The input range is specified on the case by case basis depending on the benchmark. 
+
+For each input argument, criterion captures 100 samples. The count of runs per sample is determined dynamically by the library to achieve optimal execution time. 
+
+Benchmarks of the core operations are executed sequentially on a single thread. 
+
+\subsection{Execution environment}
+All benchmarks were executed on a computer with an octa-core processor with hyper-threading support, 32GB of DDR4 RAM and 1TB solid-state drive. The operating system is macOS Catalina 10.15.2 with the stable Rust compiler version 1.38.0.
+
+\begin{table}[!htbp]
+    \centering
+
+    \begin{tabular} { |l| p{10cm} | }        
+        \hline CPU & 2,3 GHz 8-Core Intel Core i9, 16 threads \\ \hline
+        RAM & 32GB DDR4, 2400MHz \\ \hline
+        Disk & 1TB SSD \\ \hline
+        OS & macOS Catalina v10.15.2 \\ \hline     
+        Rust & v1.38.0   \\ \hline
+        Criterion & v0.3   \\ \hline
+    \end{tabular}
+    
+    \label{tab:exec-environment}
+    \caption{Hardware and software specification used for benchmarking.}
+\end{table}
 
 \section{Benchmarking directions}
-% ToDo: you have completely forgotten about branching factor, and it being a standalone feature
-% ToDo: you haven't talked about input size and configuration of benchmarks (what will be the input size). You can steal input numbers from scala paper, and then tweak them to run for reasonable amount of time. 
-
-To understand how effective certain optimizations are, we need to evaluate various configurations of the persistent vector. Additionally, implementations from \imrsvec{} and the standard library will be tested too. All vector variants are specified in table \todo{ref}. 
+To understand how effective certain optimizations are, we need to evaluate various configurations of the persistent vector. Additionally, implementations from \imrsvec{} and the standard library will be evaluated too. All vector variants are specified in the table \ref{tab:vec-implementations}. 
 
 % ToDo: try to name types after the name of types in actual code, otherwise thins will get very confusing very fast. Also, I don't think it is important to show distinction between Rc / Arc flavors of implementations, because it just introduces more confusion. 
 \begin{table}
