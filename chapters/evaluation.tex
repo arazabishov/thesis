@@ -98,7 +98,7 @@ The benchmarks described below are categorized into two groups:
 \end{itemize}
 
 \subsection{Balanced and relaxed vectors}
-As \rrbtree{} is not perfectly balanced and involves the use of size tables for the radix search, it is expected to be somewhat slower in all core operations. This, however, is not true from the perspective of asymptotic analysis, where constant factors are neglected. The goal of the benchmarks, in this case, is to reveal the overhead induced by the relaxed nodes. 
+As an instance of \rrbtree{} is not perfectly balanced and involves the use of size tables for the radix search, it is expected to be somewhat slower in all core operations. This, however, is not true from the perspective of asymptotic analysis, where constant factors are neglected. The goal of the benchmarks, in this case, is to reveal the overhead induced by the relaxed nodes. 
 
 Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The count of the relaxed nodes is partially affected by the size of the vector. 
 
@@ -251,7 +251,7 @@ Lowering the height of \rrbtree{} involves the calculation of tree capacity usin
 The pop operation is responsible for switching the internal representation of \pvec{} from \rrbvec{} to \stdvec{} when the size gets smaller than 1024. Hence, one of the objectives is to evaluate how is that reflected on performance. 
 
 \subsection{Concatenating}
-The concatenation operation merges contents of one vector into another. One of the claimed advantages of \rrbtree{} is the relatively low cost of concat operation, that is \bigo{(m^2 \cdot log_m(n)}, in comparison to \bigo{max(a,b)} of \stdvec{}. The objective of this benchmark is to validate performance properties of the concat operation experimentally. 
+The concatenation operation merges contents of one vector into another. One of the claimed advantages of \rrbtree{} is the relatively low cost of concatenation operation, that is \bigo{(m^2 \cdot log_m(n)}, in comparison to \bigo{max(a,b)} of \stdvec{}. The objective of this benchmark is to validate performance properties of the concatenation operation experimentally. 
 
 \paragraph*{Naive vs relaxed concatenation algorithm}
 The vector that is based on \rbtree{} uses a naive concatenation algorithm, that essentially is moving values from one vector to another. \rrbtree{} on the other hand merges and rebalances two trees, which theoretically is faster. Due to the hardware design specifics, this might not be true for all vector sizes. Thus, benchmarks will reveal how different algorithms perform depending on the size of concatenated vectors. 
