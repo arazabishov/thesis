@@ -25,7 +25,7 @@ In our case, there are several criteria which a suitable framework has to meet:
     \item Detection and elimination of outliers.     
     \item A way for setting up a benchmark before each run. 
     \item A way for preventing compiler optimizing benchmark code away.     
-    \item Measuring runtime with and without execution of \emph{drop}\footnote{Used to run some code when a value goes out of scope. In other languages, it is sometimes referred to as a destructor.}.
+    \item An option to measure execution time without \emph{drop}\footnote{Used to run some code when a value goes out of scope. In other languages, it is sometimes referred to as a destructor.}.
 \end{itemize}
 
 \subsubsection*{Rust's benchmark tests}
@@ -34,7 +34,7 @@ Rust's testing framework provides an experimental feature that enables developer
 However, it does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks that rely on certain preconditions.
 
 \subsubsection*{Criterion for Rust}
-Criterion for Rust, not to be confused with Criterion for Haskell, is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable of generating graphs provided that gnuplot is installed\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid measuring the execution time of \emph{drop}. 
+Criterion for Rust, not to be confused with Criterion for Haskell, is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable of generating graphs provided that gnuplot is installed\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid timing of \emph{drop}. 
 
 It is compatible with the stable release of the Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project. 
 
@@ -476,8 +476,9 @@ The total count of words stored in the file is 370103. As the benchmark is param
 The contents of the file are loaded into memory once, and then before each run, they are copied over to a new vector within the setup routine. A vector is later passed to the test routine that converts it to a parallel iterator. 
 
 \section{Presentation of results}
-% TODO: elaborate a little bit more on this point
-The results show the mean measured time for each function as the input increases. 
+The measurements are done in a number of samples that can be configured. By default, the count of samples is set to a 100, and this default is being used for this project. Each sample consists of one or typically more iterations of the routine. The elapsed time between the beginning and the end of the iterations, divided by the number of iterations, gives an estimate of the time taken by each iteration. 
+
+As measurement progresses, the sample iteration counts are increased. The presented graphs use the mean measured time for each function. Additionally, benchmarks were configured to avoid timing the execution of \emph{drop}. 
 
 \section{Reproducing results}
 Benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of the persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag as demonstrated in figure \ref{fig:sequential-benches}. To run a particular benchmark, specify its name as an argument to cargo. 
