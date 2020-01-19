@@ -1,5 +1,5 @@
 \chapter{Performance evaluation}
-In this chapter, I will introduce a methodology for performance evaluation of \rrbvec{}, \pvec{} and their variants, in comparison to implementations from \imrsvec{} and the Rust's standard library. We will look at the details of these three stages:
+In this chapter, I will introduce a methodology for performance evaluation of \rrbvec{}, \pvec{} and their variants, in comparison to implementations from \imrsvec{} and Rust's standard library. We will look at the details of these three stages:
 
 \begin{itemize}
     \item First, a methodology for collecting reliable measurements. 
@@ -10,18 +10,18 @@ In this chapter, I will introduce a methodology for performance evaluation of \r
 To begin with, I will present a notion of benchmarking framework, before diving into details of specific profiling tests. 
 
 \section{Methodology}
-\bigochar{} is a useful tool for reasoning about scalability and performance in theory, and by design, it does not consider factors such as execution environment. First, it disregards constant factors as they are not significant for the growth rate of functions. Second, it does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influences performance. Furthermore, it also applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally. 
+Big O is a useful tool for reasoning about scalability and performance in theory, and by design, it does not consider factors such as execution environments. First, it disregards constant factors as they are not significant for the growth rate of functions. Second, it does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influences performance. Furthermore, it also applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
 
-This leads us to a need for an experimental performance analysis approach, which would involve executing tests on the actual hardware and software. This, however, introduces another set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for high demanding tasks, by reducing runtime for others \cite{statistically-rigorous-java-performance-evaluation}. Such non-deterministic behavior may lead to profiling results that vary from run to run significantly, which defeats the purpose of having them. 
+This leads to a need for an experimental performance analysis approach, which would involve executing tests on the actual hardware and software. This, however, introduces another set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for high demanding tasks, by reducing runtime for others \cite{statistically-rigorous-java-performance-evaluation}. Such non-deterministic behavior may lead to profiling results that vary from run to run significantly. 
 
-Benchmarking frameworks were introduced to solve those problems. They are designed to get stable measurements by executing the same test thousands of times. Some of them, such as criterion for Haskell\footnote{\url{https://hackage.haskell.org/package/criterion}} and Rust\footnote{\url{https://crates.io/crates/criterion}}, JMH for Java\footnote{\url{https://openjdk.java.net/projects/code-tools/jmh/}}, and ScalaMeter for Scala\footnote{\url{https://scalameter.github.io/}}, introduce statistical methods for the detection and elimination of exceptionally different runs, known as outliers. 
+Benchmarking frameworks were introduced to solve this problem. They are designed to get stable measurements by executing the same test thousands of times. Some of them, such as criterion for Haskell\footnote{\url{https://hackage.haskell.org/package/criterion}} and Rust\footnote{\url{https://crates.io/crates/criterion}}, JMH for Java\footnote{\url{https://openjdk.java.net/projects/code-tools/jmh/}}, and ScalaMeter for Scala\footnote{\url{https://scalameter.github.io/}}, introduce statistical methods for the detection and elimination of exceptionally different runs, known as outliers. 
 
 \subsection{Benchmarking frameworks for Rust}
-There are several benchmarking frameworks available for Rust, and unfortunately, none of them have reached a stable release yet. However, some of them are being actively used in the Rust community and proven to produce reliable results.  
+There are several benchmarking frameworks available for Rust, and unfortunately, none of them reached a stable release yet. However, some of them are being actively used in the Rust community and proven to produce reliable results.  
 
-In our case, there are several criteria which a suitable framework has to meet:
+There are several criteria which a suitable framework has to meet:
 \begin{itemize}
-    \item Collects multiple samples where each sample consists of multiple runs to ensure consistent results. 
+    \item Collecting multiple samples where each sample consists of multiple runs to ensure consistent results. 
     \item Detection and elimination of outliers.     
     \item A way for setting up a benchmark before each run. 
     \item A way for preventing compiler optimizing benchmark code away.     
@@ -29,12 +29,12 @@ In our case, there are several criteria which a suitable framework has to meet:
 \end{itemize}
 
 \subsubsection*{Rust's benchmark tests}
-Rust's testing framework provides an experimental feature that enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function\footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code which otherwise would be considered "dead" or unused.} which is opaque for the compiler. 
+Rust's testing framework provides an experimental feature\footnote{At the moment of writing, benchmarks are available only in the nightly build of Rust.} that enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function\footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code which otherwise would be considered "dead" or unused.} which is opaque for the compiler. 
 
 However, it does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks that rely on certain preconditions.
 
 \subsubsection*{Criterion for Rust}
-Criterion for Rust, not to be confused with Criterion for Haskell, is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable of generating graphs provided that gnuplot is installed\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid timing of \emph{drop}. 
+Criterion for Rust is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable of generating graphs using gnuplot\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid timing of \emph{drop}. 
 
 It is compatible with the stable release of the Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project. 
 
@@ -44,7 +44,7 @@ Other less popular frameworks, such as \emph{bencher}\footnote{\url{https://crat
 \subsection{Configuration and input size}
 All tree-based vector implementations, such as \rbvec{}, \rrbvec{}, \pvec{}, and \imrsvec{}, were configured to use a branching factor of 32, as it provides the best tradeoff for the performance of both read and write operations \cite{efficient-immutable-vectors}. 
 
-Each benchmark was executed against an increasing range of input arguments. The input range is specified on the case by case basis depending on the benchmark. 
+Each benchmark was executed against a range of input arguments. The input range is specified on the case by case basis depending on the benchmark. 
 
 For each input argument, criterion captures 100 samples. The count of runs per sample is determined dynamically by the library to achieve optimal execution time. 
 
@@ -71,10 +71,11 @@ All benchmarks were executed on a computer with an octa-core processor with hype
 \end{table}
 
 \section{Benchmarking directions}
-To understand how effective proposed optimizations are, we need to evaluate various tree-based vectors, such as \rbvec{}, \rrbvec{}, and \pvec{}. Implementations from \imrsvec{} and the standard library will be evaluated as well. All vector variants are specified in the table \ref{tab:vec-implementations} below. 
+To understand how effective proposed optimizations are, we need to evaluate various tree-based vectors, such as \rbvec{}, \rrbvec{}, and \pvec{}. Implementations from \imrsvec{} and the standard library will be evaluated as well. All vector variants are specified in table \ref{tab:vec-implementations} below. 
 
-\begin{table}
+\begin{table}[!htbp]
     \centering
+    
     \begin{tabular} { |l| p{11cm} | }
         \hline
         \stdvec{} & A vector from the Rust's standard library. \\ \hline
@@ -90,28 +91,28 @@ To understand how effective proposed optimizations are, we need to evaluate vari
 
 \footnotetext{Both \imrsvec{} and \pvec{} use \rrbtree{} at its core. It has been developed independently in parallel to \pvec{} at the time of writing this paper: \url{https://crates.io/crates/im}.}
 
-Benchmarks described below are categorized into two groups:
+The benchmarks described below are categorized into two groups:
 \begin{itemize}
     \item Sequential benchmarks for core operations executed on a single thread. They will be executed both against \rc{} and \arc{} variants of the vector. 
-    \item Concurrent benchmarks that are executed against \arc{} based vector only. The goal is to verify whether there are benefits of fast split and combine operations of \rrbvec{}.
+    \item Parallel benchmarks that are executed against \arc{} based vector only. The goal is to verify whether there are benefits of fast split and combine operations of \rrbvec{}.
 \end{itemize}
 
 \subsection{Balanced and relaxed vectors}
-As \rrbtree{} is not perfectly balanced and involves the use of size tables for the radix search, it is expected to be somewhat slower in all core operations. This, however, is not true from the perspective of asymptotic analysis, where constant factors are neglected. The goal of benchmarks, in this case, is to reveal the overhead induced by relaxed nodes. 
+As \rrbtree{} is not perfectly balanced and involves the use of size tables for the radix search, it is expected to be somewhat slower in all core operations. This, however, is not true from the perspective of asymptotic analysis, where constant factors are neglected. The goal of the benchmarks, in this case, is to reveal the overhead induced by the relaxed nodes. 
 
-Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The count of relaxed nodes is partially affected by the size of the vector. 
+Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The count of the relaxed nodes is partially affected by the size of the vector. 
 
 \subsection{Unique access or transience}
-While \rrbvec{} performs very well as a persistent data structure, it is not very optimal when properties of persistence are not required. An example is a function that creates and returns an instance of \rrbvec{}, where all versions except the returned one are disregarded.
+While \rrbvec{} performs very well as a persistent data structure, it is not very optimal when persistence is not required. An example is a function that creates and returns an instance of \rrbvec{}, where all versions except the returned one are disregarded.
 
-Luckily, the persistent vector presented in this project takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is somewhat similar to transience in the Clojure's persistent vector, but not entirely identical \cite{improving-performance-through-transience}. 
+Luckily, the persistent vector presented in this project takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is similar to transience in the Clojure's persistent vector, but not entirely identical \cite{improving-performance-through-transience}. 
 
-In Rust, non-transient, persistent behavior can be enforced by cloning the object before performing a mutation. The goal is to measure the overhead of using clone operation in the persistent vector. 
+In Rust, non-transient, persistent behavior can be enforced by cloning the object before performing a mutation. The objective is to measure the cost of using the clone operation in the persistent vector. 
 
 \subsection{Dynamic internal representation}
-As one of the suggested optimizations in \cite{rrb-vector-practical-general-purpose-im-sequence}, a standard vector can be used to improve the performance of small-sized \rrbvec{}. The size recommended for using the standard vector representation is 4096. However, dynamically switching representation during runtime comes at a cost, which potentially may offset the benefits.
+As one of the suggested optimizations in the paper on \rrbvec{} implementation for Scala \cite{rrb-vector-practical-general-purpose-im-sequence}, a standard vector can be used to improve the performance of small-sized \rrbvec{}. The size for using the standard vector representation is 1024 for the branching factor of 32, and 256 for the branching factor of 4. However, dynamically switching representation during runtime comes at a cost, which potentially may offset the benefits.
 
-The purpose of profiling this optimization is to understand whether it improves performance in practice, and in which use cases. The range of problem sizes will include small values as well. 
+The purpose of profiling this optimization is to understand whether it improves performance in practice, and in which use cases. The problem size range will include small values as well. 
 
 \subsection{Rc vs Arc}
 Since atomic reference-counted pointers are claimed to introduce additional overhead in comparison to their non-threadsafe counterpart, the goal is to check how significant is the difference. 
@@ -119,7 +120,7 @@ Since atomic reference-counted pointers are claimed to introduce additional over
 As a part of all sequential benchmarks, both \rc{} and \arc{} variants will be evaluated. \rc{} based flavor will not be present in parallel benchmarks, as the Rust's compiler forbids non-threadsafe types to be used across threads. 
 
 \section{Core operations}
-Each benchmark described in this section has a focus on a particular core operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify vector, such as push, will have a complementary version of the benchmark which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in the tree-based and standard vectors correspondingly. 
+Each benchmark described in this section focuses on a particular core operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify vector, such as push, will have a complementary version of the benchmark which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in the tree-based and standard vectors correspondingly. 
 
 The following operations were evaluated for vector implementations in \ref{tab:vec-implementations}:
 \begin{table}[!htbp]
@@ -143,7 +144,7 @@ The following operations were evaluated for vector implementations in \ref{tab:v
 Some benchmarks depend on certain preconditions. For example, to test indexing, we first need to create a vector with values. Since building a vector instance should not be measured as a part of that test, it happens in the setup routine. Hence, benchmarks with preconditions are executed in two steps: setup and the actual test. 
 
 \paragraph*{Benchmarking dimensions}
-Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean runtime in \ms{}. 
+Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree-based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean runtime in \ms{}. 
 
 \subsection{Indexing}
 In this section, we will define benchmarks for accessing values in three different settings, which model the most common patterns of working with vector: 
@@ -159,12 +160,12 @@ In this section, we will define benchmarks for accessing values in three differe
 
 In addition to the specific goal, use cases listed above address two objectives: first, how much overhead relaxed nodes of \rrbtree{} introduce in comparison to \rbtree{}, and second, the efficiency of the dynamic internal representation in \pvec{} in comparison to \stdvec{}.
 
-The benchmarks share the same setup routine, which is responsible for generating a vector with values. To generate balanced and relaxed variants of \rbtree{} based vectors, the setup routine follows two different approaches. \rbvec{}, or balanced \rbtree{} based vector, is created by simply pushing integer values\footnote{The type of value is a 64-bit unsigned integer.} into it. On the other hand, the relaxed variants, such as \rrbvec{} and \pvec{}, are generated by concatenating multiple small instances of themselves together.
+The benchmarks share the same setup routine, which is responsible for generating a vector with values. To generate balanced and relaxed variants of \rbtree{}-based vectors, the setup routine follows two different approaches. \rbvec{}, or balanced \rbtree{}-based vector, is created by simply pushing 64-bit integer values into it. On the other hand, the relaxed variants, such as \rrbvec{} and \pvec{}, are generated by concatenating multiple small instances of vectors together.
 
-The size of the generated vector is determined by the problem size passed as a benchmark argument. The problem size domain in this test is [10, 1M]. 
+The size of the generated vector is determined by the problem size passed as a benchmark argument. The problem size domain in this test is \range{[10, 1m]}. 
 
 \subsubsection*{Index sequentially and iterating}
-In the benchmark variant with access by index, the test function loops over the array of [0, N) indices, reading values from a vector at corresponding positions. N is the problem sizes passed to the benchmark as an argument. It is important to emphasize, that in this benchmark, values are read through immutable, read-only references. In Rust, it means that values are not moved \footnote{todo: see introduction section} and still, belong to a vector. 
+In the benchmark variant with access by index, the test function loops over the array of \range{[0, N)} indices, reading values from a vector at corresponding positions. \n{} is the problem sizes passed to the benchmark as an argument. It is important to emphasize, that in this benchmark, values are read through immutable, read-only references. In Rust, it means that values are not moved and still, belong to a vector. 
 
 The second benchmark, based on iterators, reads the contents of the vector from the beginning to the end, without accessing values by index. By leveraging this knowledge, the iterator implementations of \rbvec{}, \rrbvec{}, and \pvec{}, read values from the tree by chunks, rather than by individual values. However, the mechanism of reading values is different compared to the first benchmark. Instead of immutably borrowing values, iterator takes ownership of them. This implies a different memory reclamation behavior, which makes the direct comparison to the first benchmark irrelevant. Hence, the results of this benchmark will be evaluated independently. 
 
@@ -193,7 +194,7 @@ The setup routine for all benchmarks is identical. As for the index benchmarks, 
 The size of the generated vector is determined by the problem size passed as an argument. The problem size domain for benchmarks using clone is \range{[10, 20000]}, which is smaller compared to the \range{[10, 100000]} range, used for benchmarks without clone. This is done to reduce the runtime of benchmarks. 
 
 \paragraph*{The cost of naive clone vs path copying}
-One of the claimed advantages of \rbvec{} over \stdvec{}, is the cheap clone operation enabled by the path copying \todo{ref:path-copying} algorithm of \rbtree{}. However, the naive copy of \stdvec{} is faster for small-sized vectors due to its simplicity and better locality features. \pvec{} takes the best of both worlds, by using \stdvec{} for the size up to 1024 elements, after which it switches to \rbvec{}. Hence, the objectives of the update benchmarks involving the clone operation are:
+One of the claimed advantages of \rbvec{} over \stdvec{}, is the cheap clone operation enabled by the path copying algorithm of \rbtree{}. However, the naive copy of \stdvec{} is faster for small-sized vectors due to its simplicity and better locality features. \pvec{} takes the best of both worlds, by using \stdvec{} for the size up to 1024 elements, after which it switches to \rbvec{}. Hence, the objectives of the update benchmarks involving the clone operation are:
 \begin{itemize}
     \item Compare performance of naive and path copying algorithms. 
     \item Evaluate the efficiency of dynamic internal representation in \pvec{}.  
@@ -212,7 +213,7 @@ The test function contains a loop, which is executed \n{} times. In the loop bod
 Both benchmarks are extended with the clone operation. The test variant with clone introduces an additional variable for keeping track of the cloned vector. This is done to ensure that at least two vector instances exist at the time when the update is executed. This is necessary because \rc{} pointers used to implement \rbtree{}, clone the underlying value on mutation only when the reference count is bigger than one. Thus, by having a cloned instance of vector present in the scope, we enforce the path copying algorithm to be used when updating a vector. 
 
 \subsection{Pushing}
-A common operation used to add values at the end of vector is called push. In this benchmark, we will focus on building a vector from the empty state, as well as pushing values into a prebuilt vector of different types. Additionally, aforementioned benchmarks will be extended with the clone operation to evaluate the efficiency of \pvec{}'s dynamic internal representation:
+An operation used to add values at the end of vector is called push. In this benchmark, we will focus on building a vector from the empty state, as well as pushing values into a prebuilt vector of different types. Additionally, the aforementioned benchmarks will be extended with the clone operation to evaluate the efficiency of \pvec{}'s dynamic internal representation:
 \begin{itemize}
     \item Building a vector from the empty state.    
     \begin{itemize}
@@ -279,7 +280,7 @@ Once a vector is generated, the benchmark function enters the loop with a condit
 \section{Parallel vector}
 One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concatenation operations are critical for optimal performance. 
 
-In this section, we will first take a look at how Rayon splits and distributes the work across threads, as well as available configuration parameters. Then, section \ref{sec:par-benchmarks} introduces tests for benchmarking the overall performance of persistent and standard vectors:
+In this section, we will first take a look at how Rayon splits and distributes the work across threads, as well as available configuration parameters. Section \ref{sec:par-benchmarks} introduces tests for benchmarking the overall performance of persistent and standard vectors:
 
 \begin{itemize}    
     \item Adding elements of two vectors.    
@@ -297,7 +298,7 @@ The results will be used to evaluate the effectiveness of the following optimiza
 \end{itemize}
 
 \subsection{Rayon}
-The idea of Rayon, a data parallelism library for Rust, is to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon, on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores when it is considered to be beneficial. 
+Rayon, a data parallelism library for Rust, helps to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon, on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores as long as it is beneficial. 
 
 \paragraph*{Parallel iterators}
 \begin{figure}[!htbp] 
@@ -361,14 +362,14 @@ Another limitation which parallel iterators impose, is that type of values which
         \draw[|-|]([yshift=-20mm,xshift=1mm]array-1-2.south west) -- node[above,font=\tiny,outer sep=0mm] {1} ([yshift=-20mm,xshift=-1mm]array-1-2.south east);
         \draw[loosely dotted]([yshift=-20mm,xshift=1mm]array-1-2.south west) -- ([yshift=-20mm,xshift=-1mm]array-1-12.south east);    
         
-        \draw ([xshift=1mm]array-1-12.east)--++(0:3mm) node [right]{ Vector };
+        \draw ([xshift=1mm]array-1-12.east)--++(0:3mm) node[right]{ Vector };
     \end{tikzpicture}
 
     \caption{Visualization of work splitting in Rayon.}
     \label{fig:rayon-work-splitting}
 \end{figure}
 
-One of the Rayon's components, fork/join framework, is responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. See an example in figure \ref{fig:rayon-work-splitting}.
+One of the Rayon's components, a fork/join framework, is responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see figure \ref{fig:rayon-work-splitting}.
 
 As demonstrated in figure \ref{fig:rayon-join}, the work is \emph{potentially} divided between two threads by calling \mintinline{rust}{rayon::join}, which accepts two closures. Rayon decides whether it is beneficial to parallelize the work, depending on the count of available threads, the split factor, and the workload. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided into smaller parts. When both closures finish working, the results are combined and returned to the caller. 
 
@@ -384,17 +385,17 @@ The size of the work chunk, or the \emph{split factor}, can be controlled by two
         );
     \end{minted}
     
-    \caption{An example of using rayon's join.}
+    \caption{An example for using rayon's join.}
     \label{fig:rayon-join}
 \end{figure}
 
 By default, the count of threads allocated by Rayon is equal to the number of cores available in the system. To observe how the thread count affects the performance, Rayon's thread pool will be configured to work with 2, 4, 8, and 16 threads. 
 
 \paragraph*{Load balancing}
-In the perfect world, the chunks of work split between threads take the same amount of time to process. In reality, this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. To avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is known as work-stealing and is used as the main mechanism for work distribution in Rayon. 
+In a perfect world, the chunks of work split between threads take the same amount of time to process. In reality, this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. To avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is known as work-stealing and is used as the main mechanism for work distribution in Rayon. 
 
 \paragraph*{Computation stages}
-Computation stages of both "Add elements of two vectors" and "Check if a word is a palindrome" benchmarks, could be described in three steps. 
+Computation stages of both "Add elements of two vectors" and "Check if a word is a palindrome" benchmarks, can be described in three steps. 
 \begin{itemize}
     \item First, split the work between threads. 
     \item Then process the chunk of work sequentially. 
