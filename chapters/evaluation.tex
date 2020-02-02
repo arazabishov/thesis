@@ -144,7 +144,7 @@ The following operations were evaluated for vector implementations in \ref{tab:v
 Some benchmarks depend on certain preconditions. For example, to test indexing, we first need to create a vector with values. Since building a vector instance should not be measured as a part of that test, it happens in the setup routine. Hence, benchmarks with preconditions are executed in two steps: setup and the actual test. 
 
 \paragraph*{Benchmarking dimensions}
-Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree-based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean runtime in \ms{}. 
+Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree-based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean runtime in \millis{}. 
 
 \subsection{Indexing}
 In this section, we will define benchmarks for accessing values in three different settings, which model the most common patterns of working with vector: 

@@ -1,292 +1,192 @@
-% ToDo:
-%  - Reconsider if specifying the sample count and count of runs per sample is useful. 
-%  - Fill-in more details on how benchmarks are analyzed from Criterion's documentation
-%  - Re-introduce what is a black box, and update benchmarks to avoid misusing it. 
-%  - You need to be careful with using next words interchangeably: profile, measure, benchmark
-%  - What bootstrap sampling means?
-%  - What kind of benchmarks are you presenting? Throughput or latency?
-
-% Notes from the criterion documentation: 
-% - Note from Criterion: note that Criterion.rs does not measure each individual iteration, only the complete sample. The resulting samples are stored for use in later stages.
-% - These two timing loops generate a batch of inputs and measure the time to execute the benchmark on all values in the batch. As with iter_with_large_drop they also collect the values returned from the benchmark into a Vec and drop it later without timing the drop. 
-% - Keep in mind that this is only necessary if the benchmark modifies the input - if the input is constant then one input value can be reused and the benchmark should use iter instead.
-% - You should write about what is drop in Rust, and how it is relevant in Criterion benchmarks (whether it is being measured as well or not). 
+\newcommand{\relaxed}{\emph{(r)}}
 
 \chapter{Results and discussion}
+In this chapter, we will take a look at the results of the sequential and parallel benchmarks, and discuss whether proposed\todo{ref} performance optimizations are effective. 
 
-In this chapter, we will take a look at the results of the sequential and parallel benchmarks, and discuss whether proposed performance optimizations are effective. Presentation of results of sequential benchmarks is listed under the "Performance of core operations" section, which is divided into subsections each of which corresponds to a benchmark of the core operation. 
+The sequential benchmark results are subdivided per the core operation and listed under the \ref{sec:perf-seq} section. Performance of the threadsafe implementation is evaluated separately.  
 
-The parallel benchmarks are discussed under the "Performance of parallel benchmarks" section, as they do not have a strong focus on a particular operation, but rather on the overall performance comparison of vector implementation variants. 
+The parallel benchmark results in section \ref{sec:perf-par} are not discussed by operation, as they focus on the overall performance comparison of vectors rather than particular operation in isolation. 
 
-The results of both benchmark groups are discussed to address the following points:
+The results are discussed to address the following points:
 \begin{itemize}
-    \item Effectiveness of \rrbtree{} relaxation on concatenation, splitting, and other operations of \rrbvec{}. 
-    \item The impact of the unique access optimization on performance of persistent and emphemeral vector implementations.
-    \item Effectiveness of the dynamic internal representation.         
+    \item Effect of \rrbtree{} relaxation on concatenation, splitting, and other core operations of \rrbvec{} and \pvec{}. 
+    \item The impact of the unique access optimization on the performance of all vector implementations.
+    \item Effectiveness of the dynamic internal representation.
 \end{itemize}
 
-\section{Performance of core operations}
+\paragraph*{Reading notes} 
+Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \emph{rb} tree in the benchmark. If not specified, the vector is either balanced or is not based on a tree, like \stdvec{}. 
+
+\section{Performance of the core operations}
+\label{sec:perf-seq}
+This section contains performance numbers for the non-threadsafe implementations of \stdvec{}, \rbvec{}, \rrbvec{}, \pvec{}, and \imrsvec{}. Threadsafe variants are evaluated and discussed separately in section \ref{sec:perf-rc-vs-arc}. 
 
 \subsection{Indexing}
+Figures for the index operation are separated by sequential and random access, where the sequential benchmark results are subdivided into the index and iterator figures. 
 
+\subsubsection*{Index sequentially}
+\begin{figure}[!htbp]
 
-\subsubsection*{Index Sequentially}
+    \center
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tikzpicture}
+        \tikzstyle{every node}=[
+            font=\scriptsize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]        
 
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/imrs-vector-balanced.csv}\idxseqimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/imrs-vector-relaxed.csv}\idxseqimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/pvec-balanced.csv}\idxseqpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/pvec-relaxed.csv}\idxseqpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/rbvec-balanced.csv}\idxseqrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/rrbvec-relaxed.csv}\idxseqrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/std-vec.csv}\idxseqstdvector;
 
-
-\begin{figure}        
-    \caption{Benchmarking results of indexing sequentially.}
-    \label{fig:index-sequentially}
-
-    \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rbtree.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/im-rs-rrbtree.csv}\imrsrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rbtree.csv}\pvecrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/pvec-rrbtree.csv}\pvecrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rbvec.csv}\rbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/rrbvec.csv}\rrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_sequentially/std.csv}\std;    
+        \pgfplotstableread[col sep=comma]{data/iterator_next/imrs-vector-balanced.csv}\itrnextimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/imrs-vector-relaxed.csv}\itrnextimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/pvec-balanced.csv}\itrnextpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/pvec-relaxed.csv}\itrnextpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/rbvec-balanced.csv}\itrnextrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/rrbvec-relaxed.csv}\itrnextrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/std-vec.csv}\itrnextstdvector;
         
-        % ToDo:
-        %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
-        %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)    
-    
-        \begin{loglogaxis}[         
-            use units,         
-            y unit=s, y unit prefix=m, 
-            smooth,        
-            width=340pt, % width=\textwidth, 
-            title={Index Sequentially},
-            xlabel={vector size (log scale)},
-            ylabel={mean time (log scale)},                
-            ymajorgrids=true, 
+        \begin{groupplot}[
+            group style={group size=2 by 1, horizontal sep=56pt,},                   
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},
+            yticklabels={0, \micros{0.01}, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
+            ymajorgrids=true,
             xmajorgrids=true,
             grid style=dashed,
-            legend pos=north west,        
-            legend style={draw=none,fill=none,font=\footnotesize},
-            legend cell align=left, 
-            yticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=5
-            },
-            yticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
-            xticklabel style={/pgf/number format/fixed},		
-            xticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
         ]
-            \addplot[thin, color=morange, mark=*,] table {\std}; 
-            \addlegendentry{Vec}
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Index sequentially},
+                legend columns=4,
+                legend style={
+                    at={(1.12,-0.2)},
+                    anchor=north
+                }
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\idxseqstdvector};            
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\idxseqrbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\idxseqrrbvecrelaxed};             
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\idxseqpvecbalanced};            
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\idxseqpvecrelaxed};            
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\idxseqimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\idxseqimrsvectorrelaxed};
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
     
-            \addplot[thin, color=mred, mark=*,] table {\rbvec};
-            \addlegendentry{Balanced RrbVec}
+            \nextgroupplot[xmode=log,ymode=log,title={Iterator}]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\itrnextstdvector};                     
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\itrnextrbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\itrnextrrbvecrelaxed}; 
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\itrnextpvecbalanced};
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\itrnextpvecrelaxed};
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\itrnextimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\itrnextimrsvectorrelaxed};      
+        \end{groupplot}
     
-            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
-            \addlegendentry{Unbalanced RrbVec}
-    
-            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-            \addlegendentry{Balanced PVec}
-    
-            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
-            \addlegendentry{Unbalanced PVec}
-    
-            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-            \addlegendentry{Balanced im-rs Vector}
-    
-            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
-            \addlegendentry{Unbalanced im-rs Vector} 
-        \end{loglogaxis}     
     \end{tikzpicture} 
+    \end{adjustbox}
+
+    \caption{Benchmark results of index sequentially and iterator.}
+    \label{fig:index-sequentially}
 \end{figure}
 
-% \begin{figure}        
-%     \caption{Benchmarking results of iterating through vector.}
-%     \label{fig:iter-next}
+Unsurprisingly, the \stdvec{} shows the best results in this test. As it is backed by a contiguous chunk of memory, it takes full advantage of CPU cache locality. Besides, its structure is not affected by the method used to build it, when \rbtree{} and \rrbtree{} based vectors are.
 
-%     \begin{tikzpicture} 
-%         \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/im-rs-vector-balanced.csv}\imrsrbtree;
-%         \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/im-rs-vector-unbalanced.csv}\imrsrrbtree;
-%         \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/pvec-balanced.csv}\pvecrbtree;
-%         \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/pvec-unbalanced.csv}\pvecrrbtree;
-%         \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/rrbvec-balanced.csv}\rbvec;
-%         \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/rrbvec-unbalanced.csv}\rrbvec;
-%         \pgfplotstableread[col sep=comma]{chapters/data/iterator_next/std-vec.csv}\std;    
-        
-%         % ToDo:
-%         %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
-%         %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)    
-    
-%         \begin{loglogaxis}[         
-%             use units,         
-%             y unit=s, y unit prefix=m, 
-%             smooth,        
-%             width=340pt, % width=\textwidth, 
-%             title={Iterator Next},
-%             xlabel={vector size (log scale)},
-%             ylabel={mean time (log scale)},                
-%             ymajorgrids=true, 
-%             xmajorgrids=true,
-%             grid style=dashed,
-%             legend pos=north west,        
-%             legend style={draw=none,fill=none,font=\footnotesize},
-%             legend cell align=left, 
-%             yticklabel style={
-%                 /pgf/number format/fixed, 
-%                 /pgf/number format/precision=5
-%             },
-%             yticklabel={%
-%                 \pgfmathfloatparsenumber{\tick}%
-%                 \pgfmathfloatexp{\pgfmathresult}%
-%                 \pgfmathprintnumber{\pgfmathresult}%
-%             },
-%             xticklabel style={/pgf/number format/fixed},		
-%             xticklabel={%
-%                 \pgfmathfloatparsenumber{\tick}%
-%                 \pgfmathfloatexp{\pgfmathresult}%
-%                 \pgfmathprintnumber{\pgfmathresult}%
-%             },
-%         ]
-%             \addplot[thin, color=morange, mark=*,] table {\std}; 
-%             \addlegendentry{Vec}
-    
-%             \addplot[thin, color=mred, mark=*,] table {\rbvec};
-%             \addlegendentry{Balanced RrbVec}
-    
-%             \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
-%             \addlegendentry{Unbalanced RrbVec}
-    
-%             \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-%             \addlegendentry{Balanced PVec}
-    
-%             \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
-%             \addlegendentry{Unbalanced PVec}
-    
-%             \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-%             \addlegendentry{Balanced im-rs Vector}
-    
-%             \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
-%             \addlegendentry{Unbalanced im-rs Vector} 
-%         \end{loglogaxis}     
-%     \end{tikzpicture} 
-% \end{figure}
+Both balanced and unbalanced \imrsvec{} variants tend to be slower in comparison to \rrbvec{} in the \range{[100, \mega{1}]} input range by a factor of 2.06. For smaller inputs, \rrbvec{} it is slightly faster with a difference of 1.18. 
 
-% TODO:
-%  - Insert the benchmarks for iterator_next
-%  - Role of transience in this benchmark
-%  - Rc vs Arc (you will need to sub-merge results of that run into the plot?)
-%  - Claimed perf guarantees in big-o notation
+\paragraph{Balanced vs relaxed variants}
+The difference between the balanced \rbvec{} and relaxed \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the relaxed one by a factor of 2.68 in the \range{[100, \mega{1}]} input range. This is expected because \rrbvec{} introduces relaxed nodes, which rely on the size tables to compute the path to the value. 
 
-Unsurprisingly, the \stdvec{} shows the best results in this test. As it is backed by a contiguous chunk of memory, it takes full advantage of cache locality. In addition, its structure is not affected by the method used to build it, when \rbtree{} and \rrbtree{} based vectors are. 
+This, however, is not the case for small problem sizes in the \range{[0, 100]} range, for which the concatenating algorithm produces a balanced tree. Hence, both balanced and relaxed vectors demonstrate similar performance in that range. 
 
 \paragraph{Dynamic internal representation}
+\pvec{} switches its internal representation from the standard vector to \rrbvec{} as the size gets over 1024 elements. This is evident from the plot \ref{fig:index-sequentially}, where \pvec{} is 2.31 faster than \rbvec{}, but slower than \stdvec{} by a factor of 2.61. It is slower because of the overhead induced by acquiring a mutable reference to \rc{} pointer. As soon as the threshold is passed, the difference in performance between \pvec{} and \rrbvec{} becomes negligible. 
 
-\pvec{} switches its internal representation from the standard vector to \rrbvec{} when the count of elements surpasses a certain threshold, which was set to 4096 in this case. This is evident from the plot \ref{fig:index-sequentially}, where \pvec{} is 3.44x faster than balanced \rrbvec{}, but slower than \stdvec{} by a factor of 1.79x. It is slower because of the overhead induced by acquiring a mutable reference to \rc{} pointer. As soon as the threshold is passed, the difference in performance between \pvec{} and \rrbvec{} becomes negligible. 
+\subsubsection*{Iterator}
+Results of the iterator benchmarks show approximately 10 fold improvement in performance over sequential indexing. This is expected, as iterators read the contents of the tree by chunks rather than by index. 
 
-% ToDo: should you check error margins, and use them as reference for negligible differences? 
+\stdvec{} shows the best results, with a difference of 1.98 on average compared to \pvec{}, and 9.12 in relation to \rrbvec{}. \imrsvec{} is 1.47 ahead of \rrbvec{} in the [10, 100] range. 
 
-\paragraph{Balanced vs unbalanced variants}
-The difference between the balanced and unbalanced \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the unbalanced one by a factor of 1.68x in the [100, 1M] input range. This is expected, because the unbalanced variant introduces relaxed nodes, which rely on the size tables to compute the path to the value. 
+\paragraph{Balanced vs relaxed variants}
+As iterator does not use size tables for index calculation for \rrbvec{}, it performs identically well compared to \rbvec{}. The same applies to \imrsvec{}. 
 
-This, however, is not the case for small problem sizes in the [0, 100] range, for which the concatenating algorithm produces a well balanced tree. Hence, both balanced and unbalanced vectors have identical performance numbers in that range. 
-
-Both balanced and unbalanced \imrsvec{} variants tend to be slower in comparison to \rrbvec{} in the [100, 1M] input range] by a factor of 4.1x. However, for smaller inputs it is slightly faster with a difference of 1.18x. 
-
-% ToDo: be more explicit when it comes to comparison to std, because now there is almost no mention do how fast or slow PVec is. 
-
-\paragraph*{Rc vs Arc}
-\todo{Run benchmarks for Arc}
-
-\subsubsection*{Index Randomly}
-
-
-\paragraph*{Dynamic internal representation}
-It is clear that \pvec{} is as fast as \stdvec{} up to the size of 4096, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 2.7x. 
-
-\paragraph*{Balanced vs unbalanced variants}
-Both variants perform well, with the balanced \rrbvec{} being faster by 1.36x in [100, 1M] range. Both unbalanced \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
-
-\begin{figure}        
-    \caption{Benchmarking results of indexing randomly.}
-    \label{fig:index-randomly}
-
+\subsubsection*{Index randomly}
+\begin{figure}[!htbp]
+    
+    \center
+    \begin{adjustbox}{width=\textwidth}
     \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/im-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/im-vector-unbalanced.csv}\imrsrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/pvec-balanced.csv}\pvecrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/pvec-unbalanced.csv}\pvecrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/rrbvec-balanced.csv}\rbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/rrbvec-unbalanced.csv}\rrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/index_randomly/std.csv}\std;    
-        
-        % ToDo:
-        %  - Axis should present numbers in a more readable form (you can probably specify them yourself too)
-        %  - Fonts used for axis and plot legengs (change the fonts, reduce their size)    
+        \pgfplotstableread[col sep=comma]{data/index_randomly/imrs-vector-balanced.csv}\imrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/imrs-vector-relaxed.csv}\imrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/pvec-balanced.csv}\pvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/pvec-relaxed.csv}\pvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/rbvec-balanced.csv}\rbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/rrbvec-relaxed.csv}\rrbvecrelaxed;        
+        \pgfplotstableread[col sep=comma]{data/index_randomly/std-vec.csv}\stdvector;
     
         \begin{loglogaxis}[         
-            use units,         
-            y unit=s, y unit prefix=m, 
+            use units,                     
             smooth,        
-            width=340pt, % width=\textwidth, 
-            title={Index Randomly},
-            xlabel={vector size (log scale)},
-            ylabel={mean time (log scale)},                
+            width=320pt,
+            title={Index randomly},
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},                
             ymajorgrids=true, 
             xmajorgrids=true,
-            grid style=dashed,
+            grid style=dashed,            
             legend pos=north west,        
             legend style={draw=none,fill=none,font=\footnotesize},
-            legend cell align=left, 
-            yticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=5
-            },
-            yticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
-            xticklabel style={/pgf/number format/fixed},		
-            xticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
+            legend cell align=left,             
+            yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
         ]
-            \addplot[thin, color=morange, mark=*,] table {\std}; 
-            \addlegendentry{Vec}
+            \addplot[thin, color=morange, mark=*,] table {\stdvector};             
+            \addlegendentry{\stdvec{}}
     
-            \addplot[thin, color=mred, mark=*,] table {\rbvec};
-            \addlegendentry{Balanced RrbVec}
+            \addplot[thin, color=mred, mark=*,] table {\rbvecbalanced};
+            \addlegendentry{\rbvec{}}
     
-            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
-            \addlegendentry{Unbalanced RrbVec}
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvecrelaxed}; 
+            \addlegendentry{\rrbvec{} \relaxed{}}
     
-            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-            \addlegendentry{Balanced PVec}
+            \addplot[thin, color=mgreen, mark=square,] table {\pvecbalanced};
+            \addlegendentry{\pvec{}}
+
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrelaxed};
+            \addlegendentry{\pvec{} \relaxed{}}
     
-            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
-            \addlegendentry{Unbalanced PVec}
+            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsvectorbalanced};
+            \addlegendentry{\imrsvec{}}
     
-            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-            \addlegendentry{Balanced im-rs Vector}
-    
-            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
-            \addlegendentry{Unbalanced im-rs Vector} 
+            \addplot[thin, color=mpurple, mark=square,] table {\imrsvectorrelaxed};
+            \addlegendentry{\imrsvec{} \relaxed{}} 
         \end{loglogaxis}     
     \end{tikzpicture} 
+    \end{adjustbox}
+
+    \caption{Benchmarking results of indexing randomly.}
+    \label{fig:index-randomly}
 \end{figure}
+
+\paragraph*{Balanced vs relaxed variants}
+Both variants perform well, with the balanced \rrbvec{} being faster by 1.36 in \range{[100, \mega{1}]} range. Both relaxed \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
+
+\paragraph*{Dynamic internal representation}
+It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 2.7. 
 
 \subsection{Updating}
 
 % TODO: extract common styles to avoid duplication
 % TODO: refine the tick labels for y axis
-\begin{figure}
+\begin{figure}[!htbp]
     \caption{Benchmarking results of updating values.}
     \label{fig:update}
     
@@ -299,21 +199,21 @@ Both variants perform well, with the balanced \rrbvec{} being faster by 1.36x in
             outer sep=0pt            
         ]        
 
-        \pgfplotstableread[col sep=comma]{chapters/data/update/im-rs-vector-balanced.csv}\upimrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update/im-rs-vector-unbalanced.csv}\upimrsrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update/pvec-balanced.csv}\uppvecrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update/pvec-unbalanced.csv}\uppvecrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update/rrbvec-balanced.csv}\uprbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/update/rrbvec-unbalanced.csv}\uprrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/update/std-vec.csv}\upstd;
+        \pgfplotstableread[col sep=comma]{data/update/im-rs-vector-balanced.csv}\upimrsrbtree;
+        \pgfplotstableread[col sep=comma]{data/update/im-rs-vector-unbalanced.csv}\upimrsrrbtree;
+        \pgfplotstableread[col sep=comma]{data/update/pvec-balanced.csv}\uppvecrbtree;
+        \pgfplotstableread[col sep=comma]{data/update/pvec-unbalanced.csv}\uppvecrrbtree;
+        \pgfplotstableread[col sep=comma]{data/update/rrbvec-balanced.csv}\uprbvec;
+        \pgfplotstableread[col sep=comma]{data/update/rrbvec-unbalanced.csv}\uprrbvec;
+        \pgfplotstableread[col sep=comma]{data/update/std-vec.csv}\upstd;
 
-        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/im-rs-vector-balanced.csv}\upclimrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/im-rs-vector-unbalanced.csv}\upclimrsrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/pvec-balanced.csv}\upclpvecrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/pvec-unbalanced.csv}\upclpvecrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/rrbvec-balanced.csv}\upclrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/rrbvec-unbalanced.csv}\upclrrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/update_clone/std-vec.csv}\upclstd;
+        \pgfplotstableread[col sep=comma]{data/update_clone/im-rs-vector-balanced.csv}\upclimrsrbtree;
+        \pgfplotstableread[col sep=comma]{data/update_clone/im-rs-vector-unbalanced.csv}\upclimrsrrbtree;
+        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-balanced.csv}\upclpvecrbtree;
+        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-unbalanced.csv}\upclpvecrrbtree;
+        \pgfplotstableread[col sep=comma]{data/update_clone/rrbvec-balanced.csv}\upclrbvec;
+        \pgfplotstableread[col sep=comma]{data/update_clone/rrbvec-unbalanced.csv}\upclrrbvec;
+        \pgfplotstableread[col sep=comma]{data/update_clone/std-vec.csv}\upclstd;
         
         \begin{groupplot}[
             group style={group size=2 by 1, horizontal sep=56pt,}, 
@@ -396,10 +296,10 @@ To understand how vector cloning influences the performance, the use cases above
     
     \center    
     \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{chapters/data/push/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push/pvec-balanced.csv}\pvecrbtree;        
-        \pgfplotstableread[col sep=comma]{chapters/data/push/rrbvec-balanced.csv}\rbvec;        
-        \pgfplotstableread[col sep=comma]{chapters/data/push/std-vec.csv}\std;                 
+        \pgfplotstableread[col sep=comma]{data/push/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{data/push/pvec-balanced.csv}\pvecrbtree;        
+        \pgfplotstableread[col sep=comma]{data/push/rrbvec-balanced.csv}\rbvec;        
+        \pgfplotstableread[col sep=comma]{data/push/std-vec.csv}\std;                 
     
         \begin{loglogaxis}[         
             use units,         
@@ -453,10 +353,10 @@ To understand how vector cloning influences the performance, the use cases above
 
     \center
     \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/pvec-balanced.csv}\pvecrbtree;        
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/rrbvec-balanced.csv}\rbvec;        
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone/std-vec.csv}\std;                 
+        \pgfplotstableread[col sep=comma]{data/push_clone/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_clone/pvec-balanced.csv}\pvecrbtree;        
+        \pgfplotstableread[col sep=comma]{data/push_clone/rrbvec-balanced.csv}\rbvec;        
+        \pgfplotstableread[col sep=comma]{data/push_clone/std-vec.csv}\std;                 
     
         \begin{loglogaxis}[         
             use units,         
@@ -541,13 +441,13 @@ Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor 
 
     \center
     \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/pvec-balanced.csv}\pvecrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/rrbvec-balanced.csv}\rbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_unbalanced/std-vec.csv}\std;    
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-balanced.csv}\pvecrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rrbvec-balanced.csv}\rbvec;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/std-vec.csv}\std;    
             
         \begin{loglogaxis}[         
             use units,         
@@ -610,13 +510,13 @@ Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor 
 
     \center
     \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/pvec-balanced.csv}\pvecrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/rrbvec-balanced.csv}\rbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
-        \pgfplotstableread[col sep=comma]{chapters/data/push_clone_unbalanced/std-vec.csv}\std;    
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-balanced.csv}\pvecrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rrbvec-balanced.csv}\rbvec;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/std-vec.csv}\std;    
             
         \begin{loglogaxis}[         
             use units,         
@@ -723,7 +623,13 @@ The dynamic internal representation of \pvec{} puts it into advantage by a facto
 \subsection{Slicing}
 % TODO: the bug in the im-rs has to be fixed first
 
+\subsection{Rc vs Arc}
+\label{sec:perf-rc-vs-arc}
+\stdvec{} is not included in the comparison, as its implementation does not rely on the reference counted pointers. 
+
 \section{Performance in parallel benchmarks}
+\label{sec:perf-par}
+
 The expectation from parallel benchmarks is to reveal whether proposed optimizations were effective in the parallel context. 
 
 First, if confluent concatenation and split operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic internal representation has positive impact on the overall performance of \pvec{}. 
@@ -775,16 +681,16 @@ The results are presented in the form of three-dimensional graph, where x and y 
             },            
             view={-45}{8},
         ]            
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/std-vec.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/std-vec.csv}; 
             \addlegendentry{Vec}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/rrbvec-balanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/rrbvec-balanced.csv}; 
             \addlegendentry{RbVec}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/rrbvec-unbalanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/rrbvec-unbalanced.csv}; 
             \addlegendentry{RrbVec}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/vector_addition/pvec-unbalanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/pvec-unbalanced.csv}; 
             \addlegendentry{PVec}
         \end{loglogaxis}     
     \end{tikzpicture} 
@@ -859,16 +765,16 @@ Interestingly enough, the sequential variant of the benchmark outperformed all s
             },            
             view={-45}{8},
         ]            
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/std-vec.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/std-vec.csv}; 
             \addlegendentry{Vec}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/rrbvec-balanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/rrbvec-balanced.csv}; 
             \addlegendentry{RbVec}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/rrbvec-unbalanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/rrbvec-unbalanced.csv}; 
             \addlegendentry{RrbVec}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {chapters/data/words_map/pvec-unbalanced.csv}; 
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/pvec-unbalanced.csv}; 
             \addlegendentry{PVec}
         \end{loglogaxis}     
     \end{tikzpicture} 
@@ -888,10 +794,10 @@ The increase in the thread count, causes higher count of vector splits and conca
 \paragraph*{Effect of parallelism}
 Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
-\section{Memory footprint (?)}
 \section{Discussion}
 \subsection{Overhead of RRB Tree}
 \subsection{Unique access or transience}
 \subsection{Dynamic internal representation}
+\subsection{Parallel vector}
 
 % NOTE: as the size of the vector values increases, persistent version starts gaining advantage compared to \stdvec{}, as \stdvec{}'s split and append operations are relying on memory copying / allocation. 

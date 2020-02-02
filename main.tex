@@ -29,6 +29,13 @@
 \usepackage[T1]{fontenc,url}
 \urlstyle{sf}
 
+\usepackage{siunitx}
+\DeclareSIUnit{\nothing}{\relax}
+\newcommand{\micros}[1]{\SI{#1}{\micro\second}}
+\newcommand{\millis}[1]{\SI{#1}{\milli\second}}
+\newcommand{\kilo}[1]{\SI{#1}{\kilo\nothing}}
+\newcommand{\mega}[1]{\SI{#1}{\mega\nothing}}
+
 \usepackage{algpseudocode}
 \usepackage{amssymb}
 \usepackage{tikz}
@@ -86,7 +93,6 @@
 \newcommand{\nil}{\emph{NIL}}
 \newcommand{\la}{$\leftarrow$}
 \newcommand{\ts}[1]{\textsubscript{#1}}
-\newcommand{\ms}{\emph{ms}}
 \newcommand{\n}{\emph{N}}
 
 \algnewcommand\And{\textbf{and}}

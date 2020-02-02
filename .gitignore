@@ -247,3 +247,6 @@ __*.tex
 
 # vscode
 .vscode/
+
+# macOS
+.DS_Store
