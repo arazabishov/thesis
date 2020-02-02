@@ -177,10 +177,10 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
 \end{figure}
 
 \paragraph*{Balanced vs relaxed variants}
-Both variants perform well, with the balanced \rrbvec{} being faster by 1.36 in \range{[100, \mega{1}]} range. Both relaxed \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
+\rbvec{} outperforms \rrbvec{} by 1.90 in the \range{[100, \mega{1}]} range. Both relaxed \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
 
 \paragraph*{Dynamic internal representation}
-It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 2.7. 
+It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 1.99. 
 
 \subsection{Updating}
 
