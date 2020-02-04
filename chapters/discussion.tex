@@ -14,7 +14,7 @@ The results are discussed to address the following points:
     \item Effectiveness of the dynamic internal representation.
 \end{itemize}
 
-\paragraph*{Reading notes} 
+\paragraph{Reading notes} 
 Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \emph{rb} tree in the benchmark. If not specified, the vector is either balanced or is not based on a tree, like \stdvec{}. 
 
 \section{Performance of the core operations}
@@ -119,10 +119,9 @@ Results of the iterator benchmarks show approximately 10 fold improvement in per
 As iterator does not use size tables for index calculation for \rrbvec{}, it performs identically well compared to \rbvec{}. The same applies to \imrsvec{}. 
 
 \subsubsection*{Index randomly}
-\begin{figure}[!htbp]
+\begin{figure}[t]
     
-    \center
-    \begin{adjustbox}{width=\textwidth}
+    \center    
     \begin{tikzpicture} 
         \pgfplotstableread[col sep=comma]{data/index_randomly/imrs-vector-balanced.csv}\imrsvectorbalanced;
         \pgfplotstableread[col sep=comma]{data/index_randomly/imrs-vector-relaxed.csv}\imrsvectorrelaxed;
@@ -135,7 +134,7 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
         \begin{loglogaxis}[         
             use units,                     
             smooth,        
-            width=320pt,
+            width=300pt,
             title={Index randomly},
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},                
@@ -169,26 +168,23 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
             \addplot[thin, color=mpurple, mark=square,] table {\imrsvectorrelaxed};
             \addlegendentry{\imrsvec{} \relaxed{}} 
         \end{loglogaxis}     
-    \end{tikzpicture} 
-    \end{adjustbox}
+    \end{tikzpicture}     
 
     \caption{Benchmarking results of indexing randomly.}
     \label{fig:index-randomly}
 \end{figure}
 
-\paragraph*{Balanced vs relaxed variants}
+\paragraph{Balanced vs relaxed variants}
 \rbvec{} outperforms \rrbvec{} by 1.90 in the \range{[100, \mega{1}]} range. Both relaxed \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
 
-\paragraph*{Dynamic internal representation}
+\paragraph{Dynamic internal representation}
 It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 1.99. 
 
 \subsection{Updating}
+Results of the update operation benchmarks are divided by sequential and random access, and complemented with evaluation with the use of clone operation. 
 
-% TODO: extract common styles to avoid duplication
-% TODO: refine the tick labels for y axis
+\subsubsection*{Update sequentially}
 \begin{figure}[!htbp]
-    \caption{Benchmarking results of updating values.}
-    \label{fig:update}
     
     \center
     \begin{adjustbox}{width=\textwidth}
@@ -197,31 +193,30 @@ It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right a
             font=\scriptsize, 
             inner sep=2pt,
             outer sep=0pt            
-        ]        
+        ]
 
-        \pgfplotstableread[col sep=comma]{data/update/im-rs-vector-balanced.csv}\upimrsrbtree;
-        \pgfplotstableread[col sep=comma]{data/update/im-rs-vector-unbalanced.csv}\upimrsrrbtree;
-        \pgfplotstableread[col sep=comma]{data/update/pvec-balanced.csv}\uppvecrbtree;
-        \pgfplotstableread[col sep=comma]{data/update/pvec-unbalanced.csv}\uppvecrrbtree;
-        \pgfplotstableread[col sep=comma]{data/update/rrbvec-balanced.csv}\uprbvec;
-        \pgfplotstableread[col sep=comma]{data/update/rrbvec-unbalanced.csv}\uprrbvec;
-        \pgfplotstableread[col sep=comma]{data/update/std-vec.csv}\upstd;
+        \pgfplotstableread[col sep=comma]{data/update/imrs-vector-balanced.csv}\upimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update/imrs-vector-relaxed.csv}\upimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update/pvec-balanced.csv}\uppvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update/pvec-relaxed.csv}\uppvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update/rbvec-balanced.csv}\uprbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update/rrbvec-relaxed.csv}\uprrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update/std-vec.csv}\upstdvector;
 
-        \pgfplotstableread[col sep=comma]{data/update_clone/im-rs-vector-balanced.csv}\upclimrsrbtree;
-        \pgfplotstableread[col sep=comma]{data/update_clone/im-rs-vector-unbalanced.csv}\upclimrsrrbtree;
-        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-balanced.csv}\upclpvecrbtree;
-        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-unbalanced.csv}\upclpvecrrbtree;
-        \pgfplotstableread[col sep=comma]{data/update_clone/rrbvec-balanced.csv}\upclrbvec;
-        \pgfplotstableread[col sep=comma]{data/update_clone/rrbvec-unbalanced.csv}\upclrrbvec;
-        \pgfplotstableread[col sep=comma]{data/update_clone/std-vec.csv}\upclstd;
+        \pgfplotstableread[col sep=comma]{data/update_clone/imrs-vector-balanced.csv}\upclimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone/imrs-vector-relaxed.csv}\upclimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-balanced.csv}\upclpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-relaxed.csv}\upclpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone/rbvec-balanced.csv}\upclrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone/rrbvec-relaxed.csv}\upclrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone/std-vec.csv}\upclstdvector;        
         
         \begin{groupplot}[
-            group style={group size=2 by 1, horizontal sep=56pt,}, 
-            use units, y unit=s, y unit prefix=m,             
-            xlabel={vector size (log scale)},
-            ylabel={mean time (log scale)},
-            yticklabels={0, 0.01us, 0.1us, 1us, 0.01, 0.1, 1, 10},
-            xticklabels={0, 10, 100, 1K, 10K, 100K},
+            group style={group size=2 by 1, horizontal sep=56pt,},                   
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},            
+            yticklabels={0, \micros{0.01}, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10},
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}},            
             ymajorgrids=true, 
             xmajorgrids=true,         
             grid style=dashed,  
@@ -229,50 +224,138 @@ It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right a
             \nextgroupplot[
                 xmode=log,
                 ymode=log,
-                title={Updating values},
+                title={Update sequentially},
                 legend columns=4,
                 legend style={
                     at={(1.06,-0.2)},
                     anchor=north
                 }
             ]
-            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upstd};            
-            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\uprbvec};            
-            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\uprrbvec};             
-            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\uppvecrbtree};            
-            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\uppvecrrbtree};            
-            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upimrsrbtree};            
-            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upimrsrrbtree};            
-            \legend{Vec, RrbVec (B), RrbVec (!B), PVec (B), PVec (!B), im-rs Vector (B), im-rs Vector (!B)}
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upstdvector};            
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\uprbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\uprrbvecrelaxed};                     
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\uppvecbalanced};  
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\uppvecrelaxed}; 
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upimrsvectorbalanced};            
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upimrsvectorrelaxed};            
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
     
-            \nextgroupplot[xmode=log,ymode=log,title={Updating and cloning vector}]
-            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upclstd};                     
-            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\upclrbvec};            
-            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\upclrrbvec}; 
-            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\upclpvecrbtree};
-            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\upclpvecrrbtree};
-            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upclimrsrbtree};
-            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upclimrsrrbtree};                       
+            \nextgroupplot[xmode=log,ymode=log,title={Update sequentially and cloning}]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upclstdvector};                     
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\upclrbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\upclrrbvecrelaxed}; 
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\upclpvecbalanced};
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\upclpvecrelaxed};
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upclimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upclimrsvectorrelaxed};                       
         \end{groupplot}
-    
     \end{tikzpicture} 
     \end{adjustbox}
+
+    \caption{Benchmarking results of updating values sequentially.}
+    \label{fig:update-sequentially}
 \end{figure}
 
+% TODO: \paragraph{Balanced vs relaxed variants}
 
-% TODO: find a better structure for evaluating benchmarks. Dynamic internal representation and unique access paragraphs are usually not very relevant when it comes to comparison with std and im-rs vector implementations. 
+\paragraph{Dynamic internal representation}
+In the benchmark of updating a vector without cloning, \pvec{} is faster than both variants of \rrbvec{} by a factor of 2.22 in the \range{[10, 1024]} size range. After switching the internal representation, it aligns with \rrbvec{}. 
 
-\paragraph*{Dynamic internal representation}
-In the benchmark of updating a vector without cloning, \pvec{} is clearly faster than both variants of \rrbvec{} by a factor of TODOX in the [10, 4096] size range. After switching the internal representation, it aligns with \rrbvec{}. 
+When the clone operation is involved, \pvec{} outperforms \rrbvec{} in the \range{[80, 1024]} range by a factor of 1.6. 
 
-When the clone operation is involved, it performs slightly better compared to \rrbvec{} in the [10, 1000] range by a factor of TODOX, and then degenerates up to the size of 4096. The reason for that is the costly clone operation of \stdvec{}. 
+\paragraph{Unique access or transience}
+All vector implementations are faster when the clone operation is not used. The \stdvec{} shows the best results in all sizes, with the runner up \pvec{} being slower on average of 6.47. However, with the clone operation, the \stdvec{} is slightly faster only up to the size of 1024, after which it quickly degenerates due to a very inefficient clone. 
 
-\paragraph*{Unique access or transience}
-It is clear that all vector implementations are faster when the clone operation is not used. The \stdvec{} shows the best results in all sizes, with the runner up of \pvec{} being slower on average of TODOX. However, with the clone operation, the \stdvec{} is slightly faster only up to the size of 1000, after which it quickly degenerates due to very inefficient clone. 
+% TODO: mention the difference in perf of clone between rbvec, rrbvec, pvec and stdvec. Mention the role of path copying algorithms. 
+\imrsvec{} was slower than \rrbvec{} in both tests, with and without clone operation used, by a factor of 1.73 and 1.5 correspondingly. 
 
-The interesting observation here is that clone has almost no effect on performance of \rrbvec{}, with the difference only of TODOX between two tests. This shows how effective the path copying algorithm is. 
+\subsubsection*{Update randomly}
+\begin{figure}[!htbp]
+    
+    \center
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tikzpicture}
+        \tikzstyle{every node}=[
+            font=\scriptsize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]
 
-The \imrsvec{} showed the slowest results in the update benchmark, with the difference of TODOX in comparison to \rrbvec{}. However, it was faster than \rrbvec{} when cloned by a factor of TODOX. 
+        \pgfplotstableread[col sep=comma]{data/update_randomly/imrs-vector-balanced.csv}\upimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/imrs-vector-relaxed.csv}\upimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/pvec-balanced.csv}\uppvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/pvec-relaxed.csv}\uppvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/rbvec-balanced.csv}\uprbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/rrbvec-relaxed.csv}\uprrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/std-vec.csv}\upstdvector;
+
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/imrs-vector-balanced.csv}\upclimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/imrs-vector-relaxed.csv}\upclimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/pvec-balanced.csv}\upclpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/pvec-relaxed.csv}\upclpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/rbvec-balanced.csv}\upclrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/rrbvec-relaxed.csv}\upclrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/std-vec.csv}\upclstdvector;        
+        
+        \begin{groupplot}[
+            group style={group size=2 by 1, horizontal sep=56pt,},                   
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},            
+            yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
+            ymajorgrids=true, 
+            xmajorgrids=true,         
+            grid style=dashed,  
+        ]
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Update randomly},
+                legend columns=4,
+                legend style={
+                    at={(1.06,-0.2)},
+                    anchor=north
+                }
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upstdvector};            
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\uprbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\uprrbvecrelaxed};                     
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\uppvecbalanced};  
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\uppvecrelaxed}; 
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upimrsvectorbalanced};            
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upimrsvectorrelaxed};            
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
+    
+            \nextgroupplot[xmode=log,ymode=log,title={Update randomly and cloning}]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upclstdvector};                     
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\upclrbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\upclrrbvecrelaxed}; 
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\upclpvecbalanced};
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\upclpvecrelaxed};
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upclimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upclimrsvectorrelaxed};                   
+        \end{groupplot}
+    \end{tikzpicture} 
+    \end{adjustbox}
+
+    \caption{Benchmarking results of updating values randomly.}
+    \label{fig:update-randomly}
+\end{figure}
+
+Even though both \stdvec{}, \pvec{} are faster on average, they are slower than tree-based implementations for the small input range \range{[10, 100]}. This is because tree-based vectors have pre-allocated space for values in the form of tail\todo{ref to background}, while \stdvec{} does not allocate anything on the heap by default. 
+
+\imrsvec{} shows good results too, being faster than \rrbvec{} for smaller inputs in the benchmark without clone. 
+
+\paragraph{Balanced vs relaxed variants}
+The overhead of relaxed nodes of \rrbtree{} makes a difference of todox compared to \rbtree{} in the benchmark without clone operation. When clone is used, the difference is negligible at a factor of todox. This shows that the size tables of relaxed nodes do not have a significant impact on performance when cloned. 
+
+\paragraph{Dynamic internal representation}
+When tested without clone, a relaxed \pvec{} shows good results and loses only to \stdvec{} with a difference of todox up to 1024, and todox from 1024. 
+
+In the test with clone, \pvec{} outperforms all other tree-based implementations in the \range{[100, \kilo{1}]} range, and outperforms \stdvec{} after surpassing the size of 1024, by using \rrbvec{} internally. For larger inputs in the \range{[\kilo{10}, \kilo{80}]}, \pvec{} and \rrbvec{} are significantly faster than \stdvec{} by todox. 
+
+% TODO: \paragraph{Unique access optimisation}
+% TODO: The overhead of relaxed node on path copying.
 
 \subsection{Pushing}
 \todo{move the description of benchmarks to the evaluation chapter} 
@@ -409,7 +492,7 @@ Both \rrbvec{} and \pvec{} will always remain balanced, because the push operati
 
 % The assumption is that pvec has similar performance compared to std vec
 
-\paragraph*{Dynamic internal representation}
+\paragraph{Dynamic internal representation}
 In the input range of [10, 100] \stdvec{} shows the slowest results. Since persistent vectors take advantage of the tail optimization, they do have a preallocated array of fixed size equal to the branching factor, which is set to 32. Since the tree is shallow, the tail push operation will also be relatively fast. On the other hand, \stdvec{} has to increase its capacity several times, which comes at a cost reflected in the results. 
 
 % TODO: check how math notation looks in doc
@@ -420,7 +503,7 @@ This is caused by the overhead of selecting internal representation, which cance
 
 The \imrsvec{} implementation showed the best results in the range [10, 100] range, but was slower on average by TODOX in comparison to \pvec{}, and by TODOX in comparison to \stdvec{}
 
-\paragraph*{Unique access or transience}
+\paragraph{Unique access or transience}
 Rust's compiler guarantees that mutable references are unique, which supposdely eliminates the possibility of a race condition. Essentially, it means that we can assume that it is safe to modify a vector, as we are the only ones who have a mutable access to it. 
 
 By leveraging this assumption, we can make persistent vector temporarily mutable or emphemeral. This comes with performance benefits, as there is no need to copy or clone the vector after each modification anymore. This behavior is somewhat similar to the transient behavior of the Clojure's persistent vector, even though not entirely the same. 
@@ -577,12 +660,12 @@ To understand the effect of relaxed nodes on the push operation, the setup routi
 
 There are two variants of the test: the first one is pushing values onto provided vector, while the second one also performs clone. 
 
-\paragraph*{Balanced vs unbalanced} As shown in \ref{fig:push-unbalanced}, the difference in performance between balanced and unbalanced variants is negligible, mostly because pushing new values creates balanced nodes. 
+\paragraph{Balanced vs unbalanced} As shown in \ref{fig:push-unbalanced}, the difference in performance between balanced and unbalanced variants is negligible, mostly because pushing new values creates balanced nodes. 
 
-\paragraph*{Dynamic internal representation}
+\paragraph{Dynamic internal representation}
 As in case with \ref{fig:push}, dynamic internal representation of \pvec{} hardly makes any difference in performance. The benefits of using \stdvec{} for small sizes simply is cancelled out by the overhead of choosing the representation. 
 
-\paragraph*{Unique access or transience}
+\paragraph{Unique access or transience}
 % What do I right here? Maybe I don't really need to have this push_clone_unbalanced bench at all?
 
 \stdvec{} showed the best results in \ref{fig:push-unbalanced} test. It was TODOX faster on average in comparison to the fastest runner up, balanced \rrbvec{}. \imrsvec{} was marginally slower by TODOX in comparison to \pvec{}. 
@@ -596,10 +679,10 @@ Pop will be tested in two benchmarks, namely pop and pop clone. The first test i
 
 % Drawing conclusions from numbers
 
-\paragraph*{Dynamic internal representation}
+\paragraph{Dynamic internal representation}
 % content
 
-\paragraph*{Unique access and transience}
+\paragraph{Unique access and transience}
 % content
 
 \subsection{Concatenating}
@@ -704,7 +787,7 @@ The results are presented in the form of three-dimensional graph, where x and y 
 % TODO:
 %  - Consider using tables with runtime numbers
 
-\paragraph*{Balanced vs unbalanced}
+\paragraph{Balanced vs unbalanced}
 \rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as concat and split operations which create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{} with a difference of 3.2-3.5x on average. 
 
 When executed in parallel, \rrbvec{} starts outperforming \rbvec{} at the size of 1024 elements. The reason why difference becomes apparent after surpassing that size, is because concatenation algorithm used in this project, produces balanced \rbtree{} when the height of the tree does not exceed two levels. With branching factor of 32, capacity of the tree of two levels is equal to 1024. 
@@ -713,12 +796,12 @@ As the vector size growth, Rayon performs more splits to achieve optimal vector 
 
 To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as split and concat are used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3x, 1.0-2.8x, and 1.1-2.12x correspondingly. 
 
-\paragraph*{Dynamic internal representation}
+\paragraph{Dynamic internal representation}
 \pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the sequential benchmark, \pvec{} is faster compared to \rrbvec{} by 1.7-2.0x. When parallelised on 4 threads, \rrbvec{} becomes slightly more efficient due to the higher count of concats and splits, with the difference at 1.3-1.8x. 
 
 Even though \rrbvec{}'s concat and split operations are faster for the large sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concats and splits substitute only a small portion of all operations used in this test. Operations such as get and push, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9x and 1.6-1.7x in the sequential and 4-threaded parallel benchmarks correspondingly. 
 
-\paragraph*{Effect of parallelism}
+\paragraph{Effect of parallelism}
 % TODO: this is not entirely true, because 4 threads benchmark runs slightly faster for large datasets compared to sequential bench.  
 Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
@@ -783,21 +866,35 @@ Interestingly enough, the sequential variant of the benchmark outperformed all s
     \caption{Incrementing each element of a vector on multiple threads.}    
 \end{figure}
 
-\paragraph*{Balanced vs unbalanced}
+\paragraph{Balanced vs unbalanced}
 As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test as both of them are backed by a balanced \rbtree{}. When benchmark is parallelised, \rrbvec{} gains advantage due to its efficient split and concat operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0x for the test run with 2 threads, and 1.7-2.5x for 4 threads.
 
-\paragraph*{Dynamic internal representation}
+\paragraph{Dynamic internal representation}
 Results show that \pvec{} outperforms \rbvec{} and \rrbvec{} for all vector sizes and thread configurations. When it comes to \stdvec{}, \pvec{} shows 1.4x slower run time at the input size of 10000 words, after which it catches up and surpasses \stdvec{} at the mark of 200000 words. For the biggest problem size of 370103 words, \pvec{} outperforms \stdvec{} with a difference of 1.1x. 
 
 The increase in the thread count, causes higher count of vector splits and concats. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparables to \stdvec{}. 
 
-\paragraph*{Effect of parallelism}
+\paragraph{Effect of parallelism}
 Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
 \section{Discussion}
+
+% Indexing
+% * Iterators are faster than sequential index
+
 \subsection{Overhead of RRB Tree}
+% Indexing:
+% * Relaxed nodes introduce enough overhead to make 
+%      a noticeable difference in operations by index
+% * Relaxed nodes do not affect iterator implementations
+
 \subsection{Unique access or transience}
 \subsection{Dynamic internal representation}
+% Indexing:
+%  * PVec is slower than Vec (both up to and after thresholds)
+%   * In random access test, perf difference is negligible. Vec loses its advantage due to cache invalidation. 
+%  * PVec is faster than RbVec, and RrbVec by TODOX. 
+
 \subsection{Parallel vector}
 
 % NOTE: as the size of the vector values increases, persistent version starts gaining advantage compared to \stdvec{}, as \stdvec{}'s split and append operations are relying on memory copying / allocation. 
