@@ -256,8 +256,6 @@ Results of the update operation benchmarks are divided by sequential and random 
     \label{fig:update-sequentially}
 \end{figure}
 
-% TODO: \paragraph{Balanced vs relaxed variants}
-
 \paragraph{Dynamic internal representation}
 In the benchmark of updating a vector without cloning, \pvec{} is faster than both variants of \rrbvec{} by a factor of 2.22 in the \range{[10, 1024]} size range. After switching the internal representation, it aligns with \rrbvec{}. 
 
@@ -266,7 +264,6 @@ When the clone operation is involved, \pvec{} outperforms \rrbvec{} in the \rang
 \paragraph{Unique access or transience}
 All vector implementations are faster when the clone operation is not used. The \stdvec{} shows the best results in all sizes, with the runner up \pvec{} being slower on average of 6.47. However, with the clone operation, the \stdvec{} is slightly faster only up to the size of 1024, after which it quickly degenerates due to a very inefficient clone. 
 
-% TODO: mention the difference in perf of clone between rbvec, rrbvec, pvec and stdvec. Mention the role of path copying algorithms. 
 \imrsvec{} was slower than \rrbvec{} in both tests, with and without clone operation used, by a factor of 1.73 and 1.5 correspondingly. 
 
 \subsubsection*{Update randomly}
@@ -347,15 +344,12 @@ Even though both \stdvec{}, \pvec{} are faster on average, they are slower than 
 \imrsvec{} shows good results too, being faster than \rrbvec{} for smaller inputs in the benchmark without clone. 
 
 \paragraph{Balanced vs relaxed variants}
-The overhead of relaxed nodes of \rrbtree{} makes a difference of todox compared to \rbtree{} in the benchmark without clone operation. When clone is used, the difference is negligible at a factor of todox. This shows that the size tables of relaxed nodes do not have a significant impact on performance when cloned. 
+The overhead of relaxed nodes of \rrbtree{} makes a difference of 1.49 compared to \rbtree{} in the benchmark without clone operation. When clone is used, the difference is negligible at a factor of 0.97. This shows that the size tables of relaxed nodes do not have a measurable impact on performance when cloned.
 
 \paragraph{Dynamic internal representation}
-When tested without clone, a relaxed \pvec{} shows good results and loses only to \stdvec{} with a difference of todox up to 1024, and todox from 1024. 
+When tested without clone, a relaxed \pvec{} shows good results and loses only to \stdvec{} with a difference of 1.72 up to 1024, and 0.57 from 1024.
 
-In the test with clone, \pvec{} outperforms all other tree-based implementations in the \range{[100, \kilo{1}]} range, and outperforms \stdvec{} after surpassing the size of 1024, by using \rrbvec{} internally. For larger inputs in the \range{[\kilo{10}, \kilo{80}]}, \pvec{} and \rrbvec{} are significantly faster than \stdvec{} by todox. 
-
-% TODO: \paragraph{Unique access optimisation}
-% TODO: The overhead of relaxed node on path copying.
+In the test with clone, \pvec{} outperforms all other tree-based implementations in the \range{[100, \kilo{1}]} range, and outperforms \stdvec{} after surpassing the size of 1024, by using \rrbvec{} internally. For larger inputs in the \range{[\kilo{2}, \kilo{20}]} range, \pvec{} and \rrbvec{} are significantly faster than \stdvec{} by 2.29. 
 
 \subsection{Pushing}
 \todo{move the description of benchmarks to the evaluation chapter} 
