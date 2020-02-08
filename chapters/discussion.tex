@@ -352,9 +352,6 @@ When tested without clone, a relaxed \pvec{} shows good results and loses only t
 In the test with clone, \pvec{} outperforms all other tree-based implementations in the \range{[100, \kilo{1}]} range, and outperforms \stdvec{} after surpassing the size of 1024, by using \rrbvec{} internally. For larger inputs in the \range{[\kilo{2}, \kilo{20}]} range, \pvec{} and \rrbvec{} are significantly faster than \stdvec{} by 2.29. 
 
 \subsection{Pushing}
-\todo{move the description of benchmarks to the evaluation chapter} 
-
-The push operation is used to append a new value to the end of the vector. It is also responsible for managing the capacity and the internal representation of a vector as the size growth. For example, the \stdvec{} increases its capacity by moving values into a bigger chunk of memory, while \rrbvec{} allocates a new branch and leaf nodes if necessary. \pvec{}, in addition to that, also switches its internal representation depending on the size.
 
 The following benchmarks evaluate how the size and internal representation affect the performance:
 
@@ -367,117 +364,70 @@ To understand how vector cloning influences the performance, the use cases above
 
 \subsubsection*{Building a new vector}
 
-\begin{figure}[t]
-    \caption{Benchmarking results of push.}
-    \label{fig:push}
-    
-    \center    
-    \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{data/push/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{data/push/pvec-balanced.csv}\pvecrbtree;        
-        \pgfplotstableread[col sep=comma]{data/push/rrbvec-balanced.csv}\rbvec;        
-        \pgfplotstableread[col sep=comma]{data/push/std-vec.csv}\std;                 
-    
-        \begin{loglogaxis}[         
-            use units,         
-            y unit=s, y unit prefix=m, 
-            smooth,        
-            width=300pt, % width=\textwidth, 
-            title={Push},
-            xlabel={vector size (log scale)},
-            ylabel={mean time (log scale)},                
-            ymajorgrids=true, 
-            xmajorgrids=true,
-            grid style=dashed,
-            legend pos=north west,        
-            legend style={draw=none,fill=none,font=\footnotesize},
-            legend cell align=left, 
-            yticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=5
-            },
-            yticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
-            xticklabels={0, 10, 100, 1K, 10K, 100K, 1M},
-            % xticklabel style={/pgf/number format/fixed},		
-            % xticklabel={%
-            %     \pgfmathfloatparsenumber{\tick}%
-            %     \pgfmathfloatexp{\pgfmathresult}%
-            %     \pgfmathprintnumber{\pgfmathresult}%
-            % },
-        ]
-            \addplot[thin, color=morange, mark=*,] table {\std}; 
-            \addlegendentry{Vec}
-    
-            \addplot[thin, color=mred, mark=*,] table {\rbvec};
-            \addlegendentry{Balanced RrbVec}
-    
-            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-            \addlegendentry{Balanced PVec}
-    
-            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-            \addlegendentry{Balanced im-rs Vector}
-        \end{loglogaxis}     
-    \end{tikzpicture} 
-\end{figure}
-
-\begin{figure}[t]
-    \caption{Benchmarking results of push clone.}
-    \label{fig:push-clone}
+\begin{figure}[!htbp]
 
     \center
-    \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{data/push_clone/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_clone/pvec-balanced.csv}\pvecrbtree;        
-        \pgfplotstableread[col sep=comma]{data/push_clone/rrbvec-balanced.csv}\rbvec;        
-        \pgfplotstableread[col sep=comma]{data/push_clone/std-vec.csv}\std;                 
-    
-        \begin{loglogaxis}[         
-            use units,         
-            y unit=s, y unit prefix=m, 
-            smooth,        
-            width=300pt,
-            title={Push Clone},
-            xlabel={vector size (log scale)},
-            ylabel={mean time (log scale)},                
-            ymajorgrids=true, 
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tikzpicture}
+        \tikzstyle{every node}=[
+            font=\scriptsize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]
+
+        \pgfplotstableread[col sep=comma]{data/push/imrs-vector-balanced.csv}\pushimrsvectorbalanced;        
+        \pgfplotstableread[col sep=comma]{data/push/pvec-balanced.csv}\pushpvecbalanced;        
+        \pgfplotstableread[col sep=comma]{data/push/rbvec-balanced.csv}\pushrbvecbalanced;        
+        \pgfplotstableread[col sep=comma]{data/push/std-vec.csv}\pushstdvector;
+
+        \pgfplotstableread[col sep=comma]{data/push_clone/imrs-vector-balanced.csv}\pushclnimrsvectorbalanced;        
+        \pgfplotstableread[col sep=comma]{data/push_clone/pvec-balanced.csv}\pushclnpvecbalanced;        
+        \pgfplotstableread[col sep=comma]{data/push_clone/rbvec-balanced.csv}\pushclnrbvecbalanced;        
+        \pgfplotstableread[col sep=comma]{data/push_clone/std-vec.csv}\pushclnstdvector;
+            
+        \begin{groupplot}[
+            group style={group size=2 by 1, horizontal sep=56pt,},                   
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},            
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
+            yticklabels={0, \micros{0.01}, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10},            
+            ymajorgrids=true,
             xmajorgrids=true,
             grid style=dashed,
-            legend pos=north west,        
-            legend style={draw=none,fill=none,font=\footnotesize},
-            legend cell align=left, 
-            yticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=5
-            },
-            yticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
-            xticklabel style={/pgf/number format/fixed},		
-            xticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
         ]
-            \addplot[thin, color=morange, mark=*,] table {\std}; 
-            \addlegendentry{Vec}
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Building a new vector},
+                legend columns=4,
+                legend style={
+                    at={(1.12,-0.2)},
+                    anchor=north
+                }
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushstdvector};            
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushrbvecbalanced};                                     
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\pushpvecbalanced};                              
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushimrsvectorbalanced};            
+            \legend{\stdvec{}, \rbvec{}, \pvec{}, \imrsvec{}}
     
-            \addplot[thin, color=mred, mark=*,] table {\rbvec};
-            \addlegendentry{Balanced RrbVec}
-    
-            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-            \addlegendentry{Balanced PVec}
-    
-            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-            \addlegendentry{Balanced im-rs Vector}
-        \end{loglogaxis}     
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Building a new vector and cloning it.},
+                xticklabels={0, 10, 100, \kilo{1}, \kilo{10}},
+                yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10},
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushclnstdvector};                     
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushclnrbvecbalanced};                         
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\pushclnpvecbalanced};            
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushclnimrsvectorbalanced};            
+        \end{groupplot}
     \end{tikzpicture} 
+    \end{adjustbox}
+    
+    \caption{Benchmarking results of push.}
+    \label{fig:push}
 \end{figure}
 
 The goal is to measure how the vector size influences the push operation performance. The experiment is done by pushing N values into an empty vector, where N is the desired size. N is not used as a hint for predefining the capacity, as persistent implementations do not support it. 
@@ -512,149 +462,89 @@ Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor 
 
 \subsubsection*{Adding values to an existing vector}
 
-\begin{figure}[t]
-    \caption{Measurements of push for a predefined vector.}
-    \label{fig:push-unbalanced}
+\begin{figure}[!htbp]
 
     \center
-    \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-balanced.csv}\pvecrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rrbvec-balanced.csv}\rbvec;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/std-vec.csv}\std;    
-            
-        \begin{loglogaxis}[         
-            use units,         
-            y unit=s, y unit prefix=m, 
-            smooth,        
-            width=320pt,
-            title={Push for a predefined vector},
-            xlabel={vector size (log scale)},
-            ylabel={mean time (log scale)},                
-            ymajorgrids=true, 
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tikzpicture}
+        \tikzstyle{every node}=[
+            font=\scriptsize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]                
+
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/imrs-vector-balanced.csv}\pushimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/imrs-vector-relaxed.csv}\pushimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-balanced.csv}\pushpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-relaxed.csv}\pushpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rbvec-balanced.csv}\pushrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rrbvec-relaxed.csv}\pushrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_unbalanced/std-vec.csv}\pushstdvector;
+
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/imrs-vector-balanced.csv}\pushclnimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/imrs-vector-relaxed.csv}\pushclnimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-balanced.csv}\pushclnpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-relaxed.csv}\pushclnpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rbvec-balanced.csv}\pushclnrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rrbvec-relaxed.csv}\pushclnrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/std-vec.csv}\pushclnstdvector;    
+
+        \begin{groupplot}[
+            group style={group size=2 by 1, horizontal sep=56pt,},                   
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},         
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}},
+            yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1},
+            ymajorgrids=true,
             xmajorgrids=true,
             grid style=dashed,
-            legend pos=north west,        
-            legend style={draw=none,fill=none,font=\footnotesize},
-            legend cell align=left, 
-            yticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=5
-            },
-            yticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
-            xticklabels={0, 10, 100, 1K, 10K, 100K},
-            % xticklabel style={/pgf/number format/fixed},		
-            % xticklabel={%
-            %     \pgfmathfloatparsenumber{\tick}%
-            %     \pgfmathfloatexp{\pgfmathresult}%
-            %     \pgfmathprintnumber{\pgfmathresult}%
-            % },
         ]
-            \addplot[thin, color=morange, mark=*,] table {\std}; 
-            \addlegendentry{Vec}
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Adding values to an existing vector},
+                legend columns=4,
+                legend style={
+                    at={(1.12,-0.2)},
+                    anchor=north
+                }
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushstdvector};            
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushrbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\pushrrbvecrelaxed};             
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\pushpvecbalanced};            
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\pushpvecrelaxed};            
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\pushimrsvectorrelaxed};
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
     
-            \addplot[thin, color=mred, mark=*,] table {\rbvec};
-            \addlegendentry{Balanced RrbVec}
-    
-            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
-            \addlegendentry{Unbalanced RrbVec}
-    
-            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-            \addlegendentry{Balanced PVec}
-    
-            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
-            \addlegendentry{Unbalanced PVec}
-    
-            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-            \addlegendentry{Balanced im-rs Vector}
-    
-            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
-            \addlegendentry{Unbalanced im-rs Vector} 
-        \end{loglogaxis}     
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                xticklabels={0, 10, 100, \kilo{1}, \kilo{10}},
+                yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
+                title={Adding values to an existing vector and cloning it}, 
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushclnstdvector};                     
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushclnrbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\pushclnrrbvecrelaxed}; 
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\pushclnpvecbalanced};
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\pushclnpvecrelaxed};
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushclnimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\pushclnimrsvectorrelaxed};              
+        \end{groupplot}
     \end{tikzpicture} 
-\end{figure}
-
-\begin{figure}[t]
-    \caption{Measurements of push and clone for a predefined vector.}
-    \label{fig:push-clone-unbalanced}
-
-    \center
-    \begin{tikzpicture} 
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/im-rs-vector-balanced.csv}\imrsrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/im-rs-vector-unbalanced.csv}\imrsrrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-balanced.csv}\pvecrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-unbalanced.csv}\pvecrrbtree;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rrbvec-balanced.csv}\rbvec;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rrbvec-unbalanced.csv}\rrbvec;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/std-vec.csv}\std;    
-            
-        \begin{loglogaxis}[         
-            use units,         
-            y unit=s, y unit prefix=m, 
-            smooth,        
-            width=320pt,
-            title={Push and clone for a predefined vector},
-            xlabel={vector size (log scale)},
-            ylabel={mean time (log scale)},                
-            ymajorgrids=true, 
-            xmajorgrids=true,
-            grid style=dashed,
-            legend pos=north west,        
-            legend style={draw=none,fill=none,font=\footnotesize},
-            legend cell align=left, 
-            yticklabel style={
-                /pgf/number format/fixed, 
-                /pgf/number format/precision=5
-            },
-            yticklabel={%
-                \pgfmathfloatparsenumber{\tick}%
-                \pgfmathfloatexp{\pgfmathresult}%
-                \pgfmathprintnumber{\pgfmathresult}%
-            },
-            xticklabels={0, 10, 100, 1K, 10K},
-            % xticklabel style={/pgf/number format/fixed},		
-            % xticklabel={%
-            %     \pgfmathfloatparsenumber{\tick}%
-            %     \pgfmathfloatexp{\pgfmathresult}%
-            %     \pgfmathprintnumber{\pgfmathresult}%
-            % },
-        ]
-            \addplot[thin, color=morange, mark=*,] table {\std}; 
-            \addlegendentry{Vec}
+    \end{adjustbox}
     
-            \addplot[thin, color=mred, mark=*,] table {\rbvec};
-            \addlegendentry{Balanced RrbVec}
-    
-            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvec}; 
-            \addlegendentry{Unbalanced RrbVec}
-    
-            \addplot[thin, color=mgreen, mark=square,] table {\pvecrbtree};
-            \addlegendentry{Balanced PVec}
-    
-            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrrbtree};
-            \addlegendentry{Unbalanced PVec}
-    
-            \addplot[thin, color=mpurple, mark=pentagon*,] table {\imrsrbtree};
-            \addlegendentry{Balanced im-rs Vector}
-    
-            \addplot[thin, color=mpurple, mark=square,] table {\imrsrrbtree};
-            \addlegendentry{Unbalanced im-rs Vector}
-        \end{loglogaxis}     
-    \end{tikzpicture} 
+    \caption{Benchmarking results of adding values to an existing vector.}
+    \label{fig:push-existing}
 \end{figure}
 
 To understand the effect of relaxed nodes on the push operation, the setup routine produces an unbalanced vector of size N, created by concatenating a number of small vectors together. 
 
 There are two variants of the test: the first one is pushing values onto provided vector, while the second one also performs clone. 
 
-\paragraph{Balanced vs unbalanced} As shown in \ref{fig:push-unbalanced}, the difference in performance between balanced and unbalanced variants is negligible, mostly because pushing new values creates balanced nodes. 
+\paragraph{Balanced vs unbalanced} As shown in \ref{fig:push-existing}, the difference in performance between balanced and unbalanced variants is negligible, mostly because pushing new values creates balanced nodes. 
 
 \paragraph{Dynamic internal representation}
 As in case with \ref{fig:push}, dynamic internal representation of \pvec{} hardly makes any difference in performance. The benefits of using \stdvec{} for small sizes simply is cancelled out by the overhead of choosing the representation. 
@@ -662,7 +552,7 @@ As in case with \ref{fig:push}, dynamic internal representation of \pvec{} hardl
 \paragraph{Unique access or transience}
 % What do I right here? Maybe I don't really need to have this push_clone_unbalanced bench at all?
 
-\stdvec{} showed the best results in \ref{fig:push-unbalanced} test. It was TODOX faster on average in comparison to the fastest runner up, balanced \rrbvec{}. \imrsvec{} was marginally slower by TODOX in comparison to \pvec{}. 
+\stdvec{} showed the best results in \ref{fig:push-existing} test. It was TODOX faster on average in comparison to the fastest runner up, balanced \rrbvec{}. \imrsvec{} was marginally slower by TODOX in comparison to \pvec{}. 
 
 \subsection{Popping}
 % What and why are we measuring?
