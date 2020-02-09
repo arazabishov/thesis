@@ -535,19 +535,93 @@ When push is called continuously, even for relaxed nodes, only balanced nodes ar
 Hence, there is nearly no overhead of running push over a relaxed \rrbvec{}. 
 
 \subsection{Popping}
-% What and why are we measuring?
-The pop operation is used to remove values at the end of the vector. As with push, it is responsible for managing the capacity of the underlying data structure. For \stdvec{} it means shrinking the array and copying elements over. As persistent vector is based on \rrbtree{}, it implies deallocating nodes and reducing the height of the tree when necessary. 
 
-% Which flavors of benchmarks are we going to have?
-Pop will be tested in two benchmarks, namely pop and pop clone. The first test implies calling pop continiously in the loop, until the vector is emptied. In the second benchmark, each pop operation will be followed by clone. Both benchmarks will be executed on balanced and unbalanced variants of vectors. 
+\begin{figure}[!htbp]
 
-% Drawing conclusions from numbers
+    \center
+    \begin{adjustbox}{width=\textwidth}
+    \begin{tikzpicture}
+        \tikzstyle{every node}=[
+            font=\scriptsize, 
+            inner sep=2pt,
+            outer sep=0pt            
+        ]                
+
+        \pgfplotstableread[col sep=comma]{data/pop/imrs-vector-balanced.csv}\popimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop/imrs-vector-relaxed.csv}\popimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop/pvec-balanced.csv}\poppvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop/pvec-relaxed.csv}\poppvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop/rbvec-balanced.csv}\poprbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop/rrbvec-relaxed.csv}\poprrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop/std-vec.csv}\popstdvector;
+
+        \pgfplotstableread[col sep=comma]{data/pop_clone/imrs-vector-balanced.csv}\popclnimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/imrs-vector-relaxed.csv}\popclnimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/pvec-balanced.csv}\popclnpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/pvec-relaxed.csv}\popclnpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/rbvec-balanced.csv}\popclnrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/rrbvec-relaxed.csv}\popclnrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/std-vec.csv}\popclnstdvector;    
+
+        \begin{groupplot}[
+            group style={group size=2 by 1, horizontal sep=56pt,},                   
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},                                 
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}},
+            yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1},
+            ymajorgrids=true,
+            xmajorgrids=true,
+            grid style=dashed,
+        ]
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Popping values from a vector},
+                legend columns=4,
+                legend style={
+                    at={(1.12,-0.2)},
+                    anchor=north
+                }
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\popstdvector};            
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\poprbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\poprrbvecrelaxed};             
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\poppvecbalanced};            
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\poppvecrelaxed};            
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\popimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\popimrsvectorrelaxed};
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
+    
+            
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,                
+                xticklabels={0, 10, 100, \kilo{1}, \kilo{10}},
+                yticklabels={0, \micros{1}, 0.01, 0.1, 1, 10, 100},
+                title={Popping values from a vector and cloning it}, 
+            ]
+            \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\popclnstdvector};                     
+            \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\popclnrbvecbalanced};            
+            \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\popclnrrbvecrelaxed}; 
+            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\popclnpvecbalanced};
+            \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\popclnpvecrelaxed};
+            \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\popclnimrsvectorbalanced};
+            \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\popclnimrsvectorrelaxed};              
+        \end{groupplot}
+    \end{tikzpicture} 
+    \end{adjustbox}
+    
+    \caption{Benchmarking results of popping values.}
+    \label{fig:pop}
+\end{figure}
+
+\imrsvec{} was as fast as \rbvec{} and \rrbvec{} in the test without clone. The difference between balanced and relaxed nodes of TODOX is marginal, which shows that the cost of handling the capacity of relaxed tree is not high. 
 
 \paragraph{Dynamic internal representation}
-% content
+Overall, \pvec{} is the second fastest implementation in the test without clone, with \stdvec{} being the first and TODOX faster on average. With clone, \pvec{} degrades in performance and aligns with \stdvec{} up to the size of 1024 elements. 
 
 \paragraph{Unique access and transience}
-% content
+It is apparent that all vector implementations are faster when treated sa transient. It is expected, as clone adds overhead. \rbvec{} and \rrbvec{} implementations show the best results, being faster than \stdvec{} by TODOX at most. 
 
 \subsection{Concatenating}
 % What and why are we measuring?
