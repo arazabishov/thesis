@@ -624,25 +624,117 @@ Overall, \pvec{} is the second fastest implementation in the test without clone,
 It is apparent that all vector implementations are faster when treated sa transient. It is expected, as clone adds overhead. \rbvec{} and \rrbvec{} implementations show the best results, being faster than \stdvec{} by TODOX at most. 
 
 \subsection{Concatenating}
-% What and why are we measuring?
-The concat operation takes another instance of vector and merges its contents into the former(?) vector. 
 
-Concatenation is one of the fundamental operations which make \rrbvec{} a confluently persistent data structure. We (?) claimed that performance of the concat operation is O(log(n)), in comparison to O(max(a,b)) for \stdvec{}. 
+\begin{figure}[t]
+    
+    \center    
+    \begin{tikzpicture}  
+        \pgfplotstableread[col sep=comma]{data/append/imrs-vector-relaxed.csv}\imrsvectorrelaxed;        
+        \pgfplotstableread[col sep=comma]{data/append/pvec-relaxed.csv}\pvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/append/rbvec-balanced.csv}\rbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/append/rrbvec-relaxed.csv}\rrbvecrelaxed;        
+        \pgfplotstableread[col sep=comma]{data/append/std-vec.csv}\stdvector;        
 
-One of the research questions was to check whether persistent concat beats the standard one in practice. The experiment is to simply concatenate several vectors of different size together. The benchmark is parameterized over the size of the resulting vector, which will be in the [10, 1M] range. 
+        \begin{loglogaxis}[         
+            use units,                     
+            smooth,        
+            width=300pt,
+            title={Concatenating vectors},
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},
+            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
+            yticklabels={0, \micros{1}, 0.01, 0.1, 1, 10},            
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,            
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left,                         
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\stdvector};             
+            \addlegendentry{\stdvec{}}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvecbalanced};
+            \addlegendentry{\rbvec{}}
+    
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvecrelaxed}; 
+            \addlegendentry{\rrbvec{} \relaxed{}}
 
-% Which flavors of benchmarks are we going to have?
-As the concat operation creates relaxed nodes, only unbalanced (or relaxed) variants of vectors will be evaluated. That implies \stdvec{}, \imrsvec{}, \rrbvec{} and \pvec{}. 
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrelaxed};
+            \addlegendentry{\pvec{} \relaxed{}}
+    
+            \addplot[thin, color=mpurple, mark=square,] table {\imrsvectorrelaxed};
+            \addlegendentry{\imrsvec{} \relaxed{}} 
+        \end{loglogaxis}     
+    \end{tikzpicture}     
 
-% Drawing conclusions from numbers
-Suprisingly, the \stdvec{} beats the \rrbvec{} and \imrsvec up to the size of TODOX. It is evident that the cost of concatenating persistent vectors does not grow as fast as for the standard vector. Unfortunately, this happens only at the point where size is TODOX, which is a quite large value. 
+    \caption{Benchmarking results of concatenating vectors.}
+    \label{fig:concatenate}
+\end{figure}
 
-The dynamic internal representation of \pvec{} puts it into advantage by a factor of TODOX in comparison to \rrbvec{}, and by TODOX compared to \imrsvec{} implementation. It is clear that at the size of 4096, \pvec{} switches its internal representation to \rrbvec{}. 
+Based on results, naive copying of \stdvec{} is the fastest concatenation algorithm up to the problem size of \kilo{40}. However, after surpassing \kilo{40} it quickly degenerates and loses to \rrbvec{} by TODOX on average, with a maximum difference of TODOX for the size of \mega{1}. 
 
-% TODO: consider adding append_clone back. It can put things into perspective of how expensive it would be to use stdvec as immutable (but is this really meaningful?)
+Even though not for all input sizes, we can see that \rrbvec{}'s concatenation algorithm scales better and eventually outperforms \stdvec{}. 
+
+\imrsvec{} catches up to \stdvec{} only at the size of \kilo{400}, still being slower than \rrbvec{} by TODOX at that point. 
+
+\paragraph{Balanced vs relaxed}
+For the input size up to \kilo{2}, \rbvec{} and \rrbvec{} show similar results. Simplicity of naive concatenation used by \rbvec{} is sufficient to be as fast as \rrbvec{} due to the small problem size. 
+
+This, however, drastically changes after the \kilo{2} size, where \rbvec{} continuously degrades showing the worst results among all vectors. The performance difference between \rbvec{} and \rrbvec{} at the size of \mega{1} is TODOX. 
+
+\paragraph{Dynamic internal representation}
+Thanks to the \stdvec{} representation, \pvec{} performs better than \rrbvec{} by TODOX up to the size of 1024. The moment when it switches its internal representation can be observed in the figure \ref{fig:concatenate}, where \pvec{} quickly degenerates up the performance level of \rrbvec{} between \kilo{2} and \kilo{4} sizes. 
 
 \subsection{Slicing}
-% TODO: the bug in the im-rs has to be fixed first
+
+\begin{figure}[t]
+    
+    \center    
+    \begin{tikzpicture}  
+        \pgfplotstableread[col sep=comma]{data/split_off/imrs-vector-relaxed.csv}\imrsvectorrelaxed;        
+        \pgfplotstableread[col sep=comma]{data/split_off/pvec-relaxed.csv}\pvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/split_off/rbvec-balanced.csv}\rbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/split_off/rrbvec-relaxed.csv}\rrbvecrelaxed;        
+        \pgfplotstableread[col sep=comma]{data/split_off/std-vec.csv}\stdvector;                            
+
+        \begin{loglogaxis}[         
+            use units,                     
+            smooth,        
+            width=300pt,
+            title={Slicing vectors},
+            xlabel={Vector size (log scale)},
+            ylabel={Mean time (log scale) [\millis{}]},
+            xticklabels={0, 100, \kilo{1}, \kilo{10}},
+            yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
+            ymajorgrids=true, 
+            xmajorgrids=true,
+            grid style=dashed,            
+            legend pos=north west,        
+            legend style={draw=none,fill=none,font=\footnotesize},
+            legend cell align=left,                         
+        ]
+            \addplot[thin, color=morange, mark=*,] table {\stdvector};             
+            \addlegendentry{\stdvec{}}
+    
+            \addplot[thin, color=mred, mark=*,] table {\rbvecbalanced};
+            \addlegendentry{\rbvec{}}
+    
+            \addplot[thin, color=mred, mark=pentagon,] table {\rrbvecrelaxed}; 
+            \addlegendentry{\rrbvec{} \relaxed{}}
+
+            \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrelaxed};
+            \addlegendentry{\pvec{} \relaxed{}}
+    
+            \addplot[thin, color=mpurple, mark=square,] table {\imrsvectorrelaxed};
+            \addlegendentry{\imrsvec{} \relaxed{}} 
+        \end{loglogaxis}     
+    \end{tikzpicture}     
+
+    \caption{Benchmarking results of slicing vectors.}
+    \label{fig:slice}
+\end{figure}
+
 
 \subsection{Rc vs Arc}
 \label{sec:perf-rc-vs-arc}
