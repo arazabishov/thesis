@@ -352,18 +352,15 @@ When tested without clone, a relaxed \pvec{} shows good results and loses only t
 In the test with clone, \pvec{} outperforms all other tree-based implementations in the \range{[100, \kilo{1}]} range, and outperforms \stdvec{} after surpassing the size of 1024, by using \rrbvec{} internally. For larger inputs in the \range{[\kilo{2}, \kilo{20}]} range, \pvec{} and \rrbvec{} are significantly faster than \stdvec{} by 2.29. 
 
 \subsection{Pushing}
-
-The following benchmarks evaluate how the size and internal representation affect the performance:
-
+Benchmarks are divided into two use cases:
 \begin{itemize}
     \item Building a new vector from scratch by pushing values into it. 
-    \item Pushing values into an existing vector, both balanced and unbalanced. 
+    \item Pushing values into an existing vector, both balanced and relaxed. 
 \end{itemize}
 
-To understand how vector cloning influences the performance, the use cases above will be extended with a clone operation following every push. 
+Both benchmarks are extended using the clone operation. 
 
 \subsubsection*{Building a new vector}
-
 \begin{figure}[!htbp]
 
     \center
@@ -430,38 +427,26 @@ To understand how vector cloning influences the performance, the use cases above
     \label{fig:push}
 \end{figure}
 
-The goal is to measure how the vector size influences the push operation performance. The experiment is done by pushing N values into an empty vector, where N is the desired size. N is not used as a hint for predefining the capacity, as persistent implementations do not support it. 
+When building vector without clones in the \range{[10, 100]} range, tree-based implementations are faster than \stdvec{}, as they take advantage of the tail optimization. After the size of 100 elements, the \stdvec{} outperforms the next fastest implementation -- \pvec{}, by TODOX.
 
-Both \rrbvec{} and \pvec{} will always remain balanced, because the push operation itself does not produce relaxed nodes.
-
-% The assumption is that pvec has similar performance compared to std vec
+However, when clone is used, \rbvec{} outperforms \stdvec{} for all inputs by TODOX on average. Even though \imrsvec{} is slower than \rbvec{}, it is faster than \pvec{} by TODOX. 
 
 \paragraph{Dynamic internal representation}
-In the input range of [10, 100] \stdvec{} shows the slowest results. Since persistent vectors take advantage of the tail optimization, they do have a preallocated array of fixed size equal to the branching factor, which is set to 32. Since the tree is shallow, the tail push operation will also be relatively fast. On the other hand, \stdvec{} has to increase its capacity several times, which comes at a cost reflected in the results. 
+In the test without clone, \pvec{} outperforms \rbvec{} by a marginal difference of TODOX. 
 
-% TODO: check how math notation looks in doc
-After the tipping point of N = 100, the \stdvec{} takes the lead by outperforming \pvec{}, \rrbvec{} and \imrsvec{} by a factor of TODOX on average. It is interesting that \pvec{} does not outperform \rrbvec{}, even though it relies on \stdvec{} representation up to the 4096 size. 
+Up to the size of 1024, \pvec{} is the slowest implementation when cloned. The overhead of naive copying is significant enough to cancel out the advantage of using dynamic internal representation.
 
-% TODO: check if you can reduce the count of times you jump to different parts of memory (such as calls to self.len(), which travels through flavor / arc / heap and back)
-This is caused by the overhead of selecting internal representation, which cancels out the benefits of using \stdvec{} for small sizes. The same overhead is apparent after surpassing the 4096 size, where \pvec{} is slightly slower by TODOX compared to \rrbvec{}. 
-
-The \imrsvec{} implementation showed the best results in the range [10, 100] range, but was slower on average by TODOX in comparison to \pvec{}, and by TODOX in comparison to \stdvec{}
+% TODO: move this chunk to update benchmarks instead?
+% In the benchmark \ref{fig:push}, we measure performance of the push operation followed by the explicit clone operation. By cloning a vector, we ensure that following modifications will not affect existing versions. In other words, we will get persistent behavior. 
 
 \paragraph{Unique access or transience}
-Rust's compiler guarantees that mutable references are unique, which supposdely eliminates the possibility of a race condition. Essentially, it means that we can assume that it is safe to modify a vector, as we are the only ones who have a mutable access to it. 
+The benchmark with clone shows how vectors perform when used as persistent. Clone operation can be thought of as an operation to take a snapshot of a vector. 
 
-By leveraging this assumption, we can make persistent vector temporarily mutable or emphemeral. This comes with performance benefits, as there is no need to copy or clone the vector after each modification anymore. This behavior is somewhat similar to the transient behavior of the Clojure's persistent vector, even though not entirely the same. 
+Evidently, cloning comes at a cost, both for tree-based implementations and a standard vector. For example, the runtime of \rbvec{} is TODOX higher for the test using clone compared to the one without it. 
 
-In the benchmark \todo{ref}, we measure performance of the push operation followed by the explicit clone operation. By cloning a vector, we ensure that following modifications will not affect existing versions. In other words, we will get persistent behavior. 
-
-It is evident that the clone operation is expensive for \stdvec{}, as it simply copies the contents, while persistent vectors take advantage of the structural sharing to minimize the overhead. Balanced \rrbvec{} outperforms \stdvec{} by a factor of TODOX on average, with the performance difference growing proportionally to the size of the vector. 
-
-Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor of TODOX up to the size of 4096. It does have the same overhead for cloning as \stdvec{}, and has its own overhead for the push operation due to the internal representation logic. 
-
-\imrsvec{} is slower than balanced \rrbvec{} by TODOX, and faster than \pvec{} by TODOX on average. \stdvec{} outperforms it in the [20, 2000] range by, and then degenerates as the size grows. 
+Though, tree-based vectors perform significantly better compared to \stdvec{} when growing in size. At the size of \kilo{10}, \rbvec{} is TODOX cheaper to clone compared to \stdvec{}. 
 
 \subsubsection*{Adding values to an existing vector}
-
 \begin{figure}[!htbp]
 
     \center
@@ -540,19 +525,14 @@ Unsurprisingly, \pvec{} is slower than both \stdvec{} and \rrbvec{} by a factor 
     \label{fig:push-existing}
 \end{figure}
 
-To understand the effect of relaxed nodes on the push operation, the setup routine produces an unbalanced vector of size N, created by concatenating a number of small vectors together. 
+% TODO: cut down on text by focusing on what benchmark measures, rather than how. 
 
-There are two variants of the test: the first one is pushing values onto provided vector, while the second one also performs clone. 
+\paragraph{Balanced vs relaxed}  
+Even though size tables increase the size of the node and add complexity to the implementation, both relaxed and balanced trees show nearly identical performance in this test.
 
-\paragraph{Balanced vs unbalanced} As shown in \ref{fig:push-existing}, the difference in performance between balanced and unbalanced variants is negligible, mostly because pushing new values creates balanced nodes. 
+When push is called continuously, even for relaxed nodes, only balanced nodes are added to the tree. Eventually, all new nodes at the end of the tree, except the root, will be balanced. 
 
-\paragraph{Dynamic internal representation}
-As in case with \ref{fig:push}, dynamic internal representation of \pvec{} hardly makes any difference in performance. The benefits of using \stdvec{} for small sizes simply is cancelled out by the overhead of choosing the representation. 
-
-\paragraph{Unique access or transience}
-% What do I right here? Maybe I don't really need to have this push_clone_unbalanced bench at all?
-
-\stdvec{} showed the best results in \ref{fig:push-existing} test. It was TODOX faster on average in comparison to the fastest runner up, balanced \rrbvec{}. \imrsvec{} was marginally slower by TODOX in comparison to \pvec{}. 
+Hence, there is nearly no overhead of running push over a relaxed \rrbvec{}. 
 
 \subsection{Popping}
 % What and why are we measuring?

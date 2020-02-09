@@ -109,6 +109,10 @@ Luckily, the persistent vector presented in this project takes advantage of Rust
 
 In Rust, non-transient, persistent behavior can be enforced by cloning the object before performing a mutation. The objective is to measure the cost of using the clone operation in the persistent vector. 
 
+% Rust's compiler guarantees that mutable references are unique, which supposdely eliminates the possibility of a race condition. Essentially, it means that we can assume that it is safe to modify a vector, as we are the only ones who have a mutable access to it. 
+
+% By leveraging this assumption, we can make persistent vector temporarily mutable or emphemeral. This comes with performance benefits, as there is no need to copy or clone the vector after each modification anymore. This behavior is somewhat similar to the transient behavior of the Clojure's persistent vector, even though not entirely the same. 
+
 \subsection{Dynamic internal representation}
 As one of the suggested optimizations in the paper on \rrbvec{} implementation for Scala \cite{rrb-vector-practical-general-purpose-im-sequence}, a standard vector can be used to improve the performance of small-sized \rrbvec{}. The size for using the standard vector representation is 1024 for the branching factor of 32, and 256 for the branching factor of 4. However, dynamically switching representation during runtime comes at a cost, which potentially may offset the benefits.
 
@@ -232,7 +236,15 @@ The push operation is responsible for increasing the capacity of a vector. While
 As vector is built from scratch in this benchmark, there is no need for a setup routine. The test function runs a loop over the \range{[0, N)} range of indices, and pushes the index as a value into a vector. The problem size range is \range{[10, 1m]}. 
 
 \paragraph*{Pushing values onto existing vector}
-This benchmark requires an existing vector. Hence, the setup routine generates a vector of the fixed size of \n{}, and passes it to the test function. The balanced, \rbtree{} based vector is created by pushing values directly into it, while the \rrbtree{} based one, is created by concatenating several vectors together. Once a vector is created, the test function pushes \n{} values onto it. 
+Push operation does not produce relaxed nodes in balanced trees. Hence, there is no way to evaluate the impact of relaxation in the benchmark of building a vector from scratch. However, in this benchmark, values are added to an existing vector, where vector can be both balanced and relaxed depending on the setup routine. 
+
+Objectives of the benchmark are:
+\begin{itemize}
+    \item Check the cost of the complex sub-tree capacity and index computation. 
+    \item Measure the overhead of using size tables when cloning relaxed nodes.     
+\end{itemize}
+
+The setup routine generates a vector of the fixed size of \n{} and passes it to the test function. The balanced, \rbtree{} based vector is created by pushing values directly into it, while the \rrbtree{} based one, is created by concatenating several vectors together. Once a vector is created, the test function pushes \n{} values onto it. 
 
 \paragraph*{Extending benchmarks with the clone operation}
 To force \pvec{} to switch from \stdvec{} to \rrbvec{}, several preconditions have to be met, including the reference count being bigger than 1. Hence, the benchmarks above are extended to use clone, in the same way as for benchmarks of the update operation. Beyond the evaluation of \pvec{}, the results are expected to reveal how tree-based vectors stack up to \stdvec{}. The input range for benchmarks using clone is \range{[10, 20k]}.
