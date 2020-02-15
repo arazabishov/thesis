@@ -131,8 +131,7 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
         \pgfplotstableread[col sep=comma]{data/index_randomly/rrbvec-relaxed.csv}\rrbvecrelaxed;        
         \pgfplotstableread[col sep=comma]{data/index_randomly/std-vec.csv}\stdvector;
     
-        \begin{loglogaxis}[         
-            use units,                     
+        \begin{loglogaxis}[                            
             smooth,        
             width=300pt,
             title={Index randomly},
@@ -635,8 +634,7 @@ It is apparent that all vector implementations are faster when treated sa transi
         \pgfplotstableread[col sep=comma]{data/append/rrbvec-relaxed.csv}\rrbvecrelaxed;        
         \pgfplotstableread[col sep=comma]{data/append/std-vec.csv}\stdvector;        
 
-        \begin{loglogaxis}[         
-            use units,                     
+        \begin{loglogaxis}[                   
             smooth,        
             width=300pt,
             title={Concatenating vectors},
@@ -686,6 +684,8 @@ This, however, drastically changes after the \kilo{2} size, where \rbvec{} conti
 \paragraph{Dynamic internal representation}
 Thanks to the \stdvec{} representation, \pvec{} performs better than \rrbvec{} by TODOX up to the size of 1024. The moment when it switches its internal representation can be observed in the figure \ref{fig:concatenate}, where \pvec{} quickly degenerates up the performance level of \rrbvec{} between \kilo{2} and \kilo{4} sizes. 
 
+% TODO: upgrade pvec to use rrbvec both in pop and split_off benchmarks. 
+
 \subsection{Slicing}
 
 \begin{figure}[t]
@@ -698,15 +698,14 @@ Thanks to the \stdvec{} representation, \pvec{} performs better than \rrbvec{} b
         \pgfplotstableread[col sep=comma]{data/split_off/rrbvec-relaxed.csv}\rrbvecrelaxed;        
         \pgfplotstableread[col sep=comma]{data/split_off/std-vec.csv}\stdvector;                            
 
-        \begin{loglogaxis}[         
-            use units,                     
+        \begin{loglogaxis}[            
             smooth,        
             width=300pt,
             title={Slicing vectors},
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},
-            xticklabels={0, 100, \kilo{1}, \kilo{10}},
-            yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
+            xticklabels={0, 100, \kilo{1}, \kilo{10}, \kilo{100}, \kilo{400}},
+            yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100, \seconds{1}, \seconds{10}},
             ymajorgrids=true, 
             xmajorgrids=true,
             grid style=dashed,            
@@ -735,9 +734,17 @@ Thanks to the \stdvec{} representation, \pvec{} performs better than \rrbvec{} b
     \label{fig:slice}
 \end{figure}
 
+The performance advantage of \stdvec{} over \rrbtree based vectors is TODOX up to the size of \kilo{20}, after which it degrades and gets slower than \imrsvec{} and \rrbvec{} by TODOX. 
+
+\paragraph{Balanced vs relaxed}
+Relaxed slicing algorithm outperforms naive \rbvec{} for all vector sizes, with a staggering difference of TODOX for the last size of \kilo{400}. 
+
+\paragraph{Dynamic internal representation}
+\pvec{} shows good results up to the size of \kilo{1}, being faster than \rrbvec{} and \imrsvec{} by TODOX. After switching the internal representation, it gets slower than \rrbvec{} by TODOX. 
 
 \subsection{Rc vs Arc}
 \label{sec:perf-rc-vs-arc}
+\todo{Execute sequential benchmarks using \arc{} pointer}
 \stdvec{} is not included in the comparison, as its implementation does not rely on the reference counted pointers. 
 
 \section{Performance in parallel benchmarks}
@@ -745,15 +752,15 @@ Thanks to the \stdvec{} representation, \pvec{} performs better than \rrbvec{} b
 
 The expectation from parallel benchmarks is to reveal whether proposed optimizations were effective in the parallel context. 
 
-First, if confluent concatenation and split operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic internal representation has positive impact on the overall performance of \pvec{}. 
+First, if confluent concatenation and slice operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic internal representation has a positive impact on the overall performance of \pvec{}. 
 
-At last, we will evaluate the impact of increasing number of threads on the performance. 
+At last, we will evaluate the impact of the increasing number of threads on the performance. 
 
-The results are presented in the form of three-dimensional graph, where x and y axis correspond to the problem size and number of threads used, while z is used for the mean run time. 
+The results are presented in the form of a three-dimensional graph, where x and y-axis correspond to the problem size and number of threads used, while z is used for the mean run time. 
 
 \subsection{Adding elements of two vectors.} 
 
-\begin{figure}[!htbp]
+\begin{figure}[!htbp]                
 
     \center
     \begin{tikzpicture} 
@@ -763,25 +770,19 @@ The results are presented in the form of three-dimensional graph, where x and y 
             outer sep=0pt            
         ]        
 
-        \begin{loglogaxis}[         
-            use units,         
-            z unit=s, z unit prefix=m,
+        \begin{loglogaxis}[                                 
             smooth,        
-            width=320pt,            
+            width=300pt,            
             title style={align=center},
-            title={Time comparison of incrementing numbers of the N sized vector\\ parallelised on K number of threads.},
+            title={Adding elements of two \n{} sized vectors\\ parallelised on \emph{K} number of threads.},
             ymajorgrids=true, 
             xmajorgrids=true,
             zmajorgrids=true,
-            xlabel={vector size (log scale)},
-            ylabel={number of threads (log scale)},           
-            zlabel={mean time (log scale)},                               
-            grid style=dashed,
-            legend pos=outer north east,        
-            legend style={fill=none,font=\footnotesize},
-            legend cell align=left,            
+            xlabel={Vector size (log scale)},
+            ylabel={Number of threads (log scale)},       
+            zlabel={Mean time (log scale) [\millis{}]},
+            xticklabels={10, 100, \kilo{1}, \kilo{10}},
             ytick={1, 2, 4, 8},       
-            xticklabels={10, 100, 1K, 10K},          
             yticklabels={1, 2, 4, 8},         
             zticklabel style={
                 /pgf/number format/fixed, 
@@ -791,49 +792,50 @@ The results are presented in the form of three-dimensional graph, where x and y 
                 \pgfmathfloatparsenumber{\tick}%
                 \pgfmathfloatexp{\pgfmathresult}%
                 \pgfmathprintnumber{\pgfmathresult}%
-            },            
+            },
+            grid style=dashed,
+            legend pos=outer north east,        
+            legend style={fill=none,font=\footnotesize},
+            legend cell align=left,                        
             view={-45}{8},
         ]            
             \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/std-vec.csv}; 
-            \addlegendentry{Vec}
+            \addlegendentry{\stdvec{}}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/rrbvec-balanced.csv}; 
-            \addlegendentry{RbVec}
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/rbvec-balanced.csv}; 
+            \addlegendentry{\rbvec{}}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/rrbvec-unbalanced.csv}; 
-            \addlegendentry{RrbVec}
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/rrbvec-relaxed.csv}; 
+            \addlegendentry{\rrbvec{} \relaxed{}}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/pvec-unbalanced.csv}; 
-            \addlegendentry{PVec}
-        \end{loglogaxis}     
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {data/vector_addition/pvec-relaxed.csv}; 
+            \addlegendentry{\pvec{} \relaxed{}}
+        \end{loglogaxis}
     \end{tikzpicture} 
 
-    \label{fig:map-fold}
-    \caption{Incrementing each element of a vector on multiple threads.}    
+    \label{fig:adding-two-vectors-par}
+    \caption{Adding elements of two \n{} sized vectors parallelised on \emph{K} number of threads.}    
 \end{figure}
 
 % NOTE: you can justify this by the goal of minimizing the overhead of the actual computation, to have a simpler way to compare different vector implementations. 
 
-% TODO:
-%  - Consider using tables with runtime numbers
+\paragraph{Balanced vs relaxed}
+\rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as concatenation and slice operations that create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{} with a difference of 3.2-3.5x on average. 
 
-\paragraph{Balanced vs unbalanced}
-\rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as concat and split operations which create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{} with a difference of 3.2-3.5x on average. 
+When executed in parallel, \rrbvec{} starts outperforming \rbvec{} at the size of 1024 elements. The reason why difference becomes apparent after surpassing that size is that the concatenation algorithm used in this project produces balanced \rbtree{} when the height of the tree does not exceed two levels. With the branching factor of 32, the capacity of the tree of two levels is equal to 1024. 
 
-When executed in parallel, \rrbvec{} starts outperforming \rbvec{} at the size of 1024 elements. The reason why difference becomes apparent after surpassing that size, is because concatenation algorithm used in this project, produces balanced \rbtree{} when the height of the tree does not exceed two levels. With branching factor of 32, capacity of the tree of two levels is equal to 1024. 
+As the vector size grows, Rayon performs more slices to achieve optimal vector size per a single thread. This, in a turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has the naive implementation of concatenation and slice, its performance degrades with the input size growth. The difference in execution time depending on size falls into the 1.0-2.3x range. 
 
-As the vector size growth, Rayon performs more splits to achieve optimal vector size per a single thread. This, in a turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has naive implementation of concat and split, its performance degrades with the input size growth. The difference in execution time depending on size falls into the 1.0-2.3x range. 
-
-To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as split and concat are used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3x, 1.0-2.8x, and 1.1-2.12x correspondingly. 
+To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as slice and concatenation is used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3x, 1.0-2.8x, and 1.1-2.12x correspondingly. 
 
 \paragraph{Dynamic internal representation}
-\pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the sequential benchmark, \pvec{} is faster compared to \rrbvec{} by 1.7-2.0x. When parallelised on 4 threads, \rrbvec{} becomes slightly more efficient due to the higher count of concats and splits, with the difference at 1.3-1.8x. 
+\pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the sequential benchmark, \pvec{} is faster compared to \rrbvec{} by 1.7-2.0x. When parallelized on 4 threads, \rrbvec{} becomes slightly more efficient due to the higher count of concatenations and slices, with the difference at 1.3-1.8x. 
 
-Even though \rrbvec{}'s concat and split operations are faster for the large sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concats and splits substitute only a small portion of all operations used in this test. Operations such as get and push, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9x and 1.6-1.7x in the sequential and 4-threaded parallel benchmarks correspondingly. 
+Even though \rrbvec{}'s concatenation and slice operations are faster for the large-sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concatenations and slices substitute only a small portion of all operations used in this test. Operations such as get and push, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9x and 1.6-1.7x in the sequential and 4-threaded parallel benchmarks correspondingly. 
 
 \paragraph{Effect of parallelism}
 % TODO: this is not entirely true, because 4 threads benchmark runs slightly faster for large datasets compared to sequential bench.  
-Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
+Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by the distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
 \subsection{Check if a word is a palindrome}
 
@@ -845,28 +847,22 @@ Interestingly enough, the sequential variant of the benchmark outperformed all s
             font=\footnotesize, 
             inner sep=2pt,
             outer sep=0pt            
-        ]        
-
-        \begin{loglogaxis}[         
-            use units,         
-            z unit=s, z unit prefix=m,
+        ]                
+        
+        \begin{loglogaxis}[                     
             smooth,        
-            width=320pt,            
+            width=300pt,            
             title style={align=center},
-            title={Time comparison of incrementing numbers of the N sized vector\\ parallelised on K number of threads.},
+            title={Filtering palindromes on K number of threads.},
             ymajorgrids=true, 
             xmajorgrids=true,
             zmajorgrids=true,
-            xlabel={vector size (log scale)},
-            ylabel={number of threads (log scale)},           
-            zlabel={mean time (log scale)},                               
-            grid style=dashed,
-            legend pos=outer north east,        
-            legend style={fill=none,font=\footnotesize},
-            legend cell align=left,            
+            xlabel={Vector size (log scale)},
+            ylabel={Number of threads (log scale)},           
+            zlabel={Mean time (log scale) [\millis{}]},
+            xticklabels={10, 100, \kilo{1K}, \kilo{10}, \kilo{100}, \kilo{400}},
             ytick={1, 2, 4, 8},       
-            xticklabels={10, 100, 1K, 10K},          
-            yticklabels={1, 2, 4, 8},         
+            yticklabels={1, 2, 4, 8},      
             zticklabel style={
                 /pgf/number format/fixed, 
                 /pgf/number format/precision=2
@@ -875,37 +871,38 @@ Interestingly enough, the sequential variant of the benchmark outperformed all s
                 \pgfmathfloatparsenumber{\tick}%
                 \pgfmathfloatexp{\pgfmathresult}%
                 \pgfmathprintnumber{\pgfmathresult}%
-            },            
+            },         
+            grid style=dashed,
+            legend pos=outer north east,        
+            legend style={fill=none,font=\footnotesize},
+            legend cell align=left,            
             view={-45}{8},
         ]            
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/std-vec.csv}; 
-            \addlegendentry{Vec}
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mred] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_filter/std-vec.csv}; 
+            \addlegendentry{\stdvec{}}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/rrbvec-balanced.csv}; 
-            \addlegendentry{RbVec}
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=morange] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_filter/rbvec-balanced.csv}; 
+            \addlegendentry{\rbvec{}} 
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/rrbvec-unbalanced.csv}; 
-            \addlegendentry{RrbVec}
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=blue] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_filter/rrbvec-relaxed.csv}; 
+            \addlegendentry{\rrbvec{}}
 
-            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_map/pvec-unbalanced.csv}; 
-            \addlegendentry{PVec}
+            \addplot3[surf, mesh/rows=4, opacity=0.1, fill opacity=0.3, color=mgreen] table [x={size}, y={threads}, z={time}, col sep=comma] {data/words_filter/pvec-relaxed.csv}; 
+            \addlegendentry{\pvec{}}
         \end{loglogaxis}     
     \end{tikzpicture} 
 
-    \label{fig:map-fold}
-    \caption{Incrementing each element of a vector on multiple threads.}    
+    \label{fig:words-filter}
+    \caption{Filtering palindromes on K number of threads.}    
 \end{figure}
 
-\paragraph{Balanced vs unbalanced}
-As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test as both of them are backed by a balanced \rbtree{}. When benchmark is parallelised, \rrbvec{} gains advantage due to its efficient split and concat operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0x for the test run with 2 threads, and 1.7-2.5x for 4 threads.
+\paragraph{Balanced vs relaxed}
+As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test as both of them are backed by a balanced \rbtree{}. When the benchmark is parallelized, \rrbvec{} gains advantage due to its efficient slice and concatenation operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0x for the test run with 2 threads, and 1.7-2.5x for 4 threads.
 
 \paragraph{Dynamic internal representation}
 Results show that \pvec{} outperforms \rbvec{} and \rrbvec{} for all vector sizes and thread configurations. When it comes to \stdvec{}, \pvec{} shows 1.4x slower run time at the input size of 10000 words, after which it catches up and surpasses \stdvec{} at the mark of 200000 words. For the biggest problem size of 370103 words, \pvec{} outperforms \stdvec{} with a difference of 1.1x. 
 
-The increase in the thread count, causes higher count of vector splits and concats. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparables to \stdvec{}. 
-
-\paragraph{Effect of parallelism}
-Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
+The increase in the thread count, causes higher count of vector slices and concatenations. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparable to \stdvec{}. 
 
 \section{Discussion}
 
