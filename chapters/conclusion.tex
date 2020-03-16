@@ -18,7 +18,7 @@ The list of vectors includes \rbvec{}, \rrbvec{}, and \pvec{}, all of which are 
 %     - How does RrbVec, PVec perform in the parallel context?
 
 \paragraph{The effect of relaxation}
-The advantage of the relaxed \rbtree{} is the fast appends and splits. \rrbvec{} demonstrates significantly better performance for those operations compared to \rbvec{}, and even outperforms \stdvec{} for large-sized vectors. 
+The advantage of the relaxed \rbtree{} is the fast appends and splits. \rrbvec{} demonstrates significantly better performance for those operations compared to \rbvec{}, and even outperforms \stdvec{} for the large-sized vectors. 
 
 Without fast \rrbvec{}'s append and split operations, parallel applications of persistent vector would be impractical, as data parallelism frameworks such as \rayon{}, heavily rely on those operations. 
 
@@ -74,11 +74,11 @@ Essentially, unique access is not only a performance optimization (\todo{referen
 
 While the core of \pvecrs{} outlined in this thesis can be considered complete, there are lots of features and optimizations that were intentionally left out of the scope due to the time constraints. I will continue implementing many of these features to the project myself. 
 
-\subsection{Supporting other operations}
-% - Implement the full API surface to match standard vector.
-The API of the vector implementations provided by \pvecrs{} exposes a minimal set of methods, specifically:
-
 % TODO: figure out how to make all tables consistently wide across the thesis
+\subsection{Supporting all operations of Vec}
+% TODO: positioning of the table is not optimal
+The API surface of the \pvecrs{} does not expose the same set of methods as the standard vector does. Available methods are listed in the table \ref{tab:vec-implementations}.
+
 \begin{table}[!htbp]
     \centering
     
@@ -100,9 +100,11 @@ The API of the vector implementations provided by \pvecrs{} exposes a minimal se
     \caption{A table of supported methods.}
 \end{table}
 
-The API surface of the Rust's standard vector includes many more convenience methods and properties that are not provided by \pvecrs{}. Though, one could implement them by using operations listed in \ref{tab:vec-core-operations}. 
+Having efficient appending and splitting allows us to implement several other operations such as inserting or deleting an element at any index. The complexity of these operations is bound by the complexity of the discrete operations that will be used to implement them. Thus, uniform performance characteristics across core operations are critical for achieving good all-around performance for the general-purpose vector. 
 
-% Having efficient concatenation and spitting allows us to also implement several other operations that change the structure of the tree. Some of there operations are: inserting an element/vector in any position, deleting an element/subrange of the vector and patching/replacing part of the vector. The complexity of these operations are bounded by the complexity of the core operations used.
+For example, element insertion at the given index can be implemented by splitting the vector at the given index, pushing a new element into the left sub-vector, and then concatenating two sub-vectors back together.
+
+Therefore, the operations that can be implemented by combining or re-using core operations were intentionally left as future work due to the time constraints.
 
 % TODO: you should be using terms flat and tree representation (to match with the documentation)
 \subsection{Improving dynamic internal representation}
@@ -172,4 +174,3 @@ Especially in Rust, for which the options listed above require either using the 
 % - Expanding to other data structures of the standard library.
 
 Vector is only one of many other general purpose data structures provided by the standard library, such as \emph{LinkedList}, \emph{HashMap}, \emph{HashSet}, etc. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, \todo{ref: ideal hash trees} paper demonstrates how one could use Tries as the foundation for \emph{HashMap}. 
-
