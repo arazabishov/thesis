@@ -8,24 +8,16 @@
 
 \section*{Abstract}
 
+% - Should be connected to the title
+% - Consists of three stages:
+%     - Stage 1 and 2 are general, and should shade some light on work
+%     - Stage 3 should be more specific about this paper
+
+Rust is a multi-paradigm system programming language focused on performance and reliability. Its rich type system guarantees memory and thread-safety at compile-time. 
+
+Rust forbids simultaneous sharing and mutation, that sometimes is a necessary and a useful pattern. A common way to mitigate this limitation in Rust is to clone a value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of memory and performance. 
+
+This thesis presents \pvecrs{}, a project that contributes a vector implementation with efficient clone operation that borrows ideas from persistent data structures. The project explores novel approaches to optimize vector’s performance by leveraging type system of Rust, as well as aiming to achieve convenient, idiomatic interface familiar to developers. The proposed optimizations are evaluated and discussed based on results of the sequential and parallel tests.
+
 \end{center}
 
-\todo{Abstract}
-
-\section*{Structure}
-\begin{itemize}
-    \item Abstract should be connected to title
-    \item Often consists of 3 stages
-    \begin{itemize}
-        \item 2 stages (why?) are general (shade the light on work, motivation)
-        \item 1 stage (what?) should be more specific about this paper (mention what has been achieved)
-    \end{itemize}
-\end{itemize}
-
-\section*{Thoughts}
-\begin{itemize}
-    \item Influence on software design
-    \item Immutability, concurrency and functional programming languages
-    \item Applications in particular problem domains
-    \item Why vectors in particular?
-\end{itemize}

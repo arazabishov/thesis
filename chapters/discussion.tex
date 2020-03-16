@@ -835,7 +835,7 @@ Even though \rrbvec{}'s concatenation and slice operations are faster for the la
 
 \paragraph{Effect of parallelism}
 % TODO: this is not entirely true, because 4 threads benchmark runs slightly faster for large datasets compared to sequential bench.  
-Interestingly enough, the sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by the distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
+The sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by the distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
 \subsection{Check if a word is a palindrome}
 
@@ -853,14 +853,14 @@ Interestingly enough, the sequential variant of the benchmark outperformed all s
             smooth,        
             width=300pt,            
             title style={align=center},
-            title={Filtering palindromes on K number of threads.},
+            title={Filtering palindromes on \emph{K} number of threads.},
             ymajorgrids=true, 
             xmajorgrids=true,
             zmajorgrids=true,
             xlabel={Vector size (log scale)},
             ylabel={Number of threads (log scale)},           
-            zlabel={Mean time (log scale) [\millis{}]},
-            xticklabels={10, 100, \kilo{1K}, \kilo{10}, \kilo{100}, \kilo{400}},
+            zlabel={Mean time (log scale) [\millis{}]},            
+            xticklabels={10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \kilo{400}},
             ytick={1, 2, 4, 8},       
             yticklabels={1, 2, 4, 8},      
             zticklabel style={
@@ -893,7 +893,7 @@ Interestingly enough, the sequential variant of the benchmark outperformed all s
     \end{tikzpicture} 
 
     \label{fig:words-filter}
-    \caption{Filtering palindromes on K number of threads.}    
+    \caption{Filtering palindromes on \emph{K} number of threads.}    
 \end{figure}
 
 \paragraph{Balanced vs relaxed}
@@ -905,23 +905,79 @@ Results show that \pvec{} outperforms \rbvec{} and \rrbvec{} for all vector size
 The increase in the thread count causes a higher count of vector slices and concatenations. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparable to \stdvec{}. 
 
 \section{Discussion}
+The performance of the \rrbvec{} implementation and the different optimizations were evaluated through repeated runs of the benchmarks, and is compared to other implementations such \stdvec{} and \imrsvec{}. 
+
+% TODO: what about the main selling point? The cheap clone operation for vector. 
+% TODO: lazy cloning: bootstrap this to unique access or rust's type system?
+% TODO: this paper also contributes performance evaluation using 
+%   reference counted pointers, rather than garbage collection
 
 % Indexing
 % * Iterators are faster than sequential index
 
-\subsection{Overhead of RRB Tree}
+\subsection{Balanced vs relaxed}
 % Indexing:
 % * Relaxed nodes introduce enough overhead to make 
 %      a noticeable difference in operations by index
 % * Relaxed nodes do not affect iterator implementations
 
-\subsection{Unique access or transience}
+It is clear that the \rrbtree{}-based vectors perform better in the concatenation and slicing benchmarks. The difference in the performance compared to \rbtree{}-based vectors only increases as the vector size grows. 
+
+Frameworks for parallelism, such as Rayon, take advantage of multiple threads by dividing the work between them. Hence, fast concatenation and slice operations are critical for achieving good performance. Thus, \rrbtree{} enables vectors that perform well not only in the sequential but also in the parallel context. 
+
+However, relaxed \rbtree{} is marginally less efficient compared to its balanced counterpart in operations such as index, update, push, and pop. This is expected, as relaxed nodes introduce additional complexity. The overhead of size tables in benchmarks using clone is negligible. 
+
+\subsection{Unique access}
+% Mutating an RRB-Tree based implementation is shown to be more efficient when updated in-place without aliasing. Benchmarks for updating, pushing, popping, clearly show an improvement of TODOX percent over permutations of the same operations with clone used. 
+
+An ability to update vectors in-place when compiler guarantees the safety of operation, definitely has a positive impact on the performance. Benchmarks for mutative operations, such as push, pop, and update, that included tests with and without clone, showed that updating a data structure in-place was TODOX faster on average for the tree-based vectors. 
+
+% Along the performance benefits, the provided API implementation is identical to the one of standard vec. Hence, there is no need to learn a new API surface for developers who are already familiar with the std vector. TL/DR better ergonomics. 
+
+% TODO: In parallel benchmarks, if vector is uniquely accessed, there is no need for cloning it at all. 
+% TODO: specifics of when and by how much it is more efficient. 
+
 \subsection{Dynamic internal representation}
 % Indexing:
 %  * PVec is slower than Vec (both up to and after thresholds)
 %   * In random access test, perf difference is negligible. Vec loses its advantage due to cache invalidation. 
 %  * PVec is faster than RbVec, and RrbVec by TODOX. 
 
-\subsection{Parallel vector}
+% Was it effective?
+%  * In which cases / scenarios? 
+%    * Was it better than standard vector? 
+%    * Was it better than rrbvec?
+%    * How did it perform in parallel tests?
+%  * Did it take advantage of the Rust's linear type system?
+% Was it in-effective?
+%  * If yes, in which cases?
+% When it should be used? 
+% When it should not be used?
+% Can it be improved?
+%  * If yes, how?
 
-% NOTE: as the size of the vector values increases, persistent version starts gaining advantage compared to \stdvec{}, as \stdvec{}'s split and append operations are relying on memory copying / allocation. 
+% The idea proposed in the \todo{scala paper} is to use standard vector 
+The basic idea behind dynamic internal representation is to use the standard vector as backing data structure for small sized vectors. The premise is that when vector is relatively small, simplicity of \stdvec{} makes it the fastest implementation for \emph{all} operations, including clone. 
+
+Furthermore, \stdvec{} remains to be the fastest vector even for bigger sizes except when it is concatenated, sliced, or cloned. The idea proposed in this paper builds on top of this properties and provides a mechanism to optimize performance of \pvec{} whenever possible.
+
+Essentially, \pvec{} contributes the following:
+\begin{itemize}
+    \item Improving performance for vectors of small sizes by using \stdvec{}.     
+    \item Taking advantage of the Rust's type system to upgrade vector to \rrbvec{} only if it was cloned and mutated. Since we know that \stdvec{} is faster in all operations other than concatenation and slice, when clone is not used, we simply continue using \stdvec{} until: 
+    \begin{itemize}
+        \item It is cloned and updated. 
+        \item It is concatenated or sliced. 
+    \end{itemize}
+\end{itemize}
+
+% Dynamic internal representation showed improvements over RRB-Tree based vector implementation in most tests. The exceptions are tests that involved mutation and clone operation, and only up to the threshold value after which pvec switches from vec to rrbvec. Parallel vector implementation showed good results as well. 
+
+Dynamic internal representation improved performance of \pvec{} over \rrbvec{} in the majority of benchmarks, with the exception of tests using clone. It has improved performance of operations such as push, pop, index, concatenation, and slicing for the small sized vectors.
+
+Even though \pvec{} shows improvement over \rrbvec{} for small sizes, it is slightly slower compared to \stdvec{} and \rrbvec{} for the same inputs. The overhead is caused by the additional level of indirection that \pvec{} introduces when picking a representation. 
+
+% * PVec also contributes better performance in parallel tests, as it relies only on std vector representation in them
+
+Even though \pvec{} generally performs better compared to other tree-based implementations, its performance properties are not as predictable as of \stdvec{} or \rrbvec{}. If predictability and direct control over representation is more important, one should consider using \rrbvec{} and \stdvec{} instead. 
+

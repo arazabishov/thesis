@@ -1,2 +1,174 @@
-\chapter{Conclusion}
-\section{Future work}
+\chapter{Conclusions and future work}
+In this final chapter, I will look at the state and future of \pvecrs{} itself, as well as how the ideas explored in this project can be continued further.
+
+\section{Reflecting on contributions}
+
+% - Choose your guarantees.
+% - How is this reflected in performance of PVec, RbVec, and RrbVec? When do you need to pay the cost?
+
+This project explores and blends ideas at the intersection of persistent data structures and unique features of Rust to contribute a vector implementation that delivers good performance over all operations including clone. It makes \pvecrs{} a viable alternative in applications where the fast clone operation is critical. 
+
+The list of vectors includes \rbvec{}, \rrbvec{}, and \pvec{}, all of which are based on \rrbtree{}. 
+
+% - Working implementation of RRB-Tree based vector - RrbVec
+% - How does performance of RrbVec compares to RbVec?
+%     - Performance improvements of append / split operations
+%     - The overhead of relaxed nodes
+% - Performance of parallel vector
+%     - How does RrbVec, PVec perform in the parallel context?
+
+\paragraph{The effect of relaxation}
+The advantage of the relaxed \rbtree{} is the fast appends and splits. \rrbvec{} demonstrates significantly better performance for those operations compared to \rbvec{}, and even outperforms \stdvec{} for large-sized vectors. 
+
+Without fast \rrbvec{}'s append and split operations, parallel applications of persistent vector would be impractical, as data parallelism frameworks such as \rayon{}, heavily rely on those operations. 
+
+The overhead of relaxation is present in other operations, but it is not significant enough to outweigh the benefits. 
+
+% Another great part of the story, is that you don't have to pay the cost of append / split before you actually use them. Other operations only yield balanced nodes. 
+
+% Note, this is how you can distinguish core from confluent operations:
+%  * Core operations do not produce relaxed nodes in \rrbtree{} unless the nodes on the path to the leaves are already relaxed
+
+\paragraph{Pay only for the features you use}
+
+% - Dynamic internal representation or spilling
+% - In which cases PVec improves performance, and in which cases it does not?
+%     - Support your arguments with numbers and references to the benchmarks
+% - What are the potential use cases for PVec or when it can be useful?
+% - How can it be improved?
+
+The project draws inspiration from one of the Rust core values -- zero-cost abstractions. As demonstrated in the results and discussion chapter, \pvec{} starts out as an ordinary, standard vector that delivers great performance for the core operations. When cloned, it employs a technique introduced in this paper called spilling, that transitions the vector from flat to the tree based representation. When transitioned to a balanced \rrbvec{}, \pvec{} offers practically \bigo{1} performance for all operations, including clone, that gives developers confidence in using patterns that extensively rely on the persistence properties. 
+
+% TODO: idiomatic APIs are implemented to reduce friction of introducing a new library
+- Idiomatic, ergonomic Rust API identical to the one of Vec
+Idiomatic and ergonomic interface of \pvecrs{}, identical to the standard one, simplifies the integration of the library into existing codebases. A side effect of this design is that both types of vectors can be used interchangeably in generic manner. For example, the vector type can be substituted during compile-time using feature flags without changing the source code. 
+
+- Compile time selection of pointer types: Rc vs Arc
+Thread-safety is also an optional feature, that can be enabled when compiling. This way developers do not have to pay the cost of using the parallel vector features in sequential applications. 
+
+- Unique access or transience [1]
+    - What does unique access optimisation offer?
+    - Does it improve performance? If yes, in which cases?
+        - Cheaper transient updates? If yes, support your arguments with numbers
+
+In Jean's L'Orange's paper, improving performance of RRB-Tree based vector through transience, the author mentions a possibility of having transience as a language feature for programming languages that rely on the linear type system, such as Rust. 
+
+This project implements the unique access optimization, that is somewhat similar to transience, but not entirely the same. Transient vectors implemented by Jean were confined to the thread they were created on, which is not the case with \pvecrs{}, that permits transferring objects between threads. This is only possible due to Rust's unique type system, that guarantees safety of the operation (\todo{fact check this}).
+
+Another significant difference is that Jean's transient vectors guarantee that they won't allocate new nodes or perform path copying, which is not the case for 
+\pvecrs{} due to the way reference counted pointers work in Rust. 
+
+Essentially, unique access is not only a performance optimization (\todo{reference Niko's work}), but also an ergonomics feature that makes the interface of \pvecrs{} idiomatic for Rust. 
+
+% TODO: clearly mention that c-rrb duplicates code to achieve transience. 
+% Another difference is that transient vector is another type that duplicates all the logic from the persistent vector, that comes with the maintenance burden and additional cost in terms of the binary size.
+
+\todo{Point out in discussion by how much does it improve performance}
+
+- A comprehensive experimental study of the performance characteristics of RRB-Tree based vectors in different configurations and settings.
+
+[1] - Note, you first need to define what is transience
+
+\section{Implementation state}
+% TODO: add usage numbers after publishing the library
+
+While the core of \pvecrs{} outlined in this thesis can be considered complete, there are lots of features and optimizations that were intentionally left out of the scope due to the time constraints. I will continue implementing many of these features to the project myself. 
+
+\subsection{Supporting other operations}
+% - Implement the full API surface to match standard vector.
+The API of the vector implementations provided by \pvecrs{} exposes a minimal set of methods, specifically:
+
+% TODO: figure out how to make all tables consistently wide across the thesis
+\begin{table}[!htbp]
+    \centering
+    
+    \begin{tabular} { | p{6cm} | p{5cm} | }
+        \hline
+        \mintinline[breaklines]{rust}{fn push(&mut self, e: T)} & Appends an element to the back of a collection \\ \hline
+        \mintinline[breaklines]{rust}{fn pop(&mut self) -> Option<T>} & Removes the last element from a vector and returns it, or None if it is empty. \\ \hline
+        \mintinline[breaklines]{rust}{fn get(&self, i: u64) -> Option<&T>} & Returns a reference to an element. \\ \hline
+        \mintinline[breaklines]{rust}{fn get_mut(&mut self, i: u64) -> Option<&mut T>} & Returns a mutable reference to an element. \\ \hline
+        \mintinline[breaklines]{rust}{fn append(&mut self, v: &mut Vec<T>)} & Moves all the elements of other into Self, leaving other empty. \\ \hline
+        \mintinline[breaklines]{rust}{fn len(&self) -> u64} & Returns the number of elements in the vector. \\ \hline
+        \mintinline[breaklines]{rust}{fn is_empty(&self) -> bool} & Returns true if the vector contains no elements. \\ \hline
+        \mintinline[breaklines]{rust}{fn split_off(&mut self, at: u64) -> Vec<T>} & Splits the collection into two at the given index. \\ \hline
+        \mintinline[breaklines]{rust}{fn into_iter(self) -> Self::IntoIter} & Creates an iterator from a value. \\ \hline
+        \mintinline[breaklines]{rust}{fn into_par_iter(self) -> Self::Iter} & Converts self into a parallel iterator. \\ \hline
+    \end{tabular}
+    
+    \label{tab:vec-implementations}
+    \caption{A table of supported methods.}
+\end{table}
+
+The API surface of the Rust's standard vector includes many more convenience methods and properties that are not provided by \pvecrs{}. Though, one could implement them by using operations listed in \ref{tab:vec-core-operations}. 
+
+% Having efficient concatenation and spitting allows us to also implement several other operations that change the structure of the tree. Some of there operations are: inserting an element/vector in any position, deleting an element/subrange of the vector and patching/replacing part of the vector. The complexity of these operations are bounded by the complexity of the core operations used.
+
+% TODO: you should be using terms flat and tree representation (to match with the documentation)
+\subsection{Improving dynamic internal representation}
+
+% - Using Rust's destructors in conjunction with reference counted pointers to flatten out PVec from Tree to the standard vector representation when a tree is not shared.
+\paragraph*{Dynamically switching back to the flat representation}
+A distinct feature of \pvec{} is the ability to start out as a standard vector and then switch to \rrbvec{} when cloned. Though, there is no mechanism to switch back to the flat representation, for example, when all cloned instances are destroyed. 
+
+One way to achieve this is by flattening the \rrbtree{} into a standard vector when the underlying tree is not shared with any clones. This is true when the reference count for every tree node is at most one. Assuming that this condition is true, one can switch the representation back to flat in the object destructor. 
+
+\begin{figure}[!htbp] 
+    \centering
+
+    \begin{minted}{rust}
+        let mut vec_1 = PVec::new();
+        // ^ start as a standard Vec
+
+        for i in 0..512 {
+            vec_1.push(i);            
+        }
+
+        vec_1 = vec_1.clone();
+        // ^ force switch to RrbVec
+
+        let vec_2 = vec_1.clone();
+        { // <-- Moving vec_2 to the new scope
+            vec_2
+        } // <-- vec_2 goes out of the scope and is 
+          // destroyed, vec_1 switches back to standard Vec           
+
+        // execution continues
+    \end{minted}
+
+    \caption{Example of switching back to the flat representation.}
+    \label{fig:switching-to-flat}
+\end{figure}
+
+% TODO: enforce American English in the document using a plugin.
+% TODO: A possible contribution: simplicity of the implementation allows \rrbvec{} to serve as foundation for further experimentation and research of the data structure. 
+
+% TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
+
+% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator: 
+% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time. 
+
+% TODO: Optional<Add a point to introduction to describe what is RefCell>
+
+\subsection{Focus and display optimizations}
+The notion of \emph{focus} was introduced in Scala's immutable vector implementation and was further studied in \cite{rrb-vector-practical-general-purpose-im-sequence}. Instead of keeping track only of the vector \emph{tail}, the focus is generalized to work with the leaf node which was last modified. The basis for this is the principle of spatial locality, a heuristic that assumes that collocated elements are more likely to be accessed one after another.
+
+Since the vector has to be thread-safe, focus either has to be modified when vector itself is modified or to be protected from the concurrent access. The latter comes at additional performance and maintenance cost. 
+
+\emph{Display} is a way to keep track of the entire branch of the tree, from the root to a leaf, where leaf is the \emph{focused} node. Introducing display to \rrbtree{} requires additional coordination when the tree is modified. 
+
+\paragraph{Limitations of Rust}
+The strict borrow checker rules of the Rust's compiler introduce additional complexity in implementing the \emph{display}. It is forbidden to acquire and keep mutable references to the node and its children simultaneously. That is a necessary property for display, that essentially is a stack of pointers to nodes that form a path from the root to the leaf nodes. 
+
+Alternatively, rather than keeping a stack of mutable pointers one could use \rc{}. The side effect of this choice is that ownership of \rc{} demands cloning. This, in a turn, increments the reference count. When the reference count is bigger than one, any attempts to acquire a mutable pointer will result in the clone of the underlying value. Since display and focus are updated only when vector itself is modified, it will result in path-copying every time.
+
+The second option is to use interior mutability pattern in Rust, or \refcell{}. \refcell{} is a container that enforces compile time rules of the borrow checker at run-time. Offsetting these checks helps to implement the display, but also adds overhead to every other operation, as all tree nodes have to be decorated with \refcell{}. 
+
+Even though \emph{display} and \emph{focus} seem to potentially optimize some specific use cases, the additional implementation complexity could cause more bugs and harm performance of other operations making \rrbtree{} less efficient as a general-purpose data structure. 
+
+Especially in Rust, for which the options listed above require either using unsafe subset of the language features, or sacrificing the simplicity, and possibly the reliability and performance. Adding \emph{focus} and \emph{display} to \rrbvec{} is therefore left as future work.
+
+\section{Towards the library of persistent data structures in Rust}
+% - Expanding to other data structures of the standard library.
+
+Vector is only one of many other general purpose data structures provided by the standard library, such as \emph{LinkedList}, \emph{HashMap}, \emph{HashSet}, etc. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, \todo{ref: ideal hash trees} paper demonstrates how one could use Tries as the foundation for \emph{HashMap}. 
