@@ -153,22 +153,23 @@ One way to achieve this is by flattening the \rrbtree{} into a standard vector w
 \subsection{Focus and display optimizations}
 The notion of \emph{focus} was introduced in Scala's immutable vector implementation and was further studied in \cite{rrb-vector-practical-general-purpose-im-sequence}. Instead of keeping track only of the vector \emph{tail}, the focus is generalized to work with the leaf node which was last modified. The basis for this is the principle of spatial locality, a heuristic that assumes that collocated elements are more likely to be accessed one after another.
 
-Since the vector has to be thread-safe, focus either has to be modified when vector itself is modified or to be protected from the concurrent access. The latter comes at additional performance and maintenance cost. 
+Since the vector has to be thread-safe, focus either has to be modified when the vector itself is modified or to be protected from the concurrent access. The latter comes at additional performance and maintenance costs. 
 
-\emph{Display} is a way to keep track of the entire branch of the tree, from the root to a leaf, where leaf is the \emph{focused} node. Introducing display to \rrbtree{} requires additional coordination when the tree is modified. 
+\emph{Display} is a way to keep track of the entire branch of the tree, from the root to a leaf, where a leaf is the \emph{focused} node. Introducing display to \rrbtree{} requires additional coordination when the tree is modified. 
 
 \paragraph{Limitations of Rust}
-The strict borrow checker rules of the Rust's compiler introduce additional complexity in implementing the \emph{display}. It is forbidden to acquire and keep mutable references to the node and its children simultaneously. That is a necessary property for display, that essentially is a stack of pointers to nodes that form a path from the root to the leaf nodes. 
+The strict borrow checker rules of the Rust's compiler introduce additional complexity in implementing the \emph{display}. It is forbidden to acquire and keep mutable references to the node and its children simultaneously. That is a necessary property for display, which essentially is a stack of pointers to nodes that form a path from the root to the leaf nodes. 
 
-Alternatively, rather than keeping a stack of mutable pointers one could use \rc{}. The side effect of this choice is that ownership of \rc{} demands cloning. This, in a turn, increments the reference count. When the reference count is bigger than one, any attempts to acquire a mutable pointer will result in the clone of the underlying value. Since display and focus are updated only when vector itself is modified, it will result in path-copying every time.
+Alternatively, rather than keeping a stack of mutable pointers one could use \rc{}. The side effect of this choice is that ownership of \rc{} demands to clone. This, in a turn, increments the reference count. When the reference count is bigger than one, any attempts to acquire a mutable pointer will result in the clone of the underlying value. Since display and focus are updated only when the vector itself is modified, it will result in path-copying every time.
 
-The second option is to use interior mutability pattern in Rust, or \refcell{}. \refcell{} is a container that enforces compile time rules of the borrow checker at run-time. Offsetting these checks helps to implement the display, but also adds overhead to every other operation, as all tree nodes have to be decorated with \refcell{}. 
+The second option is to use the interior mutability pattern in Rust, or \refcell{}. \refcell{} is a container that enforces compile-time rules of the borrow checker at run-time. Offsetting these checks helps to implement the display, but also adds overhead to every other operation, as all tree nodes have to be decorated with \refcell{}.  
 
 Even though \emph{display} and \emph{focus} seem to potentially optimize some specific use cases, the additional implementation complexity could cause more bugs and harm performance of other operations making \rrbtree{} less efficient as a general-purpose data structure. 
 
-Especially in Rust, for which the options listed above require either using unsafe subset of the language features, or sacrificing the simplicity, and possibly the reliability and performance. Adding \emph{focus} and \emph{display} to \rrbvec{} is therefore left as future work.
+Especially in Rust, for which the options listed above require either using the unsafe subset of the language features, or sacrificing the simplicity, and possibly the reliability and performance. Adding \emph{focus} and \emph{display} to \rrbvec{} is therefore left as future work.
 
 \section{Towards the library of persistent data structures in Rust}
 % - Expanding to other data structures of the standard library.
 
 Vector is only one of many other general purpose data structures provided by the standard library, such as \emph{LinkedList}, \emph{HashMap}, \emph{HashSet}, etc. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, \todo{ref: ideal hash trees} paper demonstrates how one could use Tries as the foundation for \emph{HashMap}. 
+
