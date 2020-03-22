@@ -11,7 +11,7 @@ The results are discussed to address the following points:
 \begin{itemize}
     \item Effect of \rrbtree{} relaxation on concatenation, splitting, and other core operations of \rrbvec{} and \pvec{}. 
     \item The impact of the unique access optimization on the performance of all vector implementations.
-    \item Effectiveness of the dynamic internal representation.
+    \item Effectiveness of the dynamic representation.
 \end{itemize}
 
 \paragraph{Reading notes} 
@@ -107,7 +107,7 @@ The difference between the balanced \rbvec{} and relaxed \rrbvec{} becomes notic
 
 This, however, is not the case for small problem sizes in the \range{[0, 100]} range, for which the concatenating algorithm produces a balanced tree. Hence, both balanced and relaxed vectors demonstrate similar performance in that range. 
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 \pvec{} switches its internal representation from the standard vector to \rrbvec{} as the size gets over 1024 elements. This is evident from the plot \ref{fig:index-sequentially}, where \pvec{} is 2.31 faster than \rbvec{}, but slower than \stdvec{} by a factor of 2.61. It is slower because of the overhead induced by acquiring a mutable reference to \rc{} pointer. As soon as the threshold is passed, the difference in performance between \pvec{} and \rrbvec{} becomes negligible. 
 
 \subsubsection*{Iterator}
@@ -176,7 +176,7 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
 \paragraph{Balanced vs relaxed variants}
 \rbvec{} outperforms \rrbvec{} by 1.90 in the \range{[100, \mega{1}]} range. Both relaxed \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 1.99. 
 
 \subsection{Updating}
@@ -255,7 +255,7 @@ Results of the update operation benchmarks are divided by sequential and random 
     \label{fig:update-sequentially}
 \end{figure}
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 In the benchmark of updating a vector without cloning, \pvec{} is faster than both variants of \rrbvec{} by a factor of 2.22 in the \range{[10, 1024]} size range. After switching the internal representation, it aligns with \rrbvec{}. 
 
 When the clone operation is involved, \pvec{} outperforms \rrbvec{} in the \range{[80, 1024]} range by a factor of 1.6. 
@@ -345,7 +345,7 @@ Even though both \stdvec{}, \pvec{} are faster on average, they are slower than 
 \paragraph{Balanced vs relaxed variants}
 The overhead of relaxed nodes of \rrbtree{} makes a difference of 1.49 compared to \rbtree{} in the benchmark without clone operation. When clone is used, the difference is negligible at a factor of 0.97. This shows that the size tables of relaxed nodes do not have a measurable impact on performance when cloned.
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 When tested without clone, a relaxed \pvec{} shows good results and loses only to \stdvec{} with a difference of 1.72 up to 1024, and 0.57 from 1024.
 
 In the test with clone, \pvec{} outperforms all other tree-based implementations in the \range{[100, \kilo{1}]} range, and outperforms \stdvec{} after surpassing the size of 1024, by using \rrbvec{} internally. For larger inputs in the \range{[\kilo{2}, \kilo{20}]} range, \pvec{} and \rrbvec{} are significantly faster than \stdvec{} by 2.29. 
@@ -430,10 +430,10 @@ When building vector without clones in the \range{[10, 100]} range, tree-based i
 
 However, when clone is used, \rbvec{} outperforms \stdvec{} for all inputs by TODOX on average. Even though \imrsvec{} is slower than \rbvec{}, it is faster than \pvec{} by TODOX. 
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 In the test without clone, \pvec{} outperforms \rbvec{} by a marginal difference of TODOX. 
 
-Up to the size of 1024, \pvec{} is the slowest implementation when cloned. The overhead of naive copying is significant enough to cancel out the advantage of using dynamic internal representation.
+Up to the size of 1024, \pvec{} is the slowest implementation when cloned. The overhead of naive copying is significant enough to cancel out the advantage of using dynamic representation.
 
 % TODO: move this chunk to update benchmarks instead?
 % In the benchmark \ref{fig:push}, we measure performance of the push operation followed by the explicit clone operation. By cloning a vector, we ensure that following modifications will not affect existing versions. In other words, we will get persistent behavior. 
@@ -616,7 +616,7 @@ Hence, there is nearly no overhead of running push over a relaxed \rrbvec{}.
 
 \imrsvec{} was as fast as \rbvec{} and \rrbvec{} in the test without clone. The difference between balanced and relaxed nodes of TODOX is marginal, which shows that the cost of handling the capacity of relaxed tree is not high. 
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 Overall, \pvec{} is the second fastest implementation in the test without clone, with \stdvec{} being the first and TODOX faster on average. With clone, \pvec{} degrades in performance and aligns with \stdvec{} up to the size of 1024 elements. 
 
 \paragraph{Unique access and transience}
@@ -681,7 +681,7 @@ For the input size up to \kilo{2}, \rbvec{} and \rrbvec{} show similar results. 
 
 This, however, drastically changes after the \kilo{2} size, where \rbvec{} continuously degrades showing the worst results among all vectors. The performance difference between \rbvec{} and \rrbvec{} at the size of \mega{1} is TODOX. 
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 Thanks to the \stdvec{} representation, \pvec{} performs better than \rrbvec{} by TODOX up to the size of 1024. The moment when it switches its internal representation can be observed in the figure \ref{fig:concatenate}, where \pvec{} quickly degenerates up the performance level of \rrbvec{} between \kilo{2} and \kilo{4} sizes. 
 
 % TODO: upgrade pvec to use rrbvec both in pop and split_off benchmarks. 
@@ -739,7 +739,7 @@ The performance advantage of \stdvec{} over \rrbtree based vectors is TODOX up t
 \paragraph{Balanced vs relaxed}
 Relaxed slicing algorithm outperforms naive \rbvec{} for all vector sizes, with a staggering difference of TODOX for the last size of \kilo{400}. 
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 \pvec{} shows good results up to the size of \kilo{1}, being faster than \rrbvec{} and \imrsvec{} by TODOX. After switching the internal representation, it gets slower than \rrbvec{} by TODOX. 
 
 \subsection{Rc vs Arc}
@@ -752,7 +752,7 @@ Relaxed slicing algorithm outperforms naive \rbvec{} for all vector sizes, with 
 
 The expectation from parallel benchmarks is to reveal whether proposed optimizations were effective in the parallel context. 
 
-First, if confluent concatenation and slice operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic internal representation has a positive impact on the overall performance of \pvec{}. 
+First, if confluent concatenation and slice operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic representation has a positive impact on the overall performance of \pvec{}. 
 
 At last, we will evaluate the impact of the increasing number of threads on the performance. 
 
@@ -828,7 +828,7 @@ As the vector size grows, Rayon performs more slices to achieve optimal vector s
 
 To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as slice and concatenation is used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3x, 1.0-2.8x, and 1.1-2.12x correspondingly. 
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 \pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the sequential benchmark, \pvec{} is faster compared to \rrbvec{} by 1.7-2.0x. When parallelized on 4 threads, \rrbvec{} becomes slightly more efficient due to the higher count of concatenations and slices, with the difference at 1.3-1.8x. 
 
 Even though \rrbvec{}'s concatenation and slice operations are faster for the large-sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concatenations and slices substitute only a small portion of all operations used in this test. Operations such as get and push, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9x and 1.6-1.7x in the sequential and 4-threaded parallel benchmarks correspondingly. 
@@ -899,7 +899,7 @@ The sequential variant of the benchmark outperformed all subsequent parallel tes
 \paragraph{Balanced vs relaxed}
 As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test as both of them are backed by a balanced \rbtree{}. When the benchmark is parallelized, \rrbvec{} gains advantage due to its efficient slice and concatenation operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0x for the test run with 2 threads, and 1.7-2.5x for 4 threads.
 
-\paragraph{Dynamic internal representation}
+\paragraph{Dynamic representation}
 Results show that \pvec{} outperforms \rbvec{} and \rrbvec{} for all vector sizes and thread configurations. When it comes to \stdvec{}, \pvec{} shows 1.4x slower run time at the input size of 10000 words, after which it catches up and surpasses \stdvec{} at the mark of 200000 words. For the biggest problem size of 370103 words, \pvec{} outperforms \stdvec{} with a difference of 1.1x. 
 
 The increase in the thread count causes a higher count of vector slices and concatenations. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparable to \stdvec{}. 
@@ -908,9 +908,6 @@ The increase in the thread count causes a higher count of vector slices and conc
 The performance of the \rrbvec{} implementation and the different optimizations were evaluated through repeated runs of the benchmarks, and is compared to other implementations such \stdvec{} and \imrsvec{}. 
 
 % TODO: what about the main selling point? The cheap clone operation for vector. 
-% TODO: lazy cloning: bootstrap this to unique access or rust's type system?
-% TODO: this paper also contributes performance evaluation using 
-%   reference counted pointers, rather than garbage collection
 
 % Indexing
 % * Iterators are faster than sequential index
@@ -921,13 +918,19 @@ The performance of the \rrbvec{} implementation and the different optimizations 
 %      a noticeable difference in operations by index
 % * Relaxed nodes do not affect iterator implementations
 
-It is clear that the \rrbtree{}-based vectors perform better in the concatenation and slicing benchmarks. The difference in the performance compared to \rbtree{}-based vectors only increases as the vector size grows. 
-
-Frameworks for parallelism, such as Rayon, take advantage of multiple threads by dividing the work between them. Hence, fast concatenation and slice operations are critical for achieving good performance. Thus, \rrbtree{} enables vectors that perform well not only in the sequential but also in the parallel context. 
+% TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
+% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator: 
+% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time. 
 
 However, relaxed \rbtree{} is marginally less efficient compared to its balanced counterpart in operations such as index, update, push, and pop. This is expected, as relaxed nodes introduce additional complexity. The overhead of size tables in benchmarks using clone is negligible. 
 
+
 \subsection{Unique access}
+% - Unique access or transience [1]
+%   - What does unique access optimisation offer?
+%   - Does it improve performance? If yes, in which cases?
+%   - Cheaper transient updates? If yes, support your arguments with numbers
+
 % Mutating an RRB-Tree based implementation is shown to be more efficient when updated in-place without aliasing. Benchmarks for updating, pushing, popping, clearly show an improvement of TODOX percent over permutations of the same operations with clone used. 
 
 An ability to update vectors in-place when compiler guarantees the safety of operation, definitely has a positive impact on the performance. Benchmarks for mutative operations, such as push, pop, and update, that included tests with and without clone, showed that updating a data structure in-place was TODOX faster on average for the tree-based vectors. 
@@ -937,7 +940,7 @@ An ability to update vectors in-place when compiler guarantees the safety of ope
 % TODO: In parallel benchmarks, if vector is uniquely accessed, there is no need for cloning it at all. 
 % TODO: specifics of when and by how much it is more efficient. 
 
-\subsection{Dynamic internal representation}
+\subsection{Dynamic representation}
 % Indexing:
 %  * PVec is slower than Vec (both up to and after thresholds)
 %   * In random access test, perf difference is negligible. Vec loses its advantage due to cache invalidation. 
@@ -957,7 +960,7 @@ An ability to update vectors in-place when compiler guarantees the safety of ope
 %  * If yes, how?
 
 % The idea proposed in the \todo{scala paper} is to use standard vector 
-The basic idea behind dynamic internal representation is to use the standard vector as backing data structure for small sized vectors. The premise is that when vector is relatively small, simplicity of \stdvec{} makes it the fastest implementation for \emph{all} operations, including clone. 
+The basic idea behind dynamic representation is to use the standard vector as backing data structure for small sized vectors. The premise is that when vector is relatively small, simplicity of \stdvec{} makes it the fastest implementation for \emph{all} operations, including clone. 
 
 Furthermore, \stdvec{} remains to be the fastest vector even for bigger sizes except when it is concatenated, sliced, or cloned. The idea proposed in this paper builds on top of this properties and provides a mechanism to optimize performance of \pvec{} whenever possible.
 
@@ -971,13 +974,12 @@ Essentially, \pvec{} contributes the following:
     \end{itemize}
 \end{itemize}
 
-% Dynamic internal representation showed improvements over RRB-Tree based vector implementation in most tests. The exceptions are tests that involved mutation and clone operation, and only up to the threshold value after which pvec switches from vec to rrbvec. Parallel vector implementation showed good results as well. 
+% Dynamic representation showed improvements over RRB-Tree based vector implementation in most tests. The exceptions are tests that involved mutation and clone operation, and only up to the threshold value after which pvec switches from vec to rrbvec. Parallel vector implementation showed good results as well. 
 
-Dynamic internal representation improved performance of \pvec{} over \rrbvec{} in the majority of benchmarks, with the exception of tests using clone. It has improved performance of operations such as push, pop, index, concatenation, and slicing for the small sized vectors.
+Dynamic representation improved performance of \pvec{} over \rrbvec{} in the majority of benchmarks, with the exception of tests using clone. It has improved performance of operations such as push, pop, index, concatenation, and slicing for the small sized vectors.
 
 Even though \pvec{} shows improvement over \rrbvec{} for small sizes, it is slightly slower compared to \stdvec{} and \rrbvec{} for the same inputs. The overhead is caused by the additional level of indirection that \pvec{} introduces when picking a representation. 
 
 % * PVec also contributes better performance in parallel tests, as it relies only on std vector representation in them
 
 Even though \pvec{} generally performs better compared to other tree-based implementations, its performance properties are not as predictable as of \stdvec{} or \rrbvec{}. If predictability and direct control over representation is more important, one should consider using \rrbvec{} and \stdvec{} instead. 
-
