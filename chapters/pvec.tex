@@ -39,3 +39,8 @@ Rust’s Arc conforms to the ownership and borrowing rules as well, but they are
 \subsubsection{Send and Sync traits}
 \section{Size bazed internal representation}
 \subsection{Optimizing for CPU cache locality}
+
+
+% TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
+% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator: 
+% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time. 

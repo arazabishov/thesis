@@ -1,6 +1,6 @@
 \newcommand{\relaxed}{\emph{(r)}}
 
-\chapter{Results and discussion}
+\chapter{Results}
 In this chapter, we will take a look at the results of the sequential and parallel benchmarks, and discuss whether proposed\todo{ref} performance optimizations are effective. 
 
 The sequential benchmark results are subdivided per the core operation and listed under the \ref{sec:perf-seq} section. Performance of the threadsafe implementation is evaluated separately.  
@@ -22,6 +22,10 @@ Implementations that are prefixed with \relaxed{} in the figure legend were conf
 This section contains performance numbers for the non-threadsafe implementations of \stdvec{}, \rbvec{}, \rrbvec{}, \pvec{}, and \imrsvec{}. Threadsafe variants are evaluated and discussed separately in section \ref{sec:perf-rc-vs-arc}. 
 
 \subsection{Indexing}
+% TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
+% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator: 
+% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time. 
+
 Figures for the index operation are separated by sequential and random access, where the sequential benchmark results are subdivided into the index and iterator figures. 
 
 \subsubsection*{Index sequentially}
@@ -904,82 +908,5 @@ Results show that \pvec{} outperforms \rbvec{} and \rrbvec{} for all vector size
 
 The increase in the thread count causes a higher count of vector slices and concatenations. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparable to \stdvec{}. 
 
-\section{Discussion}
-The performance of the \rrbvec{} implementation and the different optimizations were evaluated through repeated runs of the benchmarks, and is compared to other implementations such \stdvec{} and \imrsvec{}. 
-
-% TODO: what about the main selling point? The cheap clone operation for vector. 
-
-% Indexing
-% * Iterators are faster than sequential index
-
-\subsection{Balanced vs relaxed}
-% Indexing:
-% * Relaxed nodes introduce enough overhead to make 
-%      a noticeable difference in operations by index
-% * Relaxed nodes do not affect iterator implementations
-
-% TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
-% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator: 
-% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time. 
-
-However, relaxed \rbtree{} is marginally less efficient compared to its balanced counterpart in operations such as index, update, push, and pop. This is expected, as relaxed nodes introduce additional complexity. The overhead of size tables in benchmarks using clone is negligible. 
-
-
-\subsection{Unique access}
-% - Unique access or transience [1]
-%   - What does unique access optimisation offer?
-%   - Does it improve performance? If yes, in which cases?
-%   - Cheaper transient updates? If yes, support your arguments with numbers
-
-% Mutating an RRB-Tree based implementation is shown to be more efficient when updated in-place without aliasing. Benchmarks for updating, pushing, popping, clearly show an improvement of TODOX percent over permutations of the same operations with clone used. 
-
-An ability to update vectors in-place when compiler guarantees the safety of operation, definitely has a positive impact on the performance. Benchmarks for mutative operations, such as push, pop, and update, that included tests with and without clone, showed that updating a data structure in-place was TODOX faster on average for the tree-based vectors. 
-
-% Along the performance benefits, the provided API implementation is identical to the one of standard vec. Hence, there is no need to learn a new API surface for developers who are already familiar with the std vector. TL/DR better ergonomics. 
-
-% TODO: In parallel benchmarks, if vector is uniquely accessed, there is no need for cloning it at all. 
-% TODO: specifics of when and by how much it is more efficient. 
-
-\subsection{Dynamic representation}
-% Indexing:
-%  * PVec is slower than Vec (both up to and after thresholds)
-%   * In random access test, perf difference is negligible. Vec loses its advantage due to cache invalidation. 
-%  * PVec is faster than RbVec, and RrbVec by TODOX. 
-
-% Was it effective?
-%  * In which cases / scenarios? 
-%    * Was it better than standard vector? 
-%    * Was it better than rrbvec?
-%    * How did it perform in parallel tests?
-%  * Did it take advantage of the Rust's linear type system?
-% Was it in-effective?
-%  * If yes, in which cases?
-% When it should be used? 
-% When it should not be used?
-% Can it be improved?
-%  * If yes, how?
-
-% The idea proposed in the \todo{scala paper} is to use standard vector 
-The basic idea behind dynamic representation is to use the standard vector as backing data structure for small sized vectors. The premise is that when vector is relatively small, simplicity of \stdvec{} makes it the fastest implementation for \emph{all} operations, including clone. 
-
-Furthermore, \stdvec{} remains to be the fastest vector even for bigger sizes except when it is concatenated, sliced, or cloned. The idea proposed in this paper builds on top of this properties and provides a mechanism to optimize performance of \pvec{} whenever possible.
-
-Essentially, \pvec{} contributes the following:
-\begin{itemize}
-    \item Improving performance for vectors of small sizes by using \stdvec{}.     
-    \item Taking advantage of the Rust's type system to upgrade vector to \rrbvec{} only if it was cloned and mutated. Since we know that \stdvec{} is faster in all operations other than concatenation and slice, when clone is not used, we simply continue using \stdvec{} until: 
-    \begin{itemize}
-        \item It is cloned and updated. 
-        \item It is concatenated or sliced. 
-    \end{itemize}
-\end{itemize}
-
-% Dynamic representation showed improvements over RRB-Tree based vector implementation in most tests. The exceptions are tests that involved mutation and clone operation, and only up to the threshold value after which pvec switches from vec to rrbvec. Parallel vector implementation showed good results as well. 
-
-Dynamic representation improved performance of \pvec{} over \rrbvec{} in the majority of benchmarks, with the exception of tests using clone. It has improved performance of operations such as push, pop, index, concatenation, and slicing for the small sized vectors.
-
-Even though \pvec{} shows improvement over \rrbvec{} for small sizes, it is slightly slower compared to \stdvec{} and \rrbvec{} for the same inputs. The overhead is caused by the additional level of indirection that \pvec{} introduces when picking a representation. 
-
-% * PVec also contributes better performance in parallel tests, as it relies only on std vector representation in them
-
-Even though \pvec{} generally performs better compared to other tree-based implementations, its performance properties are not as predictable as of \stdvec{} or \rrbvec{}. If predictability and direct control over representation is more important, one should consider using \rrbvec{} and \stdvec{} instead. 
+% \section{Discussion}
+% The performance of the \rrbvec{} implementation and the different optimizations were evaluated through repeated runs of the benchmarks, and is compared to other implementations such \stdvec{} and \imrsvec{}. 

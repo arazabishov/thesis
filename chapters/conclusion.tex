@@ -9,17 +9,17 @@ The list of vectors includes \rbvec{}, \rrbvec{}, and \pvec{}, all of which are 
 \subsection{The effect of relaxation}
 The advantage of the relaxed \rbtree{} is the fast appends and splits. \rrbvec{} demonstrates significantly better performance for those operations compared to \rbvec{}, and even outperforms \stdvec{} for the large-sized vectors. 
 
-Without fast \rrbvec{}'s append and split operations, parallel applications of persistent vector would be impractical, as data parallelism frameworks such as \rayon{}, heavily rely on those operations. 
+Frameworks for parallelism, such as \rayon{}, take advantage of multiple threads by dividing the work between them. Hence, fast append and split operations are critical for achieving good performance. Thus, \rrbtree{} enables vectors that perform well not only in the sequential but also in the parallel context. 
 
 The overhead of relaxation is present in other operations, but it is not significant enough to outweigh the benefits. Also, constraints are relaxed only when append or split is used, meaning that one does not have to pay the cost of the abstraction before using it. 
 
 \subsection{Pay only for the features you use}
 The project draws inspiration from one of the Rust key features -- zero-cost abstractions. As demonstrated in the results and discussion chapter, \pvec{} starts as an ordinary, standard vector that delivers great performance for the core operations. When cloned, it employs a technique introduced in this paper called spilling, which transitions the vector from flat to the tree-based representation. When transitioned to a balanced \rrbvec{}, \pvec{} offers practically \bigo{1} performance for all operations, including clone, that gives developers confidence in using patterns that extensively rely on copying. 
 
-\paragraph{Idiomatic, ergonomic Rust interface}
-The idiomatic and ergonomic interface of \pvecrs{}, identical to the standard one, simplifies the integration of the library into existing codebases. A side effect of this design is that both types of vectors can be used interchangeably in a generic manner. For example, the vector type can be substituted during compile-time using feature flags without changing the source code. 
+\paragraph{Dynamic representation}
+Tree-based vectors are very cheap to clone, but their core operations, even though very fast, do not match the performance of the standard vector due to the nuances of hardware architecture. The dynamic representation aims to offset this cost by using the standard vector, switching to the tree-based representation only when cloned. 
 
-Thread-safety is also an optional feature that can be enabled when compiling. This way, developers do not have to pay the cost of using the parallel vector features in sequential applications. 
+Results show that dynamic representation effectively improves the performance of \pvec{} in the majority of tests, except append and split for large-sized vectors, where tree-based vectors clearly have an advantage. However, the \pvec{} as an abstraction, introduces a marginal overhead over the pure variants of its representations -- \stdvec{} and \rrbvec{}.
 
 \paragraph{Unique access}
 In the paper Improving RRB-Tree Performance through Transience \cite{improving-performance-through-transience}, the author mentions that correct use of transient types can be checked during compile-time in languages that have linear types \cite{linear-types-can-change-the-world}, such as Rust. 
@@ -28,7 +28,16 @@ This project implements unique access optimization, that is somewhat similar to 
 
 In Rust, a vector can be considered transient when it is accessed through a mutable reference without calling a special function such as \emph{transient}. The Rust's compiler ensures that the mutable reference is \emph{unique} and that the operation is safe. With that knowledge, the program can proceed to update vector in-place without creating copies -- transitively. Rust also allows moving objects between threads, so a vector instantiated on one thread can be updated on another. 
 
-Essentially, the unique access optimization ensures that the data structure can be mutated in-place only when it is safe. If a vector was cloned before being updated, copy-on-write semantics of \rc{} will enforce path-copying leaving the source untouched. Additionally, a "mutable" interface for \pvec{} that makes unique access optimization possible, also makes the API of \pvec{} identical to \stdvec{} and idiomatic to Rust.
+The unique access optimization ensures that the data structure can be mutated in-place only when it is safe. If a vector was cloned before being updated, copy-on-write semantics of \rc{} would enforce path-copying leaving the source untouched. 
+
+Benchmarks for mutative operations, such as push, pop, and update that included tests with and without clone showed that updating a data structure in-place was noticeably faster. 
+
+Additionally, a "mutable" interface for \pvec{} that makes unique access optimization possible, also makes the API of \pvec{} identical to \stdvec{} and idiomatic to Rust.
+
+\paragraph{Idiomatic, ergonomic Rust interface}
+The idiomatic and ergonomic interface of \pvecrs{}, identical to the standard one, simplifies the integration of the library into existing codebases. A side effect of this design is that both types of vectors can be used interchangeably in a generic manner. For example, the vector type can be substituted during compile-time using feature flags without changing the source code. 
+
+Thread-safety is also an optional feature that can be enabled when compiling. This way, developers do not have to pay the cost of using the parallel vector features in sequential applications. 
 
 \section{Implementation state}
 \todo{Add usage numbers after publishing the library}
