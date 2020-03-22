@@ -1,3 +1,7 @@
+% TODO: you should be using terms flat and tree representation (to match with the documentation)
+% TODO: figure out how to make all tables consistently wide across the thesis
+% TODO: consistent references (the format of author names, years, pages, etc)
+
 \documentclass[12pt,a4paper,english,twoside,openright]{report}
 \usepackage{parskip}
 
@@ -74,33 +78,38 @@
 
 \raggedbottom
 
+\newcommand{\type}[1]{\emph{\textbf{#1}}}
+\newcommand{\crate}[1]{\emph{\textbf{#1}}}
+
 \newcommand{\bigo}[1]{$\mathcal{O}(#1)$}
 \newcommand{\bigochar}[1]{$\mathcal{O}$}
 \newcommand{\range}[1]{#1}
-\newcommand{\crate}[1]{\emph{\textbf{#1}}}
 
-\newcommand{\pvecrs}{\emph{pvec-rs}}
-\newcommand{\rayon}{\emph{Rayon}}
+\newcommand{\pvecrs}{\crate{pvec-rs}}
+\newcommand{\imrs}{\crate{imrs}}
+\newcommand{\rpds}{\crate{rpds}}
+\newcommand{\rayon}{\crate{rayon}}
 
 % Used to refer to the RRB-Tree type 
 % provided by pvec-rs.
-\newcommand{\rrbtree}{\emph{\textbf{rrbtree}}}
+\newcommand{\rrbtree}{\type{rrbtree}}
 
 % This macro is used to refer to the RRB-Tree 
 % as a concept, rather than a concrete type 
 % provided by pvec-rs. 
 \newcommand{\treerrb}{\emph{RRB-Tree}}
 
-\newcommand{\refcell}{\emph{\textbf{refcell}}}
-\newcommand{\arc}{\textbf{arc}}
-\newcommand{\rc}{\textbf{rc}}
+\newcommand{\refcell}{\type{refcell}}
+\newcommand{\arc}{\type{arc}}
+\newcommand{\rc}{\type{rc}}
 
-\newcommand{\rbtree}{\emph{\textbf{rbtree}}}
-\newcommand{\rbvec}{\emph{\textbf{rbvec}}}
-\newcommand{\rrbvec}{\emph{\textbf{rrbvec}}}
-\newcommand{\pvec}{\emph{\textbf{pvec}}}
-\newcommand{\imrsvec}{\emph{\textbf{imvec}}}
-\newcommand{\stdvec}{\emph{\textbf{vec}}}
+\newcommand{\rbtree}{\type{rbtree}}
+\newcommand{\rbvec}{\type{rbvec}}
+\newcommand{\rrbvec}{\type{rrbvec}}
+\newcommand{\pvec}{\type{pvec}}
+\newcommand{\imrsvec}{\type{imvec}}
+\newcommand{\stdvec}{\type{vec}}
+
 \newcommand{\m}{$m$}
 \newcommand{\h}{$h$}
 \newcommand{\x}{$x$}
