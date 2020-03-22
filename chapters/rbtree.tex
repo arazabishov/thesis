@@ -1,3 +1,10 @@
+% TODO: give a definition to core (discrete operations)
+%   This is how you can distinguish core from confluent operations:
+%     * Core operations do not produce relaxed nodes in \rrbtree{} unless the nodes on the path to the leaves are already relaxed
+%     * Alternative name for core is discrete
+
+% TODO: define what is transience: https://clojure.org/reference/transients
+
 \chapter{Radix Balanced Tree}
 
 Radix Balanced Tree or \rbtree, is a tree data structure with a fixed number of children per node, which allows access to values using integer keys. It was first introduced by Rich Hickey as a basis for a persistent vector implementation in Clojure's standard library \cite{the-clojure-programming-language}. 
