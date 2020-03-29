@@ -51,7 +51,7 @@ For each input argument, criterion captures 100 samples. The count of runs per s
 Benchmarks of the core operations are executed sequentially on a single thread. 
 
 \subsection{Execution environment}
-All benchmarks were executed on a computer with an octa-core processor with hyper-threading support, 32GB of DDR4 RAM and 1TB solid-state drive. The operating system is macOS Catalina 10.15.2 with the stable Rust compiler version 1.38.0.
+All benchmarks were executed on a computer with an octa-core processor with hyper-threading support, 32GB of DDR4 RAM and 1TB solid-state drive. The operating system is macOS Catalina 10.15.4 with the stable Rust compiler version 1.41.1.
 
 \begin{table}[!htbp]
     \centering
@@ -60,9 +60,9 @@ All benchmarks were executed on a computer with an octa-core processor with hype
         \hline CPU & 2,3 GHz 8-Core Intel Core i9, 16 threads. \\ \hline
         RAM & 32GB DDR4, 2400MHz. \\ \hline
         Disk & 1TB SSD. \\ \hline
-        OS & macOS Catalina v10.15.2. \\ \hline     
-        Rust & v1.38.0. \\ \hline
-        Criterion & v0.3. \\ \hline
+        OS & macOS Catalina v10.15.4. \\ \hline     
+        Rust & v1.41.1. \\ \hline
+        Criterion & v0.3.1 \\ \hline
         im-rs & v14.0.0. \\ \hline
     \end{tabular}
     
@@ -527,4 +527,4 @@ To execute parallel benchmarks, user needs to pass both the \arc{} and \emph{ray
 
 Criterion can also generate HTML reports with charts using \emph{gnuplot}\footnote{\url{http://www.gnuplot.info/}}. Results can be found in the \emph{pvec-rs/target/criterion} directory, and if \emph{gnuplot} is available, the report will be located at \emph{pvec-rs/target/criterion/report/index.html}. 
 
-For more information on available options and parameters for Criterion, please consult the library documentation\footnote{\url{https://docs.rs/criterion/0.3.0/criterion/}}.
+For more information on available options and parameters for Criterion, please consult the library documentation\footnote{\url{https://docs.rs/criterion/0.3.1/criterion/}}.
