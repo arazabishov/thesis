@@ -94,7 +94,6 @@ To understand how effective proposed optimizations are, we need to evaluate vari
 
 \footnotetext{Both \imrsvec{} and \pvec{} use \rrbtree{} at its core. It has been developed independently in parallel to \pvec{} at the time of writing this paper: \url{https://crates.io/crates/im}.}
 
-\todo{Benchmarks described below also include memory benchmarks}
 The benchmarks described below are categorized into two groups:
 \begin{itemize}
     \item Sequential benchmarks for core operations executed on a single thread. They will be executed both against \rc{} and \arc{} variants of the vector.
@@ -191,7 +190,7 @@ There are two dimensions in which the update operation will be evaluated. The fi
 Here is the benchmark list of updating a vector:
 \begin{itemize}
     \item Sequentially, with and without \emph{clone}    
-    \item At random positions: with and without \emph{clone}    
+    \item At random positions, with and without \emph{clone}    
 \end{itemize}
 
 The setup routine for all benchmarks is identical. As for the index benchmarks, it generates both balanced and relaxed variants of the tree-based vectors. The type of generated values is an unsigned 64-bit integer.
