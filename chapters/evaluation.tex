@@ -1,5 +1,5 @@
 \chapter{Performance evaluation}
-In this chapter, I will introduce a methodology for performance evaluation of \rrbvec{}, \pvec{} and their variants, in comparison to implementations from \imrsvec{} and Rust's standard library. We will look at the details of these three stages:
+In this chapter, I will introduce a methodology for performance evaluation of \rrbvec{}, \pvec{}, and their variants, in comparison to implementations from \imrsvec{} and Rust's standard library. We will look at the details of three stages:
 
 \begin{itemize}
     \item First, a methodology for collecting reliable measurements.
@@ -7,10 +7,10 @@ In this chapter, I will introduce a methodology for performance evaluation of \r
     \item Finally, defining benchmarks.
 \end{itemize}
 
-To begin with, I will present a notion of benchmarking framework, before diving into details of specific profiling tests.
+To begin with, I will present a notion of the framework for benchmarking, before diving into details of specific profiling tests.
 
 \section{Methodology}
-Big O is a useful tool for reasoning about scalability and performance in theory, and by design, it does not consider factors such as execution environments. First, it disregards constant factors as they are not significant for the growth rate of functions. Second, it does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influences performance. Furthermore, it also applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
+Big \bigochar{} is a useful tool for reasoning about scalability and performance in theory, and by design, it does not consider factors such as execution environment. First, it disregards constant factors as they are not significant for the growth rate of functions. Second, it does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influences performance. Furthermore, it also applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms, which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
 
 This leads to a need for an experimental performance analysis approach, which would involve executing tests on the actual hardware and software. This, however, introduces another set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for high demanding tasks, by reducing runtime for others \cite{statistically-rigorous-java-performance-evaluation}. Such non-deterministic behavior may lead to profiling results that vary from run to run significantly.
 
@@ -29,12 +29,12 @@ There are several criteria which a suitable framework has to meet:
 \end{itemize}
 
 \subsubsection*{Rust's benchmark tests}
-Rust's testing framework provides an experimental feature\footnote{At the moment of writing, benchmarks are available only in the nightly build of Rust.} that enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function\footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code which otherwise would be considered "dead" or unused.} which is opaque for the compiler.
+Rust's testing framework provides an experimental feature\footnote{At the moment of writing, benchmarks are available only in the nightly build of Rust.} that enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function\footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code, which otherwise would be considered "dead" or unused.} which is opaque for the compiler.
 
 However, it does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks that rely on certain preconditions.
 
 \subsubsection*{Criterion for Rust}
-Criterion for Rust is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable of generating graphs using gnuplot\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid timing of \emph{drop}.
+Criterion for Rust is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, set up routines, and is capable of generating graphs using gnuplot\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid the timing of \emph{drop}.
 
 It is compatible with the stable release of the Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project.
 
@@ -50,8 +50,11 @@ For each input argument, criterion captures 100 samples. The count of runs per s
 
 Benchmarks of the core operations are executed sequentially on a single thread.
 
+\subsection{Garbage collection}
+One of the design goals for this project was to avoid using experimental and unsafe Rust language features. Hence, \pvecrs{}, relies on the memory management means provided by the Rust's standard library only, such as \rc{}. Other automatic memory management mechanisms such as third-party garbage collectors were left out as the future work. 
+
 \subsection{Execution environment}
-All benchmarks were executed on a computer with an octa-core processor with hyper-threading support, 32GB of DDR4 RAM and 1TB solid-state drive. The operating system is macOS Catalina 10.15.4 with the stable Rust compiler version 1.41.1.
+All benchmarks were executed on a computer with an octa-core processor with hyper-threading support, 32GB of DDR4 RAM, and 1TB solid-state drive. The operating system is macOS Catalina 10.15.4, with the stable Rust compiler version 1.41.1.
 
 \begin{table}[!htbp]
     \centering
@@ -91,6 +94,7 @@ To understand how effective proposed optimizations are, we need to evaluate vari
 
 \footnotetext{Both \imrsvec{} and \pvec{} use \rrbtree{} at its core. It has been developed independently in parallel to \pvec{} at the time of writing this paper: \url{https://crates.io/crates/im}.}
 
+\todo{Benchmarks described below also include memory benchmarks}
 The benchmarks described below are categorized into two groups:
 \begin{itemize}
     \item Sequential benchmarks for core operations executed on a single thread. They will be executed both against \rc{} and \arc{} variants of the vector.
@@ -102,7 +106,7 @@ As an instance of \rrbtree{} is not perfectly balanced and involves the use of s
 
 Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The count of the relaxed nodes is partially affected by the size of the vector.
 
-\todo{Decide the name of this optimization and use it consistently}
+\todo{Decide the name of this optimization and use it consistently. Also, it has to be defined somewhere else. }
 \subsection{Unique access or transience}
 While \rrbvec{} performs very well as a persistent data structure, it is not very optimal when persistence is not required. An example is a function that creates and returns an instance of \rrbvec{}, where all versions except the returned one are disregarded.
 
@@ -121,64 +125,11 @@ As one of the suggested optimizations in the paper on \rrbvec{} implementation f
 The purpose of profiling this optimization is to understand whether it improves performance in practice, and in which use cases. The problem size range will include small values as well.
 
 \subsection{Rc vs Arc}
-Since atomic reference-counted pointers are claimed to introduce additional overhead in comparison to their non-threadsafe counterpart, the goal is to check how significant is the difference.
+Atomic reference-counted pointers are expected to introduce additional overhead due to the thread-safety guarantees. The goal is to measure the impact of this overhead in tests, by running the sequential benchmarks first using \rc{}, and then \arc{} pointers. 
 
-As a part of all sequential benchmarks, both \rc{} and \arc{} variants will be evaluated. \rc{} based flavor will not be present in parallel benchmarks, as the Rust's compiler forbids non-threadsafe types to be used across threads.
-
-\todo{Garbage collection}
+Parallel benchmarks will be evaluated using only \arc{} pointers, as Rust's compiler forbids passing non-threadsafe types between threads, such as \rc{}.
 
 \todo{Give the definition for core operations in **one** place}
-
-\section{Measuring the memory footprint}
-As the space complexity is as important as time, this section presents a methodology used to evaluate the memory footprint of both the tree-based and flat vector types.
-
-\subsection{Requirements}
-
-Here are the things that we expect from the memory benchmark suite:
-\begin{itemize}
-    \item The overall memory footprint of the vector, including the use of the stack and the heap memory.
-    \item Reliable and reproducible results.
-\end{itemize}
-
-\subsection{Memory benchmarking tools}
-As of the time of writing, there is no established practice or a framework for measuring the memory usage of the Rust libraries.
-
-However, the operating systems already come with the profiling tools for measuring memory usage. These tools should provide reliable results, as the memory footprint of the process is not changing as much between runs. Hence, it should be sufficient to run each test once.
-
-Two approaches were evaluated:
-\begin{itemize}
-    \item Measuring heap allocations by printing statistics from the system allocator.
-    \item Capturing the memory usage of the process when running the benchmark application.
-\end{itemize}
-
-\subsubsection*{Allocation tracking}
-The first option is not ideal because it only evaluates the heap memory usage. Additionally, a custom memory allocator such as \crate{jemallocator}\footnote{\url{https://crates.io/crates/jemallocator}} is required to retrieve statistics. Using a non-default allocator in tests also means that benchmarks will not accurately reflect the performance in production applications.
-
-\subsubsection*{Process benchmarking}
-Benchmarking by measuring the process footprint allows us to capture both the stack and the heap usage, and it does not depend on any special Rust debug or allocator features. This, in turn, means that the benchmarks can be optimized as if they were compiled for the production use, putting them as close as possible to the real use cases.
-
-\paragraph*{Implementation}
-A new module is introduced to \pvecrs{} -- \crate{pvec-memory}, that includes the binary for executing the memory benchmarks. Its responsibilities are to configure, run and collect the test results. It will be referred to as \emph{memory bencher} from now on. \todo{A call graph for the memory bencher, time, and benchmarks.}
-
-Memory bencher contains a list of tests, input sizes and the vector types. It executes benchmarks by running them through the CLI program called \emph{time}, which outputs information about the process including the maximum amount of memory used in bytes. Memory bencher parses this value from the \emph{maximum resident set size} field.
-
-The program code occupies a part of the process memory, and needs to be accounted for. The bencher measures the footprint of the program without running any tests, and then subtracts it from the benchmark results.
-
-It is important to emphasize that the \emph{time} utility included in macOS is different from the GNU\footnote{\url{https://www.gnu.org/software/time/}} variant, that comes with more options and outputs the \emph{maximum resident set size} in kilobytes instead of bytes. The memory bencher was only tested on macOS, and requires changes to support other platforms.
-
-\subsection{Benchmarks}
-The goals for the memory tests are the following:
-\begin{itemize}
-    \item Measure and compare the memory footprint of the tree-based and standard vectors.
-    \item Evaluate the effectiveness of the structural sharing when cloning a vector.
-\end{itemize}
-
-\subsubsection*{Building a vector}
-This benchmark is expected to reveal the memory overhead of using a tree instead of the contiguous memory block as its height, and the node count grows. Given the size \n{} as a parameter, this benchmark builds a vector by pushing \n{} values into it. The problem size range is \range{[20, 60k]}.
-
-\subsubsection*{Updating and cloning a vector}
-The test builds a new vector of size \n{}, runs a loop from 0 to \n{}, clones a vector, and updates a value at the given index. All cloned instances are accumulated in another vector to observe how well structural sharing helps to save memory. The vector sizes are in \range{[20, 60k]} range. 
-
 \section{Core operations}
 Each benchmark described in this section focuses on a particular core operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify vector, such as push, will have a complementary version of the benchmark which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in the tree-based and standard vectors correspondingly.
 
@@ -543,6 +494,56 @@ Hence, the difference in performance between standard and persistent vector migh
 The total count of words stored in the file is 370103. As the benchmark is parameterized over the size of a vector, which in this case is equal to the number of words, the setup routine caps the count of words by \n{}.
 
 The contents of the file are loaded into memory once, and then before each run, they are copied over to a new vector within the setup routine. A vector is later passed to the test routine that converts it to a parallel iterator.
+
+\section{Measuring the memory footprint}
+As the space complexity is as important as time, this section presents a methodology used to evaluate the memory footprint of both the tree-based and flat vector types.
+
+\subsection{Requirements}
+
+Here are the things that we expect from the memory benchmark suite:
+\begin{itemize}
+    \item The overall memory footprint of the vector, including the use of the stack and the heap memory.
+    \item Reliable and reproducible results.
+\end{itemize}
+
+\subsection{Memory benchmarking tools}
+As of the time of writing, there is no established practice or a framework for measuring the memory usage of the Rust libraries.
+
+However, the operating systems already come with the profiling tools for measuring memory usage. These tools should provide reliable results, as the memory footprint of the process is not changing as much between runs. Hence, it should be sufficient to run each test once.
+
+Two approaches were evaluated:
+\begin{itemize}
+    \item Measuring heap allocations by printing statistics from the system allocator.
+    \item Capturing the memory usage of the process when running the benchmark application.
+\end{itemize}
+
+\subsubsection*{Allocation tracking}
+The first option is not ideal because it only evaluates the heap memory usage. Additionally, a custom memory allocator such as \crate{jemallocator}\footnote{\url{https://crates.io/crates/jemallocator}} is required to retrieve statistics. Using a non-default allocator in tests also means that benchmarks will not accurately reflect the performance in production applications.
+
+\subsubsection*{Process benchmarking}
+Benchmarking by measuring the process footprint allows us to capture both the stack and the heap usage, and it does not depend on any special Rust debug or allocator features. This, in turn, means that the benchmarks can be optimized as if they were compiled for the production use, putting them as close as possible to the real use cases.
+
+\paragraph*{Implementation}
+A new module is introduced to \pvecrs{} -- \crate{pvec-memory}, that includes the binary for executing the memory benchmarks. Its responsibilities are to configure, run and collect the test results. It will be referred to as \emph{memory bencher} from now on. \todo{A call graph for the memory bencher, time, and benchmarks.}
+
+Memory bencher contains a list of tests, input sizes and the vector types. It executes benchmarks by running them through the CLI program called \emph{time}, which outputs information about the process including the maximum amount of memory used in bytes. Memory bencher parses this value from the \emph{maximum resident set size} field.
+
+The program code occupies a part of the process memory, and needs to be accounted for. The bencher measures the footprint of the program without running any tests, and then subtracts it from the benchmark results.
+
+It is important to emphasize that the \emph{time} utility included in macOS is different from the GNU\footnote{\url{https://www.gnu.org/software/time/}} variant, that comes with more options and outputs the \emph{maximum resident set size} in kilobytes instead of bytes. The memory bencher was only tested on macOS, and requires changes to support other platforms.
+
+\subsection{Benchmarks}
+The goals for the memory tests are the following:
+\begin{itemize}
+    \item Measure and compare the memory footprint of the tree-based and standard vectors.
+    \item Evaluate the effectiveness of the structural sharing when cloning a vector.
+\end{itemize}
+
+\subsubsection*{Building a vector}
+This benchmark is expected to reveal the memory overhead of using a tree instead of the contiguous memory block as its height, and the node count grows. Given the size \n{} as a parameter, this benchmark builds a vector by pushing \n{} values into it. The problem size range is \range{[20, 60k]}.
+
+\subsubsection*{Updating and cloning a vector}
+The test builds a new vector of size \n{}, runs a loop from 0 to \n{}, clones a vector, and updates a value at the given index. All cloned instances are accumulated in another vector to observe how well structural sharing helps to save memory. The vector sizes are in \range{[20, 60k]} range. 
 
 \section{Presentation of results}
 The measurements are done in a number of samples that can be configured. By default, the count of samples is set to a 100, and this default is being used for this project. Each sample consists of one or typically more iterations of the routine. The elapsed time between the beginning and the end of the iterations, divided by the number of iterations, gives an estimate of the time taken by each iteration.
