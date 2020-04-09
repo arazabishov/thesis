@@ -1,3 +1,5 @@
+\newcommand{\balanced}{}
+\newcommand{\standard}{\emph{(s)}}
 \newcommand{\relaxed}{\emph{(r)}}
 
 \chapter{Results}
@@ -15,17 +17,13 @@ The results are discussed to address the following points:
 \end{itemize}
 
 \paragraph{Reading notes}
-Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \emph{rb} tree in the benchmark. If not specified, the vector is either balanced or is not based on a tree, like \stdvec{}.
+Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \emph{rb} tree in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when it is flat. If not specified, the vector is backed by the balanced \rbtree{}.
 
 \section{Performance of the core operations}
 \label{sec:perf-seq}
 This section contains performance numbers for the non-threadsafe implementations of \stdvec{}, \rbvec{}, \rrbvec{}, \pvec{}, and \imrsvec{}. Threadsafe variants are evaluated and discussed separately in section \ref{sec:perf-rc-vs-arc}.
 
 \subsection{Indexing}
-% TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
-% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator:
-% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time.
-
 Figures for the index operation are separated by sequential and random access, where the sequential benchmark results are subdivided into the index and iterator figures.
 
 \subsubsection*{Index sequentially}
@@ -40,20 +38,22 @@ Figures for the index operation are separated by sequential and random access, w
             outer sep=0pt
         ]
 
-        \pgfplotstableread[col sep=comma]{data/index_sequentially/imrs-vector-balanced.csv}\idxseqimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/index_sequentially/imrs-vector-relaxed.csv}\idxseqimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/index_sequentially/pvec-balanced.csv}\idxseqpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/index_sequentially/pvec-relaxed.csv}\idxseqpvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/index_sequentially/rbvec-balanced.csv}\idxseqrbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/index_sequentially/rrbvec-relaxed.csv}\idxseqrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/im-rs-vector-balanced.csv}\idxseqimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/im-rs-vector-relaxed.csv}\idxseqimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/pvec-rrbvec-balanced.csv}\idxseqpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/pvec-rrbvec-relaxed.csv}\idxseqpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/pvec-std.csv}\idxseqpvecstd;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/rbvec.csv}\idxseqrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_sequentially/rrbvec.csv}\idxseqrrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/index_sequentially/std-vec.csv}\idxseqstdvector;
 
-        \pgfplotstableread[col sep=comma]{data/iterator_next/imrs-vector-balanced.csv}\itrnextimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/iterator_next/imrs-vector-relaxed.csv}\itrnextimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/iterator_next/pvec-balanced.csv}\itrnextpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/iterator_next/pvec-relaxed.csv}\itrnextpvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/iterator_next/rbvec-balanced.csv}\itrnextrbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/iterator_next/rrbvec-relaxed.csv}\itrnextrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/im-rs-vector-balanced.csv}\itrnextimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/im-rs-vector-relaxed.csv}\itrnextimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/pvec-rrbvec-balanced.csv}\itrnextpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/pvec-rrbvec-relaxed.csv}\itrnextpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/pvec-std.csv}\itrnextpvecstd;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/rbvec.csv}\itrnextrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/iterator_next/rrbvec.csv}\itrnextrrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/iterator_next/std-vec.csv}\itrnextstdvector;
 
         \begin{groupplot}[
@@ -79,16 +79,18 @@ Figures for the index operation are separated by sequential and random access, w
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\idxseqstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\idxseqrbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\idxseqrrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\idxseqpvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\idxseqpvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\idxseqpvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\idxseqimrsvectorbalanced};
             \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\idxseqimrsvectorrelaxed};
-            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{} \standard{}, \pvec{} \balanced{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
 
             \nextgroupplot[xmode=log,ymode=log,title={Iterator}]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\itrnextstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\itrnextrbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\itrnextrrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\itrnextpvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\itrnextpvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\itrnextpvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\itrnextimrsvectorbalanced};
@@ -107,17 +109,17 @@ Unsurprisingly, the \stdvec{} shows the best results in this test. As it is back
 Both balanced and unbalanced \imrsvec{} variants tend to be slower in comparison to \rrbvec{} in the \range{[100, \mega{1}]} input range by a factor of 2.06. For smaller inputs, \rrbvec{} it is slightly faster with a difference of 1.18.
 
 \paragraph{Balanced vs relaxed variants}
-The difference between the balanced \rbvec{} and relaxed \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the relaxed one by a factor of 2.68 in the \range{[100, \mega{1}]} input range. This is expected because \rrbvec{} introduces relaxed nodes, which rely on the size tables to compute the path to the value.
+The difference between \rbvec{} and \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the relaxed one by a factor of 2.68 in the \range{[100, \mega{1}]} input range. This is expected because \rrbvec{} introduces relaxed nodes, which rely on the size tables to compute the path to the value.
 
-This, however, is not the case for small problem sizes in the \range{[0, 100]} range, for which the concatenating algorithm produces a balanced tree. Hence, both balanced and relaxed vectors demonstrate similar performance in that range.
+This, however, is not the case for small problem sizes in the \range{[0, 100]} range, for which the concatenation algorithm produces a balanced tree. Hence, both balanced and relaxed vectors demonstrate similar performance in that range.
 
 \paragraph{Dynamic representation}
-\pvec{} switches its internal representation from the standard vector to \rrbvec{} as the size gets over 1024 elements. This is evident from the plot \ref{fig:index-sequentially}, where \pvec{} is 2.31 faster than \rbvec{}, but slower than \stdvec{} by a factor of 2.61. It is slower because of the overhead induced by acquiring a mutable reference to \rc{} pointer. As soon as the threshold is passed, the difference in performance between \pvec{} and \rrbvec{} becomes negligible.
+\pvec{} switches its internal representation from the standard vector to \rrbvec{} as soon as cloned. This is evident from the plot \ref{fig:index-sequentially}, where \pvec{} is 4.21 faster than \rbvec{}, but slower than \stdvec{} by a factor of 1.75.
 
 \subsubsection*{Iterator}
-Results of the iterator benchmarks show approximately 10 fold improvement in performance over sequential indexing. This is expected, as iterators read the contents of the tree by chunks rather than by index.
+Results of the iterator benchmarks show approximately ten-fold improvement in performance over sequential indexing. This is expected, as iterators read the contents of the tree by chunks rather than by index.
 
-\stdvec{} shows the best results, with a difference of 1.98 on average compared to \pvec{}, and 9.12 in relation to \rrbvec{}. \imrsvec{} is 1.47 ahead of \rrbvec{} in the [10, 100] range.
+\stdvec{} shows the best results, with a difference of 1.98 on average compared to \pvec{}, and 9.12 in relation to \rrbvec{}. \imrsvec{} is 1.47 ahead of \rrbvec{} in the \range{[20, 100]} range.
 
 \paragraph{Balanced vs relaxed variants}
 As iterator does not use size tables for index calculation for \rrbvec{}, it performs identically well compared to \rbvec{}. The same applies to \imrsvec{}.
@@ -127,12 +129,13 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
 
     \center
     \begin{tikzpicture}
-        \pgfplotstableread[col sep=comma]{data/index_randomly/imrs-vector-balanced.csv}\imrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/index_randomly/imrs-vector-relaxed.csv}\imrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/index_randomly/pvec-balanced.csv}\pvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/index_randomly/pvec-relaxed.csv}\pvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/index_randomly/rbvec-balanced.csv}\rbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/index_randomly/rrbvec-relaxed.csv}\rrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/im-rs-vector-balanced.csv}\imrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/im-rs-vector-relaxed.csv}\imrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/pvec-std.csv}\pvecstd;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/pvec-rrbvec-balanced.csv}\pvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/pvec-rrbvec-relaxed.csv}\pvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/rbvec.csv}\rbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/index_randomly/rrbvec.csv}\rrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/index_randomly/std-vec.csv}\stdvector;
 
         \begin{loglogaxis}[
@@ -159,8 +162,11 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
             \addplot[thin, color=mred, mark=pentagon,] table {\rrbvecrelaxed};
             \addlegendentry{\rrbvec{} \relaxed{}}
 
+            \addplot[thin, color=mgreen, mark=*,] table {\pvecstd};
+            \addlegendentry{\pvec{} \standard{}}
+
             \addplot[thin, color=mgreen, mark=square,] table {\pvecbalanced};
-            \addlegendentry{\pvec{}}
+            \addlegendentry{\pvec{} \balanced{}}
 
             \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrelaxed};
             \addlegendentry{\pvec{} \relaxed{}}
@@ -178,10 +184,10 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
 \end{figure}
 
 \paragraph{Balanced vs relaxed variants}
-\rbvec{} outperforms \rrbvec{} by 1.90 in the \range{[100, \mega{1}]} range. Both relaxed \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
+\rbvec{} outperforms \rrbvec{} by 1.90 in the \range{[100, \mega{1}]} range. Both \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
 
 \paragraph{Dynamic representation}
-It is clear that \pvec{} is as fast as \stdvec{} up to the size of 1024, right after which it becomes slower and aligns with the \rrbvec{}. Even then, however, performance difference between \stdvec{} and \pvec{} is not significant, remaining quite consistent over the rest of the input range at 1.99.
+It is clear that \pvec{}, when flat, is marginally slower compared to \stdvec{}. The performance difference remains consistent over the input range at 1.75.
 
 \subsection{Updating}
 Results of the update operation benchmarks are divided by sequential and random access, and complemented with evaluation with the use of clone operation.
