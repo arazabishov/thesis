@@ -73,7 +73,7 @@ All benchmarks were executed on a computer with an octa-core processor with hype
     \caption{Hardware and software specification used for benchmarking.}
 \end{table}
 
-\section{Benchmarking directions}
+\section{Evaluation directions}
 To understand how effective proposed optimizations are, we need to evaluate various tree-based vectors, such as \rbvec{}, \rrbvec{}, and \pvec{}. Implementations from \imrsvec{} and the standard library will be evaluated as well. All vector variants are specified in table \ref{tab:vec-implementations} below.
 
 \begin{table}[!htbp]
@@ -128,7 +128,7 @@ Atomic reference-counted pointers are expected to introduce additional overhead 
 
 Parallel benchmarks will be evaluated using only \arc{} pointers, as Rust's compiler forbids passing non-threadsafe types between threads, such as \rc{}.
 
-\section{Core operations}
+\section{Sequential benchmarks}
 Each benchmark described in this section focuses on a particular core operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify vector, such as push, will have a complementary version of the benchmark, which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in the tree-based and standard vectors correspondingly.
 
 \todo{Put this table where you first define core operations}
@@ -279,7 +279,7 @@ The test itself anticipates a prepared vector, which is generated in the setup r
 
 Once a vector is generated, the benchmark function enters the loop with the condition that the vector needs to contain more than 64 elements. In the loop, a vector is split at index 64, the result of which is assigned back to a variable. Essentially, a vector is being truncated at the front by 64 elements, until it is small enough for the loop to exit.
 
-\section{Parallel vector}
+\section{Parallel benchmarks}
 One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concatenation operations are critical for optimal performance.
 
 In this section, we will first take a look at how Rayon splits and distributes the work across threads, as well as available configuration parameters. Section \ref{sec:par-benchmarks} introduces tests for benchmarking the overall performance of persistent and standard vectors:

@@ -19,7 +19,7 @@ The results are discussed to address the following points:
 \paragraph{Reading notes}
 Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \emph{rb} tree in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when it is flat. If not specified, the vector is backed by the balanced \rbtree{}.
 
-\section{Performance of the core operations}
+\section{Sequential benchmark results}
 \label{sec:perf-seq}
 This section contains performance numbers for the non-threadsafe implementations of \stdvec{}, \rbvec{}, \rrbvec{}, \pvec{}, and \imrsvec{}. Threadsafe variants are evaluated and discussed separately in section \ref{sec:perf-rc-vs-arc}.
 
@@ -757,7 +757,7 @@ Relaxed slicing algorithm outperforms naive \rbvec{} for all vector sizes, with 
 \todo{Execute sequential benchmarks using \arc{} pointer}
 \stdvec{} is not included in the comparison, as its implementation does not rely on the reference counted pointers.
 
-\section{Performance in parallel benchmarks}
+\section{Parallel benchmark results}
 \label{sec:perf-par}
 
 The expectation from parallel benchmarks is to reveal whether proposed optimizations were effective in the parallel context.
