@@ -285,7 +285,7 @@ Updates are slower for \imrsvec{} compared to \rrbvec{} by 2.47 on average. When
 Relaxed nodes and size tables associated with them were expected to have a negative impact on the performance when copying. Though, the numbers in the clone test do not confirm that assumption. However, if updated without cloning, \rrbvec{} is slower than \rbvec{} by 1.33.
 
 \paragraph{Dynamic representation}
-When updating a vector, \pvec{} is faster than both variants of \rbvec{} by a factor of 2.22 on average. It is, however, slower than \stdvec{}, even though the standard vector is used as a representation. It is expected that \pvec{} will introduce some overhead, as essentially, it is an additional abstraction layer.
+When updating a vector, \pvec{} is faster than both variants of \rbvec{} by a factor of 2.22 on average. It is, however, slower than \stdvec{}, even though the standard vector is used as a representation. It is expected that \pvec{} will introduce some overhead, as essentially, it introduces an additional abstraction layer.
 
 \subsubsection*{Update randomly}
 \begin{figure}[!htbp]
