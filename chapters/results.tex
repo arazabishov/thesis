@@ -108,7 +108,7 @@ Unsurprisingly, the \stdvec{} shows the best results in this test. As it is back
 
 Both balanced and unbalanced \imrsvec{} variants tend to be slower in comparison to \rrbvec{} in the \range{[100, \mega{1}]} input range by a factor of 2.06. For smaller inputs, \rrbvec{} it is slightly faster with a difference of 1.18.
 
-\paragraph{Balanced vs relaxed variants}
+\paragraph{Balanced vs. relaxed}
 The difference between \rbvec{} and \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the relaxed one by a factor of 2.68 in the \range{[100, \mega{1}]} input range. This is expected because \rrbvec{} introduces relaxed nodes, which rely on the size tables to compute the path to the value.
 
 This, however, is not the case for small problem sizes in the \range{[0, 100]} range, for which the concatenation algorithm produces a balanced tree. Hence, both balanced and relaxed vectors demonstrate similar performance in that range.
@@ -121,7 +121,7 @@ Results of the iterator benchmarks show approximately ten-fold improvement in pe
 
 \stdvec{} shows the best results, with a difference of 1.98 on average compared to \pvec{}, and 9.12 in relation to \rrbvec{}. \imrsvec{} is 1.47 ahead of \rrbvec{} in the \range{[20, 100]} range.
 
-\paragraph{Balanced vs relaxed variants}
+\paragraph{Balanced vs. relaxed}
 As iterator does not use size tables for index calculation for \rrbvec{}, it performs identically well compared to \rbvec{}. The same applies to \imrsvec{}.
 
 \subsubsection*{Index randomly}
@@ -151,7 +151,7 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
             legend style={draw=none,fill=none,font=\footnotesize},
             legend cell align=left,
             yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
-            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
+            xticklabels={0, 20, 100, \kilo{1}, \kilo{10}, \kilo{100}, \kilo{400}},
         ]
             \addplot[thin, color=morange, mark=*,] table {\stdvector};
             \addlegendentry{\stdvec{}}
@@ -183,7 +183,9 @@ As iterator does not use size tables for index calculation for \rrbvec{}, it per
     \label{fig:index-randomly}
 \end{figure}
 
-\paragraph{Balanced vs relaxed variants}
+A noticeable difference compared to the sequential benchmark is that the performance gap between \pvec{} and \stdvec{} is reduced from 1.76 to 1.14. The reason why \stdvec{} has lost its advantage is because of the frequent cache invalidation on access to random memory locations.
+
+\paragraph{Balanced vs. relaxed}
 \rbvec{} outperforms \rrbvec{} by 1.90 in the \range{[100, \mega{1}]} range. Both \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
 
 \paragraph{Dynamic representation}
@@ -204,28 +206,28 @@ Results of the update operation benchmarks are divided by sequential and random 
             outer sep=0pt
         ]
 
-        \pgfplotstableread[col sep=comma]{data/update/imrs-vector-balanced.csv}\upimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/update/imrs-vector-relaxed.csv}\upimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update/pvec-balanced.csv}\uppvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update/pvec-relaxed.csv}\uppvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update/rbvec-balanced.csv}\uprbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update/rrbvec-relaxed.csv}\uprrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update/im-rs-vector-balanced.csv}\upimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update/im-rs-vector-relaxed.csv}\upimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update/pvec-std.csv}\uppvecstd;
+        \pgfplotstableread[col sep=comma]{data/update/pvec-rrbvec-balanced.csv}\uppvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update/pvec-rrbvec-relaxed.csv}\uppvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update/rbvec.csv}\uprbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update/rrbvec.csv}\uprrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/update/std-vec.csv}\upstdvector;
 
-        \pgfplotstableread[col sep=comma]{data/update_clone/imrs-vector-balanced.csv}\upclimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_clone/imrs-vector-relaxed.csv}\upclimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-balanced.csv}\upclpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-relaxed.csv}\upclpvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update_clone/rbvec-balanced.csv}\upclrbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_clone/rrbvec-relaxed.csv}\upclrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone/im-rs-vector-balanced.csv}\upclimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone/im-rs-vector-relaxed.csv}\upclimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-std.csv}\upclpvecstd;
+        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-rrbvec-balanced.csv}\upclpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone/pvec-rrbvec-relaxed.csv}\upclpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone/rbvec.csv}\upclrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone/rrbvec.csv}\upclrrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/update_clone/std-vec.csv}\upclstdvector;
 
         \begin{groupplot}[
             group style={group size=2 by 1, horizontal sep=56pt,},
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},
-            yticklabels={0, \micros{0.01}, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10},
-            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}},
             ymajorgrids=true,
             xmajorgrids=true,
             grid style=dashed,
@@ -234,6 +236,8 @@ Results of the update operation benchmarks are divided by sequential and random 
                 xmode=log,
                 ymode=log,
                 title={Update sequentially},
+                yticklabels={0, \micros{0.01}, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10},
+                xticklabels={0, 20, 100, \kilo{1}, \kilo{10}, \kilo{100}},
                 legend columns=4,
                 legend style={
                     at={(1.06,-0.2)},
@@ -243,16 +247,24 @@ Results of the update operation benchmarks are divided by sequential and random 
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\uprbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\uprrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\uppvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\uppvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\uppvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upimrsvectorbalanced};
             \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upimrsvectorrelaxed};
-            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{} \standard{}, \pvec{} \balanced{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
 
-            \nextgroupplot[xmode=log,ymode=log,title={Update sequentially and cloning}]
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Update sequentially and cloning},
+                yticklabels={0, \micros{0.01}, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10},
+                xticklabels={0, 100, \kilo{1}, \kilo{10}},
+            ]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upclstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\upclrbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\upclrrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\upclpvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\upclpvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\upclpvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upclimrsvectorbalanced};
@@ -265,15 +277,15 @@ Results of the update operation benchmarks are divided by sequential and random 
     \label{fig:update-sequentially}
 \end{figure}
 
+\stdvec{} is the fastest vector in the sequential updates test, with the closest runner-up being \pvec{} with the mean difference of 2.32. When cloned, however, tree-based types, such as \rbvec{}, start outperforming the standard vector after surpassing the \kilo{4} size. The difference grows quickly, reaching 7.45 at the size of \kilo{20}. It demonstrates how well path copying scales when cloning large data structures.
+
+Updates are slower for \imrsvec{} compared to \rrbvec{} by 2.47 on average. When cloned, however, the difference is less significant, varying mostly in the range of \range{[20, 400]}.
+
+\paragraph{Balanced vs. relaxed}
+Relaxed nodes and size tables associated with them were expected to have a negative impact on the performance when copying. Though, the numbers in the clone test do not confirm that assumption. However, if updated without cloning, \rrbvec{} is slower than \rbvec{} by 1.33.
+
 \paragraph{Dynamic representation}
-In the benchmark of updating a vector without cloning, \pvec{} is faster than both variants of \rrbvec{} by a factor of 2.22 in the \range{[10, 1024]} size range. After switching the internal representation, it aligns with \rrbvec{}.
-
-When the clone operation is involved, \pvec{} outperforms \rrbvec{} in the \range{[80, 1024]} range by a factor of 1.6.
-
-\paragraph{Unique access or transience}
-All vector implementations are faster when the clone operation is not used. The \stdvec{} shows the best results in all sizes, with the runner up \pvec{} being slower on average of 6.47. However, with the clone operation, the \stdvec{} is slightly faster only up to the size of 1024, after which it quickly degenerates due to a very inefficient clone.
-
-\imrsvec{} was slower than \rrbvec{} in both tests, with and without clone operation used, by a factor of 1.73 and 1.5 correspondingly.
+When updating a vector, \pvec{} is faster than both variants of \rbvec{} by a factor of 2.22 on average. It is, however, slower than \stdvec{}, even though the standard vector is used as a representation. It is expected that \pvec{} will introduce some overhead, as essentially, it is an additional abstraction layer.
 
 \subsubsection*{Update randomly}
 \begin{figure}[!htbp]
@@ -287,20 +299,22 @@ All vector implementations are faster when the clone operation is not used. The 
             outer sep=0pt
         ]
 
-        \pgfplotstableread[col sep=comma]{data/update_randomly/imrs-vector-balanced.csv}\upimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_randomly/imrs-vector-relaxed.csv}\upimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update_randomly/pvec-balanced.csv}\uppvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_randomly/pvec-relaxed.csv}\uppvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update_randomly/rbvec-balanced.csv}\uprbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_randomly/rrbvec-relaxed.csv}\uprrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/im-rs-vector-balanced.csv}\upimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/im-rs-vector-relaxed.csv}\upimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/pvec-std.csv}\uppvecstd;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/pvec-rrbvec-balanced.csv}\uppvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/pvec-rrbvec-relaxed.csv}\uppvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/rbvec.csv}\uprbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_randomly/rrbvec.csv}\uprrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/update_randomly/std-vec.csv}\upstdvector;
 
-        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/imrs-vector-balanced.csv}\upclimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/imrs-vector-relaxed.csv}\upclimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/pvec-balanced.csv}\upclpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/pvec-relaxed.csv}\upclpvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/rbvec-balanced.csv}\upclrbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/rrbvec-relaxed.csv}\upclrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/im-rs-vector-balanced.csv}\upclimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/im-rs-vector-relaxed.csv}\upclimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/pvec-std.csv}\upclpvecstd;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/pvec-rrbvec-balanced.csv}\upclpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/pvec-rrbvec-relaxed.csv}\upclpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/rbvec.csv}\upclrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/update_clone_randomly/rrbvec.csv}\upclrrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/update_clone_randomly/std-vec.csv}\upclstdvector;
 
         \begin{groupplot}[
@@ -308,7 +322,7 @@ All vector implementations are faster when the clone operation is not used. The 
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},
             yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
-            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
+            xticklabels={0, 20, 100, \kilo{1}, \kilo{10}, \kilo{100}},
             ymajorgrids=true,
             xmajorgrids=true,
             grid style=dashed,
@@ -326,16 +340,24 @@ All vector implementations are faster when the clone operation is not used. The 
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\uprbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\uprrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\uppvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\uppvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\uppvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upimrsvectorbalanced};
             \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\upimrsvectorrelaxed};
-            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{} \standard{}, \pvec{} \balanced{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
 
-            \nextgroupplot[xmode=log,ymode=log,title={Update randomly and cloning}]
+            \nextgroupplot[
+                xmode=log,
+                ymode=log,
+                title={Update randomly and cloning},
+                yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
+                xticklabels={0, 100, \kilo{1}, \kilo{10}},
+            ]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\upclstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\upclrbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\upclrrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\upclpvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\upclpvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\upclpvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\upclimrsvectorbalanced};
@@ -348,17 +370,7 @@ All vector implementations are faster when the clone operation is not used. The 
     \label{fig:update-randomly}
 \end{figure}
 
-Even though both \stdvec{}, \pvec{} are faster on average, they are slower than tree-based implementations for the small input range \range{[10, 100]}. This is because tree-based vectors have pre-allocated space for values in the form of tail\todo{ref to background}, while \stdvec{} does not allocate anything on the heap by default.
-
-\imrsvec{} shows good results too, being faster than \rrbvec{} for smaller inputs in the benchmark without clone.
-
-\paragraph{Balanced vs relaxed variants}
-The overhead of relaxed nodes of \rrbtree{} makes a difference of 1.49 compared to \rbtree{} in the benchmark without clone operation. When clone is used, the difference is negligible at a factor of 0.97. This shows that the size tables of relaxed nodes do not have a measurable impact on performance when cloned.
-
-\paragraph{Dynamic representation}
-When tested without clone, a relaxed \pvec{} shows good results and loses only to \stdvec{} with a difference of 1.72 up to 1024, and 0.57 from 1024.
-
-In the test with clone, \pvec{} outperforms all other tree-based implementations in the \range{[100, \kilo{1}]} range, and outperforms \stdvec{} after surpassing the size of 1024, by using \rrbvec{} internally. For larger inputs in the \range{[\kilo{2}, \kilo{20}]} range, \pvec{} and \rrbvec{} are significantly faster than \stdvec{} by 2.29.
+As with indexing, when values are updated randomly rather than sequentially, the performance gap between the \stdvec{} and \pvec{} became as small as 1.11 due to the frequent cache invalidations caused by random access. Other than that, there are no significant distinctions.
 
 \subsection{Pushing}
 Benchmarks are divided into two use cases:

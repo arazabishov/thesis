@@ -181,27 +181,27 @@ In this benchmark, values will be read at random positions. Thus, it is quite li
 By iterating \n{} times, a value is accessed at random index, which is generated within the \range{[0, N)} range by using the \crate{rand} crate\footnote{A Rust library for random number generation: \url{https://crates.io/crates/rand}}. According to the \crate{rand} documentation, generated indices are uniformly distributed. The number generator is explicitly seeded to produce the same stream of randomness between runs.
 
 \subsection{Updating}
-There are two dimensions in which the update operation will be evaluated. The first one, similar to the index operation, is the order in which vector values are updated: sequential and random. The second dimension introduces the clone operation, which is used in combination with update to reveal how cloning affects performance.
+There are two dimensions in which the update operation will be evaluated. The first one, similar to the index operation, is the order in which vector values are updated: sequential and random. The second dimension introduces the clone operation used to reveal the cost of copying.
 
-Here is the benchmark list of updating a vector:
+The benchmark list:
 \begin{itemize}
     \item Sequentially, with and without \emph{clone}
     \item At random positions, with and without \emph{clone}
 \end{itemize}
 
-The setup routine for all benchmarks is identical. As for the index benchmarks, it generates both balanced and relaxed variants of the tree-based vectors. The type of generated values is an unsigned 64-bit integer.
+The setup routine for all benchmarks is identical. As for the index benchmarks, it generates both balanced and relaxed variants of the tree-based vectors. The type of inserted values is an unsigned 64-bit integer.
 
-The size of the generated vector is determined by the problem size passed as an argument. The problem size domain for benchmarks using clone is \range{[10, \kilo{20}]}, which is smaller compared to the \range{[10, \kilo{100}]} range, used for benchmarks without clone. This is done to reduce the runtime of benchmarks.
+The vector size is determined by the benchmark argument. The problem size domain for tests using clone is \range{[20, \kilo{20}]}, which is smaller compared to the \range{[20, \kilo{100}]} range, used for benchmarks without clone. This is done to reduce the runtime of benchmarks.
 
-\paragraph{The cost of naive clone vs path copying}
+\paragraph{The cost of naive clone vs. path copying}
 One of the claimed advantages of \rbvec{} over \stdvec{}, is the cheap clone operation enabled by the path copying algorithm of \rbtree{}. \pvec{} takes advantage of that by switching from the flat to the tree-based representation when cloned. Hence, the objectives are:
 \begin{itemize}
     \item Compare performance of naive and path copying algorithms.
-    \item Evaluate the efficiency of dynamic internal representation in \pvec{}.
+    \item Evaluate the efficiency of dynamic representation in \pvec{}.
 \end{itemize}
 
 \paragraph{The overhead of relaxed nodes in \rrbtree{}}
-Relaxed nodes of \rrbtree{} use size tables to keep track of the size of its child nodes. Balanced nodes, on the other hand, do not need them, as the size can be derived from the node level. Hence, relaxed nodes are more expensive to clone. Additionally, \rrbtree{} is not perfectly balanced as \rbtree{}, potentially resulting in taller trees. The results of benchmarks will reveal how significant this overhead is in practice.
+Relaxed nodes of \rrbtree{} use size tables to keep track of the size of its child nodes. Balanced nodes, on the other hand, do not need them, as the size can be derived from the node level. Thus, relaxed nodes are more expensive to clone. Additionally, \rrbtree{} is not perfectly balanced as \rbtree{}, potentially resulting in taller trees. The results will reveal how significant this overhead is in practice.
 
 \subsubsection*{Update sequentially}
 The test function iterates over indices in the \range{[0, N)} range, where \n{} is the problem size, acquiring a mutable reference to the value at the given position. Once the reference is acquired, it is used to increment the value.
@@ -210,7 +210,7 @@ The test function iterates over indices in the \range{[0, N)} range, where \n{} 
 The test function contains a loop, which is executed \n{} times. In the loop body, value is updated by incrementing it, at the index that is randomly generated in the \range{[0, N)} range.
 
 \subsubsection*{Extending benchmarks with the clone operation}
-Both benchmarks are extended with the clone operation. The test with clone introduces an additional variable for keeping track of the cloned vector. This is done to ensure that at least two vector instances exist at the same time when the update is executed. This is necessary because \rc{} pointers used to implement \rbtree{}, clone the underlying value on mutation only when the reference count is bigger than one. Thus, by having a cloned instance of vector present in the scope, we enforce the path copying algorithm to be used when updating a vector.
+The test with clone introduces an additional variable for keeping track of the cloned vector. This is done to ensure that at least two vector instances exist simultaneously when the update is executed. This is necessary because \rc{} pointers used to implement \rbtree{}, clone the underlying value on mutation only when the reference count is bigger than one. Thus, by having a cloned instance of vector present in the scope, we enforce the path copying algorithm to be used when updating a vector.
 
 \subsection{Pushing}
 This benchmark focuses on building a vector from the empty state, as well as pushing values into a prebuilt vector of different types. Both tests will be extended with the clone operation to evaluate the efficiency of \pvec{}'s dynamic internal representation:
