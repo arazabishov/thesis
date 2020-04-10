@@ -261,11 +261,8 @@ The benchmark function iterates over generated vectors and appends them into a v
 \subsection{Splitting}
 The split operation slices a vector into two parts at the given index. The \rrbtree{}'s algorithm theoretically can achieve good performance by avoiding unnecessary copying. However, due to its complexity, it might be outperformed by naive copying for small-sized vectors.
 
-\paragraph{Naive vs. relaxed splitting algorithm}
-This benchmark is aimed to compare \rrbvec{}'s slice algorithm to \stdvec{}'s and \rbvec{}'s naive copying.
-
 \paragraph{Splitting vectors}
-The test itself anticipates a prepared vector, which is generated in the setup routine. To evaluate both balanced and relaxed variants of vectors, it generates them differently by either using concatenation or simple pushing. The vector sizes are varying in the \range{[128, \kilo{40}]}.
+The test itself anticipates a prepared vector, which is generated in the setup routine. To evaluate both balanced and relaxed variants, it generates them either by using appending or pushing. The vector sizes are within \range{[128, \kilo{200}]}.
 
 Once a vector is generated, the benchmark function enters the loop with the condition that the vector needs to contain more than 64 elements. In the loop, a vector is split at index 64, the result of which is assigned back to a variable. Essentially, a vector is being truncated at the front by 64 elements, until it is small enough for the loop to exit.
 

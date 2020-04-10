@@ -709,24 +709,25 @@ For the input size up to \kilo{2}, \rbvec{} and \rrbvec{} show similar results. 
 
 This, however, drastically changes after the \kilo{2} size, where \rbvec{} continuously degrades, showing the worst results among all vectors. The performance difference between \rbvec{} and \rrbvec{} at the size of \mega{1} is staggering 145.59.
 
-As for \pvec{}, it follows the \stdvec{} and \rrbvec{} curves because of the dynamic representation as expected.
+As for \pvec{}, it follows the curves of \stdvec{} and \rrbvec{} because of the dynamic representation, as expected.
 
-\subsection{Slicing}
+\subsection{Splitting}
 
 \begin{figure}[t]
 
     \center
     \begin{tikzpicture}
-        \pgfplotstableread[col sep=comma]{data/split_off/imrs-vector-relaxed.csv}\imrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/split_off/pvec-relaxed.csv}\pvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/split_off/rbvec-balanced.csv}\rbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/split_off/rrbvec-relaxed.csv}\rrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/split_off/im-rs-vector-relaxed.csv}\imrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/split_off/pvec-std.csv}\pvecstd;
+        \pgfplotstableread[col sep=comma]{data/split_off/pvec-rrbvec-relaxed.csv}\pvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/split_off/rbvec.csv}\rbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/split_off/rrbvec.csv}\rrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/split_off/std-vec.csv}\stdvector;
 
         \begin{loglogaxis}[
             smooth,
             width=300pt,
-            title={Slicing vectors},
+            title={Splitting vectors},
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},
             xticklabels={0, 100, \kilo{1}, \kilo{10}, \kilo{100}, \kilo{400}},
@@ -747,6 +748,9 @@ As for \pvec{}, it follows the \stdvec{} and \rrbvec{} curves because of the dyn
             \addplot[thin, color=mred, mark=pentagon,] table {\rrbvecrelaxed};
             \addlegendentry{\rrbvec{} \relaxed{}}
 
+            \addplot[thin, color=mgreen, mark=*,] table {\pvecstd};
+            \addlegendentry{\pvec{} \standard{}}
+
             \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrelaxed};
             \addlegendentry{\pvec{} \relaxed{}}
 
@@ -755,17 +759,16 @@ As for \pvec{}, it follows the \stdvec{} and \rrbvec{} curves because of the dyn
         \end{loglogaxis}
     \end{tikzpicture}
 
-    \caption{Benchmarking results of slicing vectors.}
-    \label{fig:slice}
+    \caption{Benchmarking results of splitting vectors.}
+    \label{fig:split}
 \end{figure}
 
-The performance advantage of \stdvec{} over \rrbtree based vectors is TODOX up to the size of \kilo{20}, after which it degrades and gets slower than \imrsvec{} and \rrbvec{} by TODOX.
+% TODO: you have to be open about:
+%  1: split_off and append are fast*er* compared to vec only for large sizes
+%   1.1: this is part of the reason why in par benchmarks tree-based vectors suck
+%  2: split_off benchmark is biased as it favors the use-case that is faster for the tree-based implementations
 
-\paragraph{Balanced vs relaxed}
-Relaxed slicing algorithm outperforms naive \rbvec{} for all vector sizes, with a staggering difference of TODOX for the last size of \kilo{400}.
-
-\paragraph{Dynamic representation}
-\pvec{} shows good results up to the size of \kilo{1}, being faster than \rrbvec{} and \imrsvec{} by TODOX. After switching the internal representation, it gets slower than \rrbvec{} by TODOX.
+The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of \kilo{20}, after which it degrades and gets slower than \imrsvec{} and \rrbvec{} by 5.95. The difference is more significant for \rbvec{} at the factor of 65.65 for the size of \kilo{400}.
 
 \subsection{Rc vs Arc}
 \label{sec:perf-rc-vs-arc}
