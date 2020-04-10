@@ -393,14 +393,14 @@ Both benchmarks are extended using the clone operation.
             outer sep=0pt
         ]
 
-        \pgfplotstableread[col sep=comma]{data/push/imrs-vector-balanced.csv}\pushimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/push/pvec-balanced.csv}\pushpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/push/rbvec-balanced.csv}\pushrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push/im-rs-vector-balanced.csv}\pushimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/push/pvec-std.csv}\pushpvecstd;
+        \pgfplotstableread[col sep=comma]{data/push/rbvec.csv}\pushrbvecbalanced;
         \pgfplotstableread[col sep=comma]{data/push/std-vec.csv}\pushstdvector;
 
-        \pgfplotstableread[col sep=comma]{data/push_clone/imrs-vector-balanced.csv}\pushclnimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_clone/pvec-balanced.csv}\pushclnpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_clone/rbvec-balanced.csv}\pushclnrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone/im-rs-vector-balanced.csv}\pushclnimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone/pvec-rrbvec-balanced.csv}\pushclnpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone/rbvec.csv}\pushclnrbvecbalanced;
         \pgfplotstableread[col sep=comma]{data/push_clone/std-vec.csv}\pushclnstdvector;
 
         \begin{groupplot}[
@@ -419,27 +419,33 @@ Both benchmarks are extended using the clone operation.
                 title={Building a new vector},
                 legend columns=4,
                 legend style={
-                    at={(1.12,-0.2)},
+                    at={(0.5,-0.2)},
                     anchor=north
                 }
             ]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushrbvecbalanced};
-            \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\pushpvecbalanced};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\pushpvecstd};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushimrsvectorbalanced};
-            \legend{\stdvec{}, \rbvec{}, \pvec{}, \imrsvec{}}
+            \legend{\stdvec{}, \rbvec{}, \pvec{} \standard{}, \imrsvec{}}
 
             \nextgroupplot[
                 xmode=log,
                 ymode=log,
                 title={Building a new vector and cloning it.},
-                xticklabels={0, 10, 100, \kilo{1}, \kilo{10}},
+                xticklabels={0, 20, 100, \kilo{1}, \kilo{10}},
                 yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10},
+                legend columns=4,
+                legend style={
+                    at={(0.5,-0.2)},
+                    anchor=north
+                }
             ]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushclnstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushclnrbvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\pushclnpvecbalanced};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushclnimrsvectorbalanced};
+            \legend{\stdvec{}, \rbvec{}, \pvec{}, \imrsvec{}}
         \end{groupplot}
     \end{tikzpicture}
     \end{adjustbox}
@@ -448,24 +454,16 @@ Both benchmarks are extended using the clone operation.
     \label{fig:push}
 \end{figure}
 
-When building vector without clones in the \range{[10, 100]} range, tree-based implementations are faster than \stdvec{}, as they take advantage of the tail optimization. After the size of 100 elements, the \stdvec{} outperforms the next fastest implementation -- \pvec{}, by TODOX.
+When building a vector in the \range{[20, 100]} range, tree-based types are slightly faster than \stdvec{}, as they take advantage of the tail optimization.
 
-However, when clone is used, \rbvec{} outperforms \stdvec{} for all inputs by TODOX on average. Even though \imrsvec{} is slower than \rbvec{}, it is faster than \pvec{} by TODOX.
+\imrsvec{} is almost as fast as \rbvec{} with a difference of 1.18. When cloned, however, \rbvec{} outperforms it by a significant amount of 3.61.
+
+In the cloning benchmark, persistent vectors once more demonstrate how effective they are when copied, by \rbvec{} being faster than \stdvec{} by a staggering factor of 12.85.
 
 \paragraph{Dynamic representation}
-In the test without clone, \pvec{} outperforms \rbvec{} by a marginal difference of TODOX.
+Overall, \pvec{} is the fastest vector, mostly due to the combination of using \stdvec{} with the pre-allocated space\footnote{\pvec{} is initialized to the capacity of branching factor, that is 32 in the test configuration.} for small sizes. Closer to the end of the size range, \stdvec{} and \pvec{} align in performance with the average difference of 1.27.
 
-Up to the size of 1024, \pvec{} is the slowest implementation when cloned. The overhead of naive copying is significant enough to cancel out the advantage of using dynamic representation.
-
-% TODO: move this chunk to update benchmarks instead?
-% In the benchmark \ref{fig:push}, we measure performance of the push operation followed by the explicit clone operation. By cloning a vector, we ensure that following modifications will not affect existing versions. In other words, we will get persistent behavior.
-
-\paragraph{Unique access or transience}
-The benchmark with clone shows how vectors perform when used as persistent. Clone operation can be thought of as an operation to take a snapshot of a vector.
-
-Evidently, cloning comes at a cost, both for tree-based implementations and a standard vector. For example, the runtime of \rbvec{} is TODOX higher for the test using clone compared to the one without it.
-
-Though, tree-based vectors perform significantly better compared to \stdvec{} when growing in size. At the size of \kilo{10}, \rbvec{} is TODOX cheaper to clone compared to \stdvec{}.
+When cloned, \pvec{} is losing only to \rbvec{} by in-significant 1.35, demonstrating the effectiveness of the dynamic representation.
 
 \subsubsection*{Adding values to an existing vector}
 \begin{figure}[!htbp]
@@ -479,27 +477,28 @@ Though, tree-based vectors perform significantly better compared to \stdvec{} wh
             outer sep=0pt
         ]
 
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/imrs-vector-balanced.csv}\pushimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/imrs-vector-relaxed.csv}\pushimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-balanced.csv}\pushpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/pvec-relaxed.csv}\pushpvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rbvec-balanced.csv}\pushrbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/rrbvec-relaxed.csv}\pushrrbvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/push_unbalanced/std-vec.csv}\pushstdvector;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/im-rs-vector-balanced.csv}\pushimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/im-rs-vector-relaxed.csv}\pushimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/pvec-std.csv}\pushpvecstd;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/pvec-rrbvec-balanced.csv}\pushpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/pvec-rrbvec-relaxed.csv}\pushpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/rbvec.csv}\pushrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/rrbvec.csv}\pushrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_relaxed/std-vec.csv}\pushstdvector;
 
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/imrs-vector-balanced.csv}\pushclnimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/imrs-vector-relaxed.csv}\pushclnimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-balanced.csv}\pushclnpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/pvec-relaxed.csv}\pushclnpvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rbvec-balanced.csv}\pushclnrbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/rrbvec-relaxed.csv}\pushclnrrbvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/push_clone_unbalanced/std-vec.csv}\pushclnstdvector;
+        \pgfplotstableread[col sep=comma]{data/push_clone_relaxed/im-rs-vector-balanced.csv}\pushclnimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone_relaxed/im-rs-vector-relaxed.csv}\pushclnimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_clone_relaxed/pvec-rrbvec-balanced.csv}\pushclnpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone_relaxed/pvec-rrbvec-relaxed.csv}\pushclnpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_clone_relaxed/rbvec.csv}\pushclnrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/push_clone_relaxed/rrbvec.csv}\pushclnrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/push_clone_relaxed/std-vec.csv}\pushclnstdvector;
 
         \begin{groupplot}[
             group style={group size=2 by 1, horizontal sep=56pt,},
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},
-            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}},
+            xticklabels={0, 20, 100, \kilo{1}, \kilo{10}, \kilo{100}},
             yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1},
             ymajorgrids=true,
             xmajorgrids=true,
@@ -511,25 +510,31 @@ Though, tree-based vectors perform significantly better compared to \stdvec{} wh
                 title={Adding values to an existing vector},
                 legend columns=4,
                 legend style={
-                    at={(1.12,-0.2)},
+                    at={(0.5,-0.2)},
                     anchor=north
                 }
             ]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushrbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\pushrrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\pushpvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\pushpvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\pushpvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushimrsvectorbalanced};
             \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\pushimrsvectorrelaxed};
-            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{} \standard{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
 
             \nextgroupplot[
                 xmode=log,
                 ymode=log,
-                xticklabels={0, 10, 100, \kilo{1}, \kilo{10}},
+                xticklabels={0, 20, 100, \kilo{1}, \kilo{10}, \kilo{20}},
                 yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1, 10, 100},
                 title={Adding values to an existing vector and cloning it},
+                legend columns=4,
+                legend style={
+                    at={(0.5,-0.2)},
+                    anchor=north
+                }
             ]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\pushclnstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\pushclnrbvecbalanced};
@@ -538,6 +543,7 @@ Though, tree-based vectors perform significantly better compared to \stdvec{} wh
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\pushclnpvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\pushclnimrsvectorbalanced};
             \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\pushclnimrsvectorrelaxed};
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
         \end{groupplot}
     \end{tikzpicture}
     \end{adjustbox}
@@ -546,14 +552,9 @@ Though, tree-based vectors perform significantly better compared to \stdvec{} wh
     \label{fig:push-existing}
 \end{figure}
 
-% TODO: cut down on text by focusing on what benchmark measures, rather than how.
-
-\paragraph{Balanced vs relaxed}
 Even though size tables increase the size of the node and add complexity to the implementation, both relaxed and balanced trees show nearly identical performance in this test.
 
-When push is called continuously, even for relaxed nodes, only balanced nodes are added to the tree. Eventually, all new nodes at the end of the tree, except the root, will be balanced.
-
-Hence, there is nearly no overhead of running push over a relaxed \rrbvec{}.
+When push is called continuously, even for relaxed nodes, only balanced nodes are added to the tree. Eventually, all new nodes at the end of the tree, except the root, will be balanced. Thus, there is nearly no overhead of running push over a relaxed \rrbvec{} in the given benchmarks.
 
 \subsection{Popping}
 

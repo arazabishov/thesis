@@ -213,26 +213,16 @@ The test function contains a loop, which is executed \n{} times. In the loop bod
 The test with clone introduces an additional variable for keeping track of the cloned vector. This is done to ensure that at least two vector instances exist simultaneously when the update is executed. This is necessary because \rc{} pointers used to implement \rbtree{}, clone the underlying value on mutation only when the reference count is bigger than one. Thus, by having a cloned instance of vector present in the scope, we enforce the path copying algorithm to be used when updating a vector.
 
 \subsection{Pushing}
-This benchmark focuses on building a vector from the empty state, as well as pushing values into a prebuilt vector of different types. Both tests will be extended with the clone operation to evaluate the efficiency of \pvec{}'s dynamic internal representation:
-\begin{itemize}
-    \item Building a vector from the empty state.
-    \begin{itemize}
-        \item With and without \emph{clone}.
-    \end{itemize}
-    \item Pushing values on top of the existing vector.
-    \begin{itemize}
-        \item With and without \emph{clone}.
-    \end{itemize}
-\end{itemize}
+The push operation is evaluated by populating an empty and existing vectors. Both tests are also extended with the clone operation.
 
 \paragraph{The overhead of relaxed nodes in \rrbtree{}}
-The push operation is responsible for increasing the capacity of a vector. While the push operation of \rrbtree{} heavily relies on the size tables for calculating the capacity of nodes, for \rbtree{}, it is sufficient to have the level of the node and the branching factor to perform the same calculation. Additionally, constructing new relaxed nodes requires allocating size tables. All these factors combined are expected to make \rrbtree{}'s push slower compared to \rbtree{}. Thus, there is a dedicated benchmark that uses prebuilt, \rrbtree{}, and \rbtree{} based vectors to evaluate the difference.
+The push operation is responsible for increasing the vector capacity. While the vector capacity calculation for \rrbtree{} relies on the size tables, for \rbtree{}, it is sufficient to know the level of the node and the branching factor. Additionally, instantiating relaxed nodes implies the allocation of size tables. All these factors combined are expected to make \rrbtree{}'s push slower compared to \rbtree{}. Thus, there is a dedicated benchmark that uses prebuilt, \rrbtree{}, and \rbtree{} based vectors to evaluate the difference.
 
 \paragraph{Building a vector}
 As vector is built from scratch in this benchmark, there is no need for a setup routine. The test function runs a loop over the \range{[0, N)} range of indices, and pushes the index as a value into a vector. The problem size range is \range{[20, \mega{1}]}.
 
 \paragraph{Pushing values into an existing vector}
-Push operation does not produce relaxed nodes in balanced trees. Hence, there is no way to evaluate the impact of relaxation in the benchmark of building a vector from scratch. However, in this benchmark, values are added to an existing vector, where vector can be both balanced and relaxed depending on the setup routine.
+Push operation does not produce relaxed nodes in balanced trees. Hence, there is no way to evaluate the impact of relaxation in the benchmark of building a vector from scratch. Thus, in this benchmark, values are added to an existing vector, where vector can be both balanced and relaxed depending on the setup routine.
 
 Objectives of the benchmark are:
 \begin{itemize}
@@ -243,7 +233,7 @@ Objectives of the benchmark are:
 The setup routine generates a vector of the fixed size of \n{} and passes it to the test function. The balanced, \rbtree{} based vector is created by pushing values directly into it, while the \rrbtree{} based one, is created by concatenating several vectors together. Once a vector is created, the test function pushes \n{} values onto it.
 
 \paragraph{Extending benchmarks with the clone operation}
-To force \pvec{} to switch from \stdvec{} to \rrbvec{}, several preconditions have to be met, including the reference count being bigger than 1. Hence, the benchmarks above are extended to use clone, in the same way as for benchmarks of the update operation. Beyond the evaluation of \pvec{}, the results are expected to reveal how tree-based vectors stack up to \stdvec{}. The input range for benchmarks using clone is \range{[10, 20k]}.
+To force \pvec{} to switch from \stdvec{} to \rrbvec{}, several preconditions have to be met, including the reference count being bigger than 1. Hence, the benchmarks above are extended to use clone, in the same way as for benchmarks of the update operation. Beyond the evaluation of \pvec{}, the results are expected to reveal how tree-based vectors stack up to \stdvec{}. The input range for benchmarks using clone is \range{[20, \kilo{40}]}.
 
 \subsection{Popping}
 The pop operation is responsible for managing the capacity of the underlying data structure as well as push. For \stdvec{} it means shrinking the array and copying elements over. For tree-based vectors, it implies de-allocating nodes and reducing the height of the tree when necessary.
