@@ -236,14 +236,14 @@ The setup routine generates a vector of the fixed size of \n{} and passes it to 
 To force \pvec{} to switch from \stdvec{} to \rrbvec{}, several preconditions have to be met, including the reference count being bigger than 1. Hence, the benchmarks above are extended to use clone, in the same way as for benchmarks of the update operation. Beyond the evaluation of \pvec{}, the results are expected to reveal how tree-based vectors stack up to \stdvec{}. The input range for benchmarks using clone is \range{[20, \kilo{40}]}.
 
 \subsection{Popping}
-The pop operation is responsible for managing the capacity of the underlying data structure as well as push. For \stdvec{} it means shrinking the array and copying elements over. For tree-based vectors, it implies de-allocating nodes and reducing the height of the tree when necessary.
+The pop operation manages the vector capacity as well as push. For \stdvec{}, it means shrinking the array and copying elements over. For tree-based vectors, it implies de-allocating nodes and reducing the height of the tree when necessary.
 
-The benchmark is divided into two tests, namely pop and pop clone. The first test implies calling pop continuously in the loop until the vector is emptied, with the problem size of \range{[20, \kilo{60}]}.
+The benchmark is divided into two tests, namely pop and pop clone. The first test calls pop continuously in the loop until the vector is emptied, with the problem size range of \range{[20, \kilo{60}]}.
 
-In the second benchmark, each pop operation will be followed by a clone. Both benchmarks will be executed against relaxed and balanced vector variants, which are prepared in the setup routine. The problem size range is \range{[20, \kilo{20}]}.
+In the second benchmark, each pop operation will be followed by a clone. Both tests include balanced and relaxed vector types, which are prepared in the setup routine. The problem size range is \range{[20, \kilo{40}]}.
 
 \paragraph{The overhead of relaxed nodes in \rrbtree{}}
-Lowering the height of \rrbtree{} involves the calculation of tree capacity using size tables, which comes at an additional cost. Thus, one of the goals is to measure and compare the cost of pop for both balanced and relaxed variants of vectors.
+Lowering the height of \rrbtree{} involves the tree capacity calculation using size tables, that comes at an additional cost. Thus, this test includes both balanced and relaxed variants of vectors.
 
 \subsection{Appending}
 The append operation merges contents of one vector into another. One of the advantages of \rrbtree{} is the relatively low cost of append, that is \bigo{(m^2 \cdot log_m(n)}, in comparison to \bigo{max(a,b)} of \stdvec{}. The objective is to confirm this assumption experimentally.

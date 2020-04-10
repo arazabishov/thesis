@@ -569,27 +569,29 @@ When push is called continuously, even for relaxed nodes, only balanced nodes ar
             outer sep=0pt
         ]
 
-        \pgfplotstableread[col sep=comma]{data/pop/imrs-vector-balanced.csv}\popimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/pop/imrs-vector-relaxed.csv}\popimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/pop/pvec-balanced.csv}\poppvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/pop/pvec-relaxed.csv}\poppvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/pop/rbvec-balanced.csv}\poprbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/pop/rrbvec-relaxed.csv}\poprrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop/im-rs-vector-balanced.csv}\popimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop/im-rs-vector-relaxed.csv}\popimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop/pvec-std.csv}\poppvecstd;
+        \pgfplotstableread[col sep=comma]{data/pop/pvec-rrbvec-balanced.csv}\poppvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop/pvec-rrbvec-relaxed.csv}\poppvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop/rbvec.csv}\poprbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop/rrbvec.csv}\poprrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/pop/std-vec.csv}\popstdvector;
 
-        \pgfplotstableread[col sep=comma]{data/pop_clone/imrs-vector-balanced.csv}\popclnimrsvectorbalanced;
-        \pgfplotstableread[col sep=comma]{data/pop_clone/imrs-vector-relaxed.csv}\popclnimrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/pop_clone/pvec-balanced.csv}\popclnpvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/pop_clone/pvec-relaxed.csv}\popclnpvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/pop_clone/rbvec-balanced.csv}\popclnrbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/pop_clone/rrbvec-relaxed.csv}\popclnrrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/im-rs-vector-balanced.csv}\popclnimrsvectorbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/im-rs-vector-relaxed.csv}\popclnimrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/pvec-std.csv}\popclnpvecstd;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/pvec-rrbvec-balanced.csv}\popclnpvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/pvec-rrbvec-relaxed.csv}\popclnpvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/rbvec.csv}\popclnrbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/pop_clone/rrbvec.csv}\popclnrrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/pop_clone/std-vec.csv}\popclnstdvector;
 
         \begin{groupplot}[
             group style={group size=2 by 1, horizontal sep=56pt,},
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},
-            xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}},
+            xticklabels={0, 20, 100, \kilo{1}, \kilo{10}, \kilo{60}},
             yticklabels={0, \micros{0.1}, \micros{1}, 0.01, 0.1, 1},
             ymajorgrids=true,
             xmajorgrids=true,
@@ -608,23 +610,24 @@ When push is called continuously, even for relaxed nodes, only balanced nodes ar
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\popstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\poprbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\poprrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\poppvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\poppvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\poppvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\popimrsvectorbalanced};
             \addplot[ultra thin, color=mpurple, mark=square, mark size=1.6pt,] table {\popimrsvectorrelaxed};
-            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
-
+            \legend{\stdvec{}, \rbvec{}, \rrbvec{} \relaxed{}, \pvec{} \standard{}, \pvec{}, \pvec{} \relaxed{}, \imrsvec{}, \imrsvec{} \relaxed{}}
 
             \nextgroupplot[
                 xmode=log,
                 ymode=log,
-                xticklabels={0, 10, 100, \kilo{1}, \kilo{10}},
+                xticklabels={0, 20, 100, \kilo{1}, \kilo{10}},
                 yticklabels={0, \micros{1}, 0.01, 0.1, 1, 10, 100},
                 title={Popping values from a vector and cloning it},
             ]
             \addplot[ultra thin, color=morange, mark=*, mark size=1.2pt,] table {\popclnstdvector};
             \addplot[ultra thin, color=mred, mark=*, mark size=1.2pt,] table {\popclnrbvecbalanced};
             \addplot[ultra thin, color=mred, mark=pentagon, mark size=1.6pt,] table {\popclnrrbvecrelaxed};
+            \addplot[ultra thin, color=mgreen, mark=*, mark size=1.2pt,] table {\popclnpvecstd};
             \addplot[ultra thin, color=mgreen, mark=square, mark size=1.6pt,] table {\popclnpvecbalanced};
             \addplot[ultra thin, color=mgreen, mark=diamond*, mark size=1.2pt,] table {\popclnpvecrelaxed};
             \addplot[ultra thin, color=mpurple, mark=pentagon*, mark size=1.2pt,] table {\popclnimrsvectorbalanced};
@@ -637,13 +640,11 @@ When push is called continuously, even for relaxed nodes, only balanced nodes ar
     \label{fig:pop}
 \end{figure}
 
-\imrsvec{} was as fast as \rbvec{} and \rrbvec{} in the test without clone. The difference between balanced and relaxed nodes of TODOX is marginal, which shows that the cost of handling the capacity of relaxed tree is not high.
+In the test without clone, \imrsvec{} is slightly faster than \rbvec{} and \rrbvec{} by 1.29. The difference between balanced and relaxed trees is only 1.02, showing that the cost of managing the relaxed tree capacity is not expensive.
 
-\paragraph{Dynamic representation}
-Overall, \pvec{} is the second fastest implementation in the test without clone, with \stdvec{} being the first and TODOX faster on average. With clone, \pvec{} degrades in performance and aligns with \stdvec{} up to the size of 1024 elements.
+\pvec{} is the second fastest vector with \stdvec{} being 1.99 faster on average. When cloned, \pvec{} switches the representation and becomes as fast as \rbvec{}. 
 
-\paragraph{Unique access and transience}
-It is apparent that all vector implementations are faster when treated sa transient. It is expected, as clone adds overhead. \rbvec{} and \rrbvec{} implementations show the best results, being faster than \stdvec{} by TODOX at most.
+On the other hand, \imrsvec{} is the slowest tree-based vector when cloned, but still faster than \stdvec{}, especially for large sizes.
 
 \subsection{Concatenating}
 
