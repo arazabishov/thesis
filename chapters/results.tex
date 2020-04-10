@@ -642,26 +642,27 @@ When push is called continuously, even for relaxed nodes, only balanced nodes ar
 
 In the test without clone, \imrsvec{} is slightly faster than \rbvec{} and \rrbvec{} by 1.29. The difference between balanced and relaxed trees is only 1.02, showing that the cost of managing the relaxed tree capacity is not expensive.
 
-\pvec{} is the second fastest vector with \stdvec{} being 1.99 faster on average. When cloned, \pvec{} switches the representation and becomes as fast as \rbvec{}. 
+\pvec{} is the second fastest vector with \stdvec{} being 1.99 faster on average. When cloned, \pvec{} switches the representation and becomes as fast as \rbvec{}.
 
 On the other hand, \imrsvec{} is the slowest tree-based vector when cloned, but still faster than \stdvec{}, especially for large sizes.
 
-\subsection{Concatenating}
+\subsection{Appending}
 
 \begin{figure}[t]
 
     \center
     \begin{tikzpicture}
-        \pgfplotstableread[col sep=comma]{data/append/imrs-vector-relaxed.csv}\imrsvectorrelaxed;
-        \pgfplotstableread[col sep=comma]{data/append/pvec-relaxed.csv}\pvecrelaxed;
-        \pgfplotstableread[col sep=comma]{data/append/rbvec-balanced.csv}\rbvecbalanced;
-        \pgfplotstableread[col sep=comma]{data/append/rrbvec-relaxed.csv}\rrbvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/append/im-rs-vector-relaxed.csv}\imrsvectorrelaxed;
+        \pgfplotstableread[col sep=comma]{data/append/pvec-std.csv}\pvecstd;
+        \pgfplotstableread[col sep=comma]{data/append/pvec-rrbvec-relaxed.csv}\pvecrelaxed;
+        \pgfplotstableread[col sep=comma]{data/append/rbvec.csv}\rbvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/append/rrbvec.csv}\rrbvecrelaxed;
         \pgfplotstableread[col sep=comma]{data/append/std-vec.csv}\stdvector;
 
         \begin{loglogaxis}[
             smooth,
             width=300pt,
-            title={Concatenating vectors},
+            title={Appending vectors},
             xlabel={Vector size (log scale)},
             ylabel={Mean time (log scale) [\millis{}]},
             xticklabels={0, 10, 100, \kilo{1}, \kilo{10}, \kilo{100}, \mega{1}},
@@ -682,6 +683,9 @@ On the other hand, \imrsvec{} is the slowest tree-based vector when cloned, but 
             \addplot[thin, color=mred, mark=pentagon,] table {\rrbvecrelaxed};
             \addlegendentry{\rrbvec{} \relaxed{}}
 
+            \addplot[thin, color=mgreen, mark=*,] table {\pvecstd};
+            \addlegendentry{\pvec{} \standard{}}
+
             \addplot[thin, color=mgreen, mark=diamond*,] table {\pvecrelaxed};
             \addlegendentry{\pvec{} \relaxed{}}
 
@@ -690,25 +694,22 @@ On the other hand, \imrsvec{} is the slowest tree-based vector when cloned, but 
         \end{loglogaxis}
     \end{tikzpicture}
 
-    \caption{Benchmarking results of concatenating vectors.}
-    \label{fig:concatenate}
+    \caption{Benchmarking results of appending vectors.}
+    \label{fig:append}
 \end{figure}
 
-Based on results, naive copying of \stdvec{} is the fastest concatenation algorithm up to the problem size of \kilo{40}. However, after surpassing \kilo{40} it quickly degenerates and loses to \rrbvec{} by TODOX on average, with a maximum difference of TODOX for the size of \mega{1}.
+Based on the results, the naive copying of \stdvec{} is the fastest concatenation algorithm up to the problem size of \kilo{40}. However, after surpassing \kilo{40} it quickly degenerates and loses to \rrbvec{} by 6.53, with a maximum difference of 12.85 for the size of \mega{1}.
 
 Even though not for all input sizes, we can see that \rrbvec{}'s concatenation algorithm scales better and eventually outperforms \stdvec{}.
 
-\imrsvec{} catches up to \stdvec{} only at the size of \kilo{400}, still being slower than \rrbvec{} by TODOX at that point.
+\imrsvec{} catches up to \stdvec{} only at the size of \kilo{400}, still being slower than \rrbvec{} by 1.29 at that point.
 
-\paragraph{Balanced vs relaxed}
-For the input size up to \kilo{2}, \rbvec{} and \rrbvec{} show similar results. Simplicity of naive concatenation used by \rbvec{} is sufficient to be as fast as \rrbvec{} due to the small problem size.
+\paragraph{Balanced vs. relaxed}
+For the input size up to \kilo{2}, \rbvec{} and \rrbvec{} show similar results. The simplicity of naive concatenation used by \rbvec{} is sufficient to be as fast as \rrbvec{} due to the small problem size.
 
-This, however, drastically changes after the \kilo{2} size, where \rbvec{} continuously degrades showing the worst results among all vectors. The performance difference between \rbvec{} and \rrbvec{} at the size of \mega{1} is TODOX.
+This, however, drastically changes after the \kilo{2} size, where \rbvec{} continuously degrades, showing the worst results among all vectors. The performance difference between \rbvec{} and \rrbvec{} at the size of \mega{1} is staggering 145.59.
 
-\paragraph{Dynamic representation}
-Thanks to the \stdvec{} representation, \pvec{} performs better than \rrbvec{} by TODOX up to the size of 1024. The moment when it switches its internal representation can be observed in the figure \ref{fig:concatenate}, where \pvec{} quickly degenerates up the performance level of \rrbvec{} between \kilo{2} and \kilo{4} sizes.
-
-% TODO: upgrade pvec to use rrbvec both in pop and split_off benchmarks.
+As for \pvec{}, it follows the \stdvec{} and \rrbvec{} curves because of the dynamic representation as expected.
 
 \subsection{Slicing}
 

@@ -249,7 +249,7 @@ Lowering the height of \rrbtree{} involves the tree capacity calculation using s
 The append operation merges contents of one vector into another. One of the advantages of \rrbtree{} is the relatively low cost of append, that is \bigo{(m^2 \cdot log_m(n)}, in comparison to \bigo{max(a,b)} of \stdvec{}. The objective is to confirm this assumption experimentally.
 
 \paragraph{Naive vs. relaxed append algorithm}
-The \rbtree{}-based vector uses a naive concatenation algorithm that simply moves values from one vector to another. \rrbtree{}, on the other hand, merges and re-balances two trees, which is faster in theory. Due to the hardware design specifics, this might not be true for all vector sizes. Thus, benchmarks will reveal how different algorithms perform depending on the size of concatenated vectors.
+The \rbtree{}-based vector uses a naive concatenation algorithm that moves values from one vector to another. \rrbtree{}, on the other hand, merges and re-balances two trees, which is faster in theory. Due to the hardware design specifics, this might not be true for all vector sizes. Thus, benchmarks will reveal how different algorithms perform depending on the size of concatenated vectors.
 
 \paragraph{Appending vectors}
 The setup routine prepares a collection of vectors, where each consecutive vector is bigger than the previous. The total size of all prepared vectors adds up to the problem size \n{}. The benchmark is parameterized over the vector size, which will be in the \range{[20, \mega{1}]} range.
