@@ -1,4 +1,4 @@
-\chapter{Performance evaluation}
+\chapter{Methodology}
 In this chapter, I will introduce a methodology for performance evaluation of \rrbvec{}, \pvec{}, and their variants, in comparison to implementations from \imrsvec{} and Rust's standard library. We will look at the details of three stages:
 
 \begin{itemize}
@@ -9,7 +9,7 @@ In this chapter, I will introduce a methodology for performance evaluation of \r
 
 To begin with, I will present a notion of the framework for benchmarking, before diving into details of specific profiling tests.
 
-\section{Methodology}
+\section{Introduction}
 Big \bigochar{} is a useful tool for reasoning about scalability and performance in theory, and by design, it does not consider factors such as execution environment. First, it disregards constant factors as they are not significant for the growth rate of functions. Second, it does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influences performance. Furthermore, it also applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms, which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
 
 This leads to a need for an experimental performance analysis approach, which would involve executing tests on the actual hardware and software. This, however, introduces another set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for high demanding tasks, by reducing runtime for others \cite{statistically-rigorous-java-performance-evaluation}. Such non-deterministic behavior may lead to profiling results that vary from run to run significantly.
