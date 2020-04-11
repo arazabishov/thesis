@@ -777,14 +777,13 @@ The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of 
 
 \section{Parallel benchmark results}
 \label{sec:perf-par}
+The results present the overall vector performance across several operations in the parallel context to check the following:
+\begin{itemize}
+    \item Scalability of the tree-based vectors.
+    \item The impact of the relaxed append and split operations.
+\end{itemize}
 
-The expectation from parallel benchmarks is to reveal whether proposed optimizations were effective in the parallel context.
-
-First, if confluent concatenation and slice operations of \rrbvec{} are faster compared to \rbvec{}. And second, whether the dynamic representation has a positive impact on the overall performance of \pvec{}.
-
-At last, we will evaluate the impact of the increasing number of threads on the performance.
-
-The results are presented in the form of a three-dimensional graph, where x and y-axis correspond to the problem size and number of threads used, while z is used for the mean run time.
+The results are presented in the form of a three-dimensional graph, where x and y-axis correspond to the problem size and number of used threads, while z stands for the mean runtime.
 
 \subsection{Adding elements of two vectors.}
 
@@ -802,7 +801,7 @@ The results are presented in the form of a three-dimensional graph, where x and 
             smooth,
             width=300pt,
             title style={align=center},
-            title={Adding elements of two \n{} sized vectors\\ parallelised on \emph{K} number of threads.},
+            title={Adding elements of two \n{} sized vectors\\ parallelized on \emph{K} number of threads.},
             ymajorgrids=true,
             xmajorgrids=true,
             zmajorgrids=true,
@@ -842,24 +841,18 @@ The results are presented in the form of a three-dimensional graph, where x and 
     \end{tikzpicture}
 
     \label{fig:adding-two-vectors-par}
-    \caption{Adding elements of two \n{} sized vectors parallelised on \emph{K} number of threads.}
+    \caption{Adding elements of two \n{} sized vectors parallelized on \emph{K} number of threads.}
 \end{figure}
 
-% NOTE: you can justify this by the goal of minimizing the overhead of the actual computation, to have a simpler way to compare different vector implementations.
-
-\paragraph{Balanced vs relaxed}
-\rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as concatenation and slice operations that create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{} with a difference of 3.2-3.5x on average.
+\rbvec{} and \rrbvec{} show nearly identical results in sequential benchmarks. This is expected, as append and split operations that create relaxed nodes were not used. Hence, \rrbvec{} remains balanced throughout the test, and is backed by the same representation of \rrbtree{} as \rbvec{}. Both variants are consistently slower compared to \stdvec{}, with a difference of 3.2-3.5 on average.
 
 When executed in parallel, \rrbvec{} starts outperforming \rbvec{} at the size of 1024 elements. The reason why difference becomes apparent after surpassing that size is that the concatenation algorithm used in this project produces balanced \rbtree{} when the height of the tree does not exceed two levels. With the branching factor of 32, the capacity of the tree of two levels is equal to 1024.
 
-As the vector size grows, Rayon performs more slices to achieve optimal vector size per a single thread. This, in a turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has the naive implementation of concatenation and slice, its performance degrades with the input size growth. The difference in execution time depending on size falls into the 1.0-2.3x range.
+As the vector size grows, Rayon performs more slices to achieve optimal vector size per a single thread. This, in turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has the naive implementation of append and split, its performance degrades with the input size growth. The difference in execution time, depending on size falls into the 1.0-2.3 range.
 
-To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as slice and concatenation is used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3x, 1.0-2.8x, and 1.1-2.12x correspondingly.
+To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as split and append are used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3, 1.0-2.8, and 1.1-2.12 correspondingly.
 
-\paragraph{Dynamic representation}
-\pvec{} consistently demonstrates better results compared to \rrbvec{}. This can be explained by the fact that it uses \stdvec{} as its internal representation until the concatenation stage, during which it upgrades to \rrbvec{}. In the sequential benchmark, \pvec{} is faster compared to \rrbvec{} by 1.7-2.0x. When parallelized on 4 threads, \rrbvec{} becomes slightly more efficient due to the higher count of concatenations and slices, with the difference at 1.3-1.8x.
-
-Even though \rrbvec{}'s concatenation and slice operations are faster for the large-sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that concatenations and slices substitute only a small portion of all operations used in this test. Operations such as get and push, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9x and 1.6-1.7x in the sequential and 4-threaded parallel benchmarks correspondingly.
+Even though \rrbvec{}'s append and split operations are faster for the large-sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that appends and splits constitute only a small number of all operations used in this test. Operations such as push and get, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9 and 1.6-1.7 in the sequential and 4-threaded parallel benchmarks correspondingly.
 
 \paragraph{Effect of parallelism}
 % TODO: this is not entirely true, because 4 threads benchmark runs slightly faster for large datasets compared to sequential bench.
@@ -924,13 +917,6 @@ The sequential variant of the benchmark outperformed all subsequent parallel tes
     \caption{Filtering palindromes on \emph{K} number of threads.}
 \end{figure}
 
-\paragraph{Balanced vs relaxed}
-As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test as both of them are backed by a balanced \rbtree{}. When the benchmark is parallelized, \rrbvec{} gains advantage due to its efficient slice and concatenation operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0x for the test run with 2 threads, and 1.7-2.5x for 4 threads.
+As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test, as both of them are backed by a balanced \rbtree{}. When the benchmark is parallelized, \rrbvec{} gains advantage due to its efficient slice and concatenation operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0 for the test run with two threads, and 1.7-2.5 for four threads.
 
-\paragraph{Dynamic representation}
-Results show that \pvec{} outperforms \rbvec{} and \rrbvec{} for all vector sizes and thread configurations. When it comes to \stdvec{}, \pvec{} shows 1.4x slower run time at the input size of 10000 words, after which it catches up and surpasses \stdvec{} at the mark of 200000 words. For the biggest problem size of 370103 words, \pvec{} outperforms \stdvec{} with a difference of 1.1x.
-
-The increase in the thread count causes a higher count of vector slices and concatenations. Thus, the bigger the problem size and the thread count is, the more advantages \pvec{} provides, demonstrating performance results comparable to \stdvec{}.
-
-% \section{Discussion}
-% The performance of the \rrbvec{} implementation and the different optimizations were evaluated through repeated runs of the benchmarks, and is compared to other implementations such \stdvec{} and \imrsvec{}.
+The increase in the thread count causes a higher count of vector slices and concatenations. Thus, the bigger the problem size and the thread count is, the more advantages \rrbvec{} provides, demonstrating performance results comparable to \stdvec{}.

@@ -267,24 +267,16 @@ The test itself anticipates a prepared vector, which is generated in the setup r
 Once a vector is generated, the benchmark function enters the loop with the condition that the vector needs to contain more than 64 elements. In the loop, a vector is split at index 64, the result of which is assigned back to a variable. Essentially, a vector is being truncated at the front by 64 elements, until it is small enough for the loop to exit.
 
 \section{Parallel benchmarks}
-One of the claims is that \rrbvec{} is very efficient when it comes to split and concatenate operations. The data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to ensure good parallelism. Thus, fast split and concatenation operations are critical for optimal performance.
+The data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to facilitate the parallelism. Thus, data structures with the fast split and append operations are critical for optimal performance for such frameworks.
 
-In this section, we will first take a look at how Rayon splits and distributes the work across threads, as well as available configuration parameters. Section \ref{sec:par-benchmarks} introduces tests for benchmarking the overall performance of persistent and standard vectors:
+In this section, we will take a look at how to configure Rayon and review how it distributes the work across threads. Section \ref{sec:par-benchmarks} describes the following performance tests in detail:
 
 \begin{itemize}
     \item Adding elements of two vectors.
-    \item Check if a word is a palindrome.
+    \item Checking if a word is a palindrome.
 \end{itemize}
 
-All the tests will be executed on 1, 2, 4, 8, and 16 threads.
-
-Unlike the measurements presented from the sequential benchmarks, the parallel ones include the runtime of both vector operations and Rayon. As the objective is the overall performance comparison, this is considered to be an acceptable tradeoff.
-
-The results will be used to evaluate the effectiveness of the following optimizations:
-\begin{itemize}
-    \item The effect of relaxed concatenation and split operations of \rrbvec{} on the overall performance.
-    \item Dynamic internal representation of \pvec{}.
-\end{itemize}
+Unlike the sequential benchmarks that measure operations in isolation, the parallel benchmarks include Rayon's runtime. It is considered to be an acceptable tradeoff, as the objective is to evaluate the overall performance. Additionally, we also want to check whether the relaxed append and split of \rrbvec{} have a positive performance impact.
 
 \subsection{Rayon}
 Rayon, a data parallelism library for Rust, helps to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon, on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores as long as it is beneficial.
@@ -311,9 +303,9 @@ Rayon, a data parallelism library for Rust, helps to turn sequential code into p
 
 The convenience of Rust iterators is in the provided operators that are called \emph{combinators}. Combinators can be chained and combined, allowing a developer to perform complex manipulations of iterators safely and efficiently.
 
-Parallel iterators provide a similar set of combinators, even though not entirely identical. As iterators process values sequentially, there is a set of combinators that expect values to be emitted in a particular order. As the parallel iterators are designed to process data in any order, inherently sequential combinators are simply not applicable. Thus, Rayon might be not a suitable solution for algorithms relying on the sequential order of execution.
+Parallel iterators provide a similar set of combinators, even though not entirely identical. As iterators process values sequentially, there is a set of combinators that expect values to be emitted in a particular order. As the parallel iterators are designed to process data in any order, inherently sequential combinators are not applicable. Thus, Rayon might not be a suitable solution for algorithms relying on the sequential order of execution.
 
-Another limitation which parallel iterators impose, is that type of values which it works with have to implement the \emph{Send} trait. It means using non-threadsafe types such as \rc{} in combination with Rayon is prohibited.
+Another requirement for parallel iterators is that the type of values it works with have to implement the \emph{Send} trait. It means using non-threadsafe types such as \rc{} in combination with Rayon is prohibited.
 
 \paragraph{Work splitting}
 \begin{figure}[!htbp]
@@ -358,11 +350,15 @@ Another limitation which parallel iterators impose, is that type of values which
     \label{fig:rayon-work-splitting}
 \end{figure}
 
-One of the Rayon's components, a fork/join framework, is responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see figure \ref{fig:rayon-work-splitting}.
+% TODO: reference for fork/join frameworks
+% TODO: be consistent with the typesetting for types. You sometimes use emph, emph(bold), etc.
+The fork/join framework is a part of Rayon responsible for dividing and distributing the work between threads. When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see figure \ref{fig:rayon-work-splitting}.
 
-As demonstrated in figure \ref{fig:rayon-join}, the work is \emph{potentially} divided between two threads by calling \mintinline{rust}{rayon::join}, which accepts two closures. Rayon decides whether it is beneficial to parallelize the work, depending on the count of available threads, the split factor, and the workload. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided into smaller parts. When both closures finish working, the results are combined and returned to the caller.
+A method that splits the work is \mintinline{rust}{rayon::join}, and it accepts two \emph{closures}\footnote{Rust’s closures are anonymous functions you can save in a variable or pass as arguments to other functions.}. Its usage is demonstrated in figure \ref{fig:rayon-join}.
 
-The size of the work chunk, or the \emph{split factor}, can be controlled by two operations available for \emph{IndexedParallelIterator}, namely \emph{with\_min\_len} and \emph{with\_max\_len}. The use of combinators which may affect the size of a collection, such as \emph{filter}, returns a \emph{ParallelIterator} which does not support configuration of the \emph{split factor}.
+Next, Rayon decides whether it is beneficial to parallelize the work by evaluating the factors such as the number of available threads, the \emph{split factor}\footnote{Split factor is a combination of the minimum and the maximum size of the chunk of work.}, and the workload. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided further. When both closures finish working, the results are combined and returned to the caller.
+
+\emph{Split factor} can be configured by two methods, namely \emph{with\_min\_len} and \emph{with\_max\_len}, available for \emph{IndexedParallelIterator}. The use of combinators that may affect the size of a collection, such as \emph{filter}, returns a \emph{ParallelIterator} which does not support configuration of the \emph{split factor}.
 
 \begin{figure}[!htbp]
     \centering
@@ -374,24 +370,26 @@ The size of the work chunk, or the \emph{split factor}, can be controlled by two
         );
     \end{minted}
 
-    \caption{An example for using rayon's join.}
+    \caption{An example of using Rayon's join.}
     \label{fig:rayon-join}
 \end{figure}
 
-By default, the count of threads allocated by Rayon is equal to the number of cores available in the system. To observe how the thread count affects the performance, Rayon's thread pool will be configured to work with 2, 4, 8, and 16 threads.
+By default, the thread number allocated by Rayon is equal to the number of cores available in the system. To observe how the thread count affects the performance, Rayon's thread pool will be configured to work with 2, 4, 8, and 16 threads.
 
 \paragraph{Load balancing}
-In a perfect world, the chunks of work split between threads take the same amount of time to process. In reality, this is often not the case, resulting in some threads idling. In Rayon, each thread has a queue of work attached to it. It keeps processing the queue until it becomes empty. To avoid idling, the thread which has finished processing its queue can steal work from another thread. This technique is known as work-stealing and is used as the main mechanism for work distribution in Rayon.
+Ideally, tasks split between threads take the same amount of time to process. Unfortunately, this is often not the case, resulting in poor utilization of resources. To fairly distribute the work, Rayon attaches a work queue to each thread. A thread keeps processing the queue until it becomes empty. When the queue is empty, a thread can steal work from another thread. This technique is known as work-stealing.
 
 \paragraph{Computation stages}
-Computation stages of both "Add elements of two vectors" and "Check if a word is a palindrome" benchmarks, can be described in three steps.
-\begin{itemize}
-    \item First, split the work between threads.
-    \item Then process the chunk of work sequentially.
-    \item Finally, combine and return the results.
-\end{itemize}
+The parallel benchmarks for this project are executed in three stages:
+\begin{enumerate}
+    \item Split the work into tasks between threads.
+    \item Process the tasks.
+    \item Combine and return the results.
+\end{enumerate}
 
-The final step can be subdivided further:
+% TODO: you haven't really described how results are collected, and what are Fold and Reduce combinators.
+% TODO: throwing a snippet in won't help.
+The third step can be either of two:
 \begin{itemize}
     \item Collect individual items into a vector using the parallel \emph{Fold} combinator.
     \item Reduce emitted vectors into a single one using the \emph{Reduce} combinator.
@@ -418,52 +416,34 @@ The final step can be subdivided further:
 
 \subsection{Benchmarks}
 \label{sec:par-benchmarks}
-The benchmarks were executed against following vector implementations: \stdvec{}, \rbvec{}, \rrbvec{}, and \pvec{}, where \rbvec{}, \rrbvec{}, and \pvec{} are based on the threadsafe reference-counted pointer -- \arc{}. The \imrsvec{} is not included because it does not implement the Rayon's \emph{IntoParallelIterator} trait, which makes its evaluation irrelevant.
+The benchmarks were executed against \stdvec{} and vectors from \pvecrs{}, where \rbvec{}, \rrbvec{}, and \pvec{} were compiled with the threadsafe reference-counted pointer -- \arc{}.
 
-Benchmarks have been parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation executed on a single thread.
+As of the time of writing, \imrsvec{} does not implement the Rayon's \emph{IntoParallelIterator} trait. Since all other tested vectors rely on it, the decision was made not to include \imrsvec{} in the parallel benchmarks to avoid the unfair comparison.
 
-\subsubsection*{Sum of elements of two vectors}
+Benchmarks were parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation used as the baseline.
+
+\subsubsection*{Adding elements of two vectors}
 Given two equally sized vectors of integers, the test function adds values at the corresponding indices and returns a new instance of a vector with results. The benchmark is subdivided into three steps:
 
 \begin{enumerate}
-    \item Transform each vector into a parallel iterator and merge them into a single sequence of value pairs.
-    \item Add items of the emitted tuple of two integers into a single value.
+    \item Transform two vectors into a single sequence of value pairs by merging their parallel iterators.
+    \item Add values of the emitted value pair into a single integer.
     \item Reduce individual sums into a vector of results.
 \end{enumerate}
 
-The setup routine prepares two vectors of integers the \range{[0, N]} problem size range.
+The setup routine prepares two vectors of integers in the \range{[0, N]} problem size range.
 
-\subsubsection*{Check if a word is a palindrome}
-The benchmark checks whether a word is a palindrome. As input, we are using a list of English words consisting of only alphabetic characters. The benchmark consists of two variants:
-\begin{itemize}
-    \item Annotating every word with a boolean which indicates if the word is a palindrome.
-    \item Collecting palindromes into a new vector.
-\end{itemize}
-
-The computation stages of both tests are very similar code-wise, with the difference present in the operators used to process each word:
+\subsubsection*{Checking if a word is a palindrome}
+The benchmark checks whether a word is a palindrome and annotates it with a boolean flag. As input, we are using a list of English words consisting only of alphabetic characters. The computation stages are the following:
 
 \begin{enumerate}
     \item Transform the given vector of words into a parallel iterator.
-    \item A word processing step for two tests correspondingly:
-    \begin{enumerate}
-        \item Return a tuple containing the word and the flag which indicates whether the word is a palindrome.
-        \item Filter out all words which are not palindromes.
-    \end{enumerate}
-    \item Reduce the results to a new instance of a vector.
+    \item Return a tuple of the word and the flag indicating if the word is a palindrome.
+    \item Reduce the results to a new instance of a vector of tuples.
 \end{enumerate}
 
-Essentially, the difference comes down to the operators used. For the first test, each word is processed by the \emph{Map} combinator. It takes a string as an argument and returns a tuple of a string and boolean.
-
-The second test relies on the \emph{Filter} combinator, which takes a predicate as an argument. The predicate, in this case, is the function checking if the word is a palindrome.
-
-An important difference in behavior between two tests is that filter alters the length of the resulting vector, while the map combinator does not.
-
-Hence, the difference in performance between standard and persistent vector might become more apparent in the second test, as Rayon will not be able to make optimizations based on the assumptions made about the size of the resulting vector.
-
 \paragraph{The benchmark setup}
-The total count of words stored in the file is 370103. As the benchmark is parameterized over the size of a vector, which in this case is equal to the number of words, the setup routine caps the count of words by \n{}.
-
-The contents of the file are loaded into memory once, and then before each run, they are copied over to a new vector within the setup routine. A vector is later passed to the test routine that converts it to a parallel iterator.
+The dictionary file contains 370103 words. The benchmark is parameterized over the number of threads and words. The data is loaded into memory only once, and before each run, the setup routine copies \n{} words and passes them to the test as a vector.
 
 \section{Measuring the memory footprint}
 As the space complexity is as important as time, this section presents a methodology used to evaluate the memory footprint of both the tree-based and flat vector types.
