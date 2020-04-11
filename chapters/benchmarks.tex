@@ -922,6 +922,8 @@ Once a vector is generated, the benchmark function enters the loop with the cond
 
 The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of \kilo{20}, after which it degrades and gets slower than \imrsvec{} and \rrbvec{} by 5.95. The difference is more significant for \rbvec{} at the factor of 65.65 for the size of \kilo{400}.
 
+% NOTE: this can go under the summary part of the 
+%  section, rather than being its own sub-section
 \subsection{Rc vs Arc}
 \label{sec:perf-rc-vs-arc}
 \todo{Execute sequential benchmarks using \arc{} pointer}
