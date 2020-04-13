@@ -933,6 +933,43 @@ The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of 
 \label{sec:par-benchmarks}
 
 % > =================================================================================
+\subsection*{Computation stages}
+The parallel benchmarks for this project are executed in three stages:
+\begin{enumerate}
+    \item Split the work into tasks between threads.
+    \item Process the tasks.
+    \item Combine and return the results.
+\end{enumerate}
+
+% TODO: you haven't really described how results are collected, and what are Fold and Reduce combinators.
+% TODO: throwing a snippet in won't help.
+The third step can be either of two:
+\begin{itemize}
+    \item Collect individual items into a vector using the parallel \emph{Fold} combinator.
+    \item Reduce emitted vectors into a single one using the \emph{Reduce} combinator.
+\end{itemize}
+
+\begin{figure}[!htbp]
+    \centering
+
+    \begin{minted}{rust}
+        let result = parallel_iterator
+            .fold(Vec::new, |mut vec, x| {
+                vec.push(x);
+                vec
+            })
+            .reduce(Vec::new, |mut vec1, mut vec2| {
+                vec1.append(&mut vec2);
+                vec1
+            });
+    \end{minted}
+
+    \caption{Collecting items of parallel iterator.}
+    \label{fig:fold-reduce}
+\end{figure}
+% < =================================================================================
+
+% > =================================================================================
 The benchmarks were executed against \stdvec{} and vectors from \pvecrs{}, where \rbvec{}, \rrbvec{}, and \pvec{} were compiled with the threadsafe reference-counted pointer -- \arc{}.
 
 As of the time of writing, \imrsvec{} does not implement the Rayon's \emph{IntoParallelIterator} trait. Since all other tested vectors rely on it, the decision was made not to include \imrsvec{} in the parallel benchmarks to avoid the unfair comparison.
