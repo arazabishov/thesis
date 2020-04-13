@@ -194,7 +194,6 @@ Another requirement for parallel iterators is that the type of values it works w
     \label{fig:rayon-work-splitting}
 \end{figure}
 
-% TODO: be consistent with the typesetting for types. You sometimes use emph, emph(bold), etc.
 At the core, Rayon relies on the fork-join\footnote{The fork-join pattern was first pioneered in 1963\cite{history-of-fork-join}, and was popularized by the Cilk project\cite{cilk}} pattern for dividing and distributing the work between threads.  
 
 When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see figure \ref{fig:rayon-work-splitting}.
