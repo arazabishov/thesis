@@ -225,13 +225,13 @@ Ideally, tasks split between threads take the same amount of time to process. Un
 \section{Measuring the memory footprint}
 As the space complexity is as important as time, this section presents a methodology used to evaluate the memory footprint of both the tree-based and flat vector types.
 
-Here are the things that we expect from the memory benchmark suite:
+The requirements for the memory benchmark suite are:
 \begin{itemize}
     \item The overall memory footprint of the vector, including the use of the stack and the heap memory.
     \item Reliable and reproducible results.
 \end{itemize}
 
-\subsection{Memory benchmarking tools}
+\subsection{Memory profiling tools}
 As of the time of writing, there is no established practice or a framework for measuring the memory usage of the Rust libraries.
 
 However, the operating systems already come with the profiling tools for measuring memory usage. These tools should provide reliable results, as the memory footprint of the process is not changing as much between runs. Hence, it should be sufficient to run each test once.
@@ -258,7 +258,7 @@ The program code occupies a part of the process memory, and needs to be accounte
 It is important to emphasize that the \emph{time} utility included in macOS is different from the GNU\footnote{\url{https://www.gnu.org/software/time/}} variant, that comes with more options and outputs the \emph{maximum resident set size} in kilobytes instead of bytes. The memory bencher was only tested on macOS, and requires changes to support other platforms.
 
 \section{Presentation of results}
-The measurements are done in a number of samples that can be configured. By default, the count of samples is set to a 100, and this default is being used for this project. Each sample consists of one or typically more iterations of the routine. The elapsed time between the beginning and the end of the iterations, divided by the number of iterations, gives an estimate of the time taken by each iteration.
+The measurements are done in a number of samples that can be configured. For this project, the count of samples is set to ten. Each sample consists of one or typically more iterations of the routine. The elapsed time between the beginning and the end of the iterations, divided by the number of iterations, gives an estimate of the time taken by each iteration.
 
 As measurement progresses, the sample iteration counts are increased. The presented graphs use the mean measured time for each function. Additionally, benchmarks were configured to avoid timing the execution of \emph{drop}.
 
@@ -282,8 +282,8 @@ All benchmarks were executed on a computer with an octa-core processor with hype
     \caption{Hardware and software specification used for benchmarking.}
 \end{table}
 
-\section{Reproducing results}
-Benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of the persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag as demonstrated in figure \ref{fig:sequential-benches}. To run a particular benchmark, specify its name as an argument to cargo.
+\subsection{Running benchmarks}
+Benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of the persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag, as demonstrated in figure \ref{fig:sequential-benches}. To run a particular benchmark, specify its name as an argument to cargo.
 
 \floatstyle{boxed}
 \begin{figure}[!htbp]
@@ -302,7 +302,6 @@ Benchmarks can be compiled and executed using Rust's package manager named \emph
 \end{figure}
 
 To execute parallel benchmarks, user needs to pass both the \arc{} and \emph{rayon-iter} feature flags:
-
 \begin{figure}[!htbp]
     \centering
 
@@ -318,7 +317,7 @@ Criterion can also generate HTML reports with charts using \emph{gnuplot}\footno
 
 For more information on available options and parameters for Criterion, please consult the library documentation\footnote{\url{https://docs.rs/criterion/0.3.1/criterion/}}.
 
-\subsection{Memory benchmark results}
+\subsubsection*{Memory benchmark results}
 Memory benchmarks produce consistent and reproducible results. Hence it is enough to execute them only once. Due to the differences in how \emph{time} works on different operating systems, macOS is the only supported platform at the moment. Figure \ref{fig:memory-benches} demonstrates how to execute the tests:
 
 \floatstyle{boxed}
