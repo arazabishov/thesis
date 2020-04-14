@@ -33,13 +33,15 @@
 \usepackage[T1]{fontenc,url}
 \urlstyle{sf}
 
-\usepackage{siunitx}
+\usepackage[binary-units=true]{siunitx}
 \DeclareSIUnit{\nothing}{\relax}
+\newcommand{\kilo}[1]{\SI{#1}{\kilo\nothing}}
+\newcommand{\mega}[1]{\SI{#1}{\mega\nothing}}
 \newcommand{\micros}[1]{\SI{#1}{\micro\second}}
 \newcommand{\millis}[1]{\SI{#1}{\milli\second}}
 \newcommand{\seconds}[1]{\SI{#1}{\second}}
-\newcommand{\kilo}[1]{\SI{#1}{\kilo\nothing}}
-\newcommand{\mega}[1]{\SI{#1}{\mega\nothing}}
+\newcommand{\mbytes}[1]{\SI{#1}{\mega\byte}}
+\newcommand{\gbytes}[1]{\SI{#1}{\giga\byte}}
 
 \usepackage{algpseudocode}
 \usepackage{amssymb}
