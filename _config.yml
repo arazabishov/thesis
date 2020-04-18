@@ -1,1 +1,4 @@
+logo: images/ferris-waving.svg
+title: An RRB-Tree based vector for Rust
+description: A confluently persistent vector implementation for Rust based on RRB-Tree
 theme: jekyll-theme-minimal
