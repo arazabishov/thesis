@@ -4,7 +4,7 @@
 
 * [The project web page](https://abishov.com/pvec-rs)
 * [The source code repository at GitHub](https://github.com/ArazAbishov/pvec-rs)
-* [The published library at crates.io](https://crates.io/crates/pvec) and [documentation]((https://docs.rs/pvec/))
+* [The published library at crates.io](https://crates.io/crates/pvec) and [documentation](https://docs.rs/pvec/)
 
 ## Building the document
 
