@@ -25,9 +25,3 @@ cd ../ && lualatex -shell-escape main.tex
 ## Tools
 
 For writing, I used the VSCode extension for LaTeX - [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=James-Yu.latex-workshop).
-
-----
-
-<p align="center">
-    <img src="images/ferris-waving.svg" width="196" class="center"/>  
-</p>
