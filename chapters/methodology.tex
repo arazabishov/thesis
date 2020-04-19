@@ -294,12 +294,12 @@ Benchmarks can be compiled and executed using Rust's package manager named \emph
     \label{fig:sequential-benches}
 \end{figure}
 
-To execute parallel benchmarks, the user needs to pass both the \arc{} and \emph{rayon-iter} feature flags:
+To execute parallel benchmarks, the user needs to pass both the \arc{} and \emph{rayon\_iter} feature flags:
 \begin{figure}[!htbp]
     \centering
 
     \begin{minted}{bash}
-        cargo bench --features=arc,rayon-iter
+        cargo bench --features=arc,rayon_iter
     \end{minted}
 
     \caption{Running parallel benchmarks.}
