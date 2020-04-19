@@ -1,4 +1,4 @@
-# An RRB-Tree based vector for Rust
+# A technical report about RRB-Tree based vector for Rust
 
 ## The project links
 
