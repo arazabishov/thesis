@@ -1,46 +1,40 @@
-\chapter{Definition of RRB-Tree in Rust}
+\newcommand{\boxptr}{\type{box}}
 
-In order to define a persistent vector in Rust, we first need to understand how different parts of it are connected to each other in the computer memory, and which Rust constructs are the most suitable for their representation. 
+\chapter{Persistent vector in Rust}
 
-The backbone of a confluently persistent vector is \rrbtree, with auxiliary properties such as a tail, size, and height. \rrbtree\ consists of infinitely nested nodes, which form a directed acyclic graph in memory \todo{add figure}. 
+This chapter discusses approaches to define a persistent vector in Rust, their advantages and disadvantages, and their influence on the data structure design:
 
-Since the data structure can be arbitrarily large, the Rust compiler is not able to reliably measure its size during compilation. Hence, the static memory allocation on the stack is not possible without additional constraints, such as fixed capacity. 
+\begin{itemize}
+    \item First, we will take a look at the memory layout of \rrbtree{} and how it supports the implementation of cloning and path copying.
+    \item Then, the dynamic representation and unique access optimizations will be introduced in the context of Rust's ownership and borrowing rules.
+    \item At last, we will talk about the thread-safety\todo{Use the word consistently in the document} and the Rust requirements for sharing objects between threads.
+\end{itemize}
 
-In fact, the Rust compiler will abort the compilation if a \emph{recursive type} is encountered. A recursive type is a type, where a value can have as part of itself another value of the same type, such as a \rrbtree\ node. The solution is to use dynamic memory allocation instead of static. Rust provides a special type of pointers for this purpose, such as Box, Arc, etc. 
+\section{Memory layout}
+To define a persistent vector in Rust, we first need to understand how different parts of it are connected in the computer memory, and which Rust constructs are the most suitable for their representation.
 
-As \rrbtree\ employs structural sharing, several tree instances might point to the same subtrees. In other words, one node might be referenced by several parent nodes simultaneously. Even though Box enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer which supports a notion of shared ownership is known as \emph{Rc} or reference counted pointer. 
+The backbone of a confluently persistent vector is \rrbtree{}, with auxiliary properties such as a tail, size, and height. \rrbtree{} consists of infinitely nested nodes, which form a directed acyclic graph\footnote{A graph is a set of nodes connected by edges. In a directed acyclic graph, the edges are connected so that each edge only goes one way without creating a cycle.} in memory.\todo{Add a figure}
 
-Even though Box enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer which supports a notion of shared ownership is known as \emph{Rc<T>} or reference counted pointer. 
+Since the data structure can be arbitrarily large, the Rust compiler is not able to reliably measure its size during compilation. Hence, the static memory allocation on the stack is not possible without additional constraints, such as fixed capacity.
 
-\todo{introduction: figure out a notation for talking about Rust types}
-\todo{introduction: define what is ownership in Rust}
+In fact, the Rust compiler will abort the compilation if a \emph{recursive data type}\footnote{\url{https://doc.rust-lang.org/book/ch15-01-box.html\#enabling-recursive-types-with-boxes}} definition is encountered. A recursive data type is a type that contains itself, such as a tree node. The solution is to use dynamic memory allocation instead of static. Rust offers a special type of pointers for this purpose, such as \boxptr{}, \rc{}, etc.
 
-The standard library also offers an \emph{Arc<T>} type, which is very similar to Rc<T> with the difference that it uses atomic operations to synchronize accesses to its reference counts. This can make Arc<T> a little more expensive during run time, but it enables threads to share a value safely. 
+As \rrbtree{} employs structural sharing, several tree instances might point to the same sub-trees. In other words, one node can be referenced by several other parent nodes simultaneously. Even though \boxptr{} enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer that supports a notion of shared ownership is known as \rc{} or reference counting pointer.
 
-\todo{project: PVec does not seem to implement Send + Sync methods}
-\todo{performance: look into other perf measurement tools, such as alloc-counter}
+\subsection{Reference counting pointers}
+In a nutshell, a reference counting pointer allows shared ownership of the object wrapped into it. Every time a potential owner needs a reference to the value, the pointer itself is cloned instead of the underlying object. The reference count is incremented on each clone, and decremented when a pointer goes out of the scope. If the reference count reaches zero, the underlying value is destroyed.
 
-As a persistent vector is intended to be a part of a library, Arc would be a better choice as it creates a foundation for the data structure to be used in the multithreaded environment. 
+\subsubsection*{Copy-on-write semantics}
+Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced during run-time rather than compile-time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other references do not exist. 
 
-\todo{Maybe insert a diagram here of how arc looks \& works internally}
+The \emph{make\_mut}\todo{Typesetting of methods} method that is available on \rc{} allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are other pointers to the same allocation, then \emph{make\_mut} will clone the inner value to a new allocation to ensure unique ownership. This is also referred to as \emph{copy-on-write} behavior. \todo{A diagram demonstrating semantics of rc}
 
-In the nutshell, a reference counting pointer allows shared ownership of the object wrapped into it. Every time a potential owner needs a reference to the value, the pointer is cloned instead of the underlying object. On each clone the reference count is incremented, and decremented every time a pointer goes out of the scope. If reference count reaches 0, the underlying value is destroyed. 
+\subsection{Enumerations and cache locality}
 
-Rust’s Arc conforms to the ownership and borrowing rules as well, but they are enforced during run time rather than compile time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other reference do not exist. As reference count is expected to be more than 1, it features methods which copy the underlying value if there are other references. 
+% The standard library also offers an \emph{Arc<T>} type, which is very similar to Rc<T> with the difference that it uses atomic operations to synchronize accesses to its reference counts. This can make Arc<T> a little more expensive during run time, but it enables threads to share a value safely.
 
-\todo{Example of Arc::make\_mut}
-
-\todo{Transience as a language feature}
-
-\section{Zero cost abstractions}
-\subsection{Transience as a language feature}
-\subsection{Choosing your guarantees}
-\subsubsection{Atomic reference counting and thread safety}
-\subsubsection{Send and Sync traits}
-\section{Size bazed internal representation}
-\subsection{Optimizing for CPU cache locality}
-
+% As a persistent vector is intended to be a part of a library, Arc would be a better choice as it creates a foundation for the data structure to be used in the multithreaded environment.
 
 % TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
-% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator: 
-% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time. 
+% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator:
+% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time.
