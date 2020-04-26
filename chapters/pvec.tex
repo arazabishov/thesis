@@ -22,6 +22,7 @@ In fact, the Rust compiler will abort the compilation if a \emph{recursive data 
 As \rrbtree{} employs structural sharing, several tree instances might point to the same sub-trees. In other words, one node can be referenced by several other parent nodes simultaneously. Even though \boxptr{} enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer that supports a notion of shared ownership is known as \rc{} or reference counting pointer.
 
 \subsection{Reference counting pointers}
+\todo{A diagram of its memory layout}
 In a nutshell, a reference counting pointer allows shared ownership of the object wrapped into it. Every time a potential owner needs a reference to the value, the pointer itself is cloned instead of the underlying object. The reference count is incremented on each clone, and decremented when a pointer goes out of the scope. If the reference count reaches zero, the underlying value is destroyed.
 
 \subsubsection*{Copy-on-write semantics}
@@ -29,11 +30,63 @@ Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced d
 
 The \emph{make\_mut}\todo{Typesetting of methods} method that is available on \rc{} allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are other pointers to the same allocation, then \emph{make\_mut} will clone the inner value to a new allocation to ensure unique ownership. This is also referred to as \emph{copy-on-write} behavior. \todo{A diagram demonstrating semantics of rc}
 
-\subsection{Enumerations and cache locality}
-
 % The standard library also offers an \emph{Arc<T>} type, which is very similar to Rc<T> with the difference that it uses atomic operations to synchronize accesses to its reference counts. This can make Arc<T> a little more expensive during run time, but it enables threads to share a value safely.
 
 % As a persistent vector is intended to be a part of a library, Arc would be a better choice as it creates a foundation for the data structure to be used in the multithreaded environment.
+
+% \subsubsection*{Shared pointer}
+
+\subsection{Defining the tree node in Rust}
+With the knowledge of how \rc{} can help us to manage the memory and its semantics we can move on to the Rust constructs for defining custom data types:
+
+\begin{itemize}
+    \item Structures or \emph{structs}: is a custom data type that lets you package together multiple related values\footnote{\url{https://doc.rust-lang.org/book/ch05-00-structs.html}}.
+    \item Enumerations or \emph{enums}: allows you to define a type by enumerating its possible \emph{variants}\footnote{\url{https://doc.rust-lang.org/book/ch06-00-enums.html}}.
+    \item Trait objects: objects that implement a trait.\footnote{https://doc.rust-lang.org/book/ch17-02-trait-objects.html}
+\end{itemize}
+
+Struct is a common way of defining a new type in Rust. The arrangement and padding of the struct fields in memory is handled by the compiler to achieve optimal performance. Thus, it is possible that the total size of the struct will exceed the sum of its fields. Inheritance in structs is forbidden by design. 
+
+Enumerations are used to define a type that has different variants. Each variant can have a different set of attributes. Pattern matching in the \emph{match} expression makes it easy to run different code for different values of an enum. If a new enum variant is added, compiler will check that match expressions handle it accordingly. Enums cannot be extended with new variants outside of their declaration.
+
+Traits are used to define an interface. They are more flexible than enums because they can be implemented by other types, giving a library developer more flexibility. Trait objects is the Rust's way of implementing the dynamic dispatch\footnote{In computer science, dynamic dispatch is the process of selecting which implementation of a polymorphic operation (method or function) to call at run time.}.
+
+\subsubsection*{The \rrbtree{} node}
+Since \rrbtree{} node is an implementation detail of \rrbtree{}, it is set to be private, consequently ruling out trait objects is not needed.
+
+\begin{figure}[!htbp]
+    \centering
+
+    \begin{minted}{rust}
+        // type SharedPtr<T> = Arc<T> | Rc<T>;
+        
+        enum Node<T> {
+            RelaxedBranch(SharedPtr<RelaxedBranch<T>>),
+            Branch(SharedPtr<Branch<T>>),
+            Leaf(SharedPtr<Leaf<T>>),
+        }
+        
+        struct RelaxedBranch<T> {
+            children: [Option<Node<T>>; BRANCH_FACTOR],
+            sizes: [Option<usize>; BRANCH_FACTOR],
+            len: usize,
+        }
+        
+        struct Branch<T> {
+            children: [Option<Node<T>>; BRANCH_FACTOR],
+            len: usize,
+        }
+        
+        struct Leaf<T> {
+            elements: [Option<T>; BRANCH_FACTOR],
+            len: usize,
+        }
+    \end{minted}
+
+    \caption{Definition of the \rrbtree{} node.}
+    \label{fig:rrbtree-node}
+\end{figure}
+
 
 % TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
 % TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator:
