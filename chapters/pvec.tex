@@ -26,7 +26,7 @@ As \rrbtree{} employs structural sharing, several tree instances might point to 
 In a nutshell, a reference counting pointer allows shared ownership of the object wrapped into it. Every time a potential owner needs a reference to the value, the pointer itself is cloned instead of the underlying object. The reference count is incremented on each clone, and decremented when a pointer goes out of the scope. If the reference count reaches zero, the underlying value is destroyed.
 
 \subsubsection*{Copy-on-write semantics}
-Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced during run-time rather than compile-time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other references do not exist. 
+Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced during run-time rather than compile-time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other references do not exist.
 
 The \emph{make\_mut}\todo{Typesetting of methods} method that is available on \rc{} allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are other pointers to the same allocation, then \emph{make\_mut} will clone the inner value to a new allocation to ensure unique ownership. This is also referred to as \emph{copy-on-write} behavior. \todo{A diagram demonstrating semantics of rc}
 
@@ -34,49 +34,117 @@ The \emph{make\_mut}\todo{Typesetting of methods} method that is available on \r
 
 % As a persistent vector is intended to be a part of a library, Arc would be a better choice as it creates a foundation for the data structure to be used in the multithreaded environment.
 
-% \subsubsection*{Shared pointer}
+\subsubsection*{Memory reclamation}
 
-\subsection{Defining the tree node in Rust}
+\subsubsection*{Thread safety}
+
+\subsubsection*{Path copying}
+
+\subsection{Structures, enumerations and cache locality}
 With the knowledge of how \rc{} can help us to manage the memory and its semantics we can move on to the Rust constructs for defining custom data types:
 
 \begin{itemize}
     \item Structures or \emph{structs}: is a custom data type that lets you package together multiple related values\footnote{\url{https://doc.rust-lang.org/book/ch05-00-structs.html}}.
     \item Enumerations or \emph{enums}: allows you to define a type by enumerating its possible \emph{variants}\footnote{\url{https://doc.rust-lang.org/book/ch06-00-enums.html}}.
-    \item Trait objects: objects that implement a trait.\footnote{https://doc.rust-lang.org/book/ch17-02-trait-objects.html}
 \end{itemize}
 
-Struct is a common way of defining a new type in Rust. The arrangement and padding of the struct fields in memory is handled by the compiler to achieve optimal performance. Thus, it is possible that the total size of the struct will exceed the sum of its fields. Inheritance in structs is forbidden by design. 
+\begin{figure}
+    \caption{The memory layout of Rust containers.}
+    \label{fig:memory-layout-of-rust-containers}
 
-Enumerations are used to define a type that has different variants. Each variant can have a different set of attributes. Pattern matching in the \emph{match} expression makes it easy to run different code for different values of an enum. If a new enum variant is added, compiler will check that match expressions handle it accordingly. Enums cannot be extended with new variants outside of their declaration.
+    \centering
+    \begin{tikzpicture}[
+        font=\ttfamily,
+        nodes={
+            draw,
+            anchor=center,
+            minimum height=8mm,
+            text depth=.5ex,
+            text height=2ex
+        },
+    ]
+        \node[draw, fill=blue!20, anchor=center, minimum width=14mm, minimum height=8mm, inner sep=4pt] at (current page.north west) (rc) {ptr};
+        \draw(rc.north) node[above, draw=none] {\mintinline{rust}{Rc<T>}};
 
-Traits are used to define an interface. They are more flexible than enums because they can be implemented by other types, giving a library developer more flexibility. Trait objects is the Rust's way of implementing the dynamic dispatch\footnote{In computer science, dynamic dispatch is the process of selecting which implementation of a polymorphic operation (method or function) to call at run time.}.
+        \matrix[inner sep=4pt] (rcptr) [below = 6mm of rc.south] {
+            \node[fill=green!20, minimum width=14mm] {strong}; &
+            \node[fill=green!20, minimum width=14mm] {weak}; &
+            \node[fill=red!20, minimum width=26mm] {T}; \\
+        };
+
+        \begin{scope}[on background layer]
+            \draw[fill=yellow!40] (rcptr.north west) rectangle (rcptr.south east);
+        \end{scope}
+
+        \draw[->, shorten >= 4pt] (rc.south) to (rcptr.north);
+
+        \node[draw, fill=blue!20, anchor=center, minimum width=14mm, minimum height=8mm, inner sep=4pt] [below right=16mm and 52mm of rc.east] (arc) {ptr};
+        \draw(arc.north) node[above, draw=none] {\mintinline{rust}{Arc<T>}};
+
+        \matrix[inner sep=4pt] (arcptr) [below = 6mm of arc.south] {
+            \node[fill=purple!20, minimum width=14mm] {strong}; &
+            \node[fill=purple!20, minimum width=14mm] {weak}; &
+            \node[fill=red!20, minimum width=26mm] {T}; \\
+        };
+
+        \begin{scope}[on background layer]
+            \draw[fill=yellow!40] (arcptr.north west) rectangle (arcptr.south east);
+        \end{scope}
+
+        \draw[->, shorten >= 4pt] (arc.south) to (arcptr.north);
+
+        \matrix[draw=none, inner sep=4pt] (enum-var-1) [below=16mm of rcptr.south] {
+            \node[fill=green!20, minimum width=14mm] {tag}; &
+            \node[fill=red!20, minimum width=24mm] {A}; &
+            \node[fill=white, minimum width=16mm] {}; \\
+        };
+        \draw(enum-var-1.north) node[above, draw=none] {\mintinline{rust}{enum {A, B, C}}};
+
+        \matrix[draw=none, inner sep=4pt] (enum-var-2) [below=0pt of enum-var-1.south] {
+            \node[fill=green!20, minimum width=14mm] {tag}; &
+            \node[fill=red!20, minimum width=40mm] {B}; \\
+        };
+        \matrix[draw=none, inner sep=4pt] (enum-var-3) [below=0pt of enum-var-2.south] {
+            \node[fill=green!20, minimum width=14mm] {tag}; &
+            \node[fill=red!20, minimum width=14mm] {C}; &
+            \node[fill=white, minimum width=26mm] {}; \\
+        };
+    \end{tikzpicture}
+\end{figure}
+
+Struct is a common way of defining a new type in Rust. The arrangement and padding of the struct fields in memory is handled by the compiler to achieve optimal performance. Thus, it is possible that the total size of the struct will exceed the sum of its fields. Inheritance in structs is forbidden by design.
+
+Enumerations are used to define a type that has different variants. Each variant can have a different set of attributes. Pattern matching in the \emph{match} expression makes it easy to run different code for different values of an enum.
+
+If a new enum variant is added, compiler will check that match expressions handle it accordingly. Enums \emph{cannot} be extended with new variants outside of their declaration.
+
+The size of the enum is capped by its largest variant to guarantee that all variants can be used interchangeably. The section below demonstrates why it is critical for the performance.
 
 \subsubsection*{The \rrbtree{} node}
-Since \rrbtree{} node is an implementation detail of \rrbtree{}, it is set to be private, consequently ruling out trait objects is not needed.
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
     \centering
 
     \begin{minted}{rust}
         // type SharedPtr<T> = Arc<T> | Rc<T>;
-        
+
         enum Node<T> {
             RelaxedBranch(SharedPtr<RelaxedBranch<T>>),
             Branch(SharedPtr<Branch<T>>),
             Leaf(SharedPtr<Leaf<T>>),
         }
-        
+
         struct RelaxedBranch<T> {
             children: [Option<Node<T>>; BRANCH_FACTOR],
             sizes: [Option<usize>; BRANCH_FACTOR],
             len: usize,
         }
-        
+
         struct Branch<T> {
             children: [Option<Node<T>>; BRANCH_FACTOR],
             len: usize,
         }
-        
+
         struct Leaf<T> {
             elements: [Option<T>; BRANCH_FACTOR],
             len: usize,
@@ -87,6 +155,20 @@ Since \rrbtree{} node is an implementation detail of \rrbtree{}, it is set to be
     \label{fig:rrbtree-node}
 \end{figure}
 
+As demonstrated in figure \ref{fig:rrbtree-node}, the tree node can be represented by one of the three different types: \mintinline{rust}{RelaxedBranch}, \mintinline{rust}{Branch} or \mintinline{rust}{Leaf}. Leaves hold values, while two other types reference nodes.
+
+\paragraph{Optimising for the cache locality}
+An eagle eyed reader will notice that the \mintinline{rust}{Node} enum could have been declared in a more concise way by having the fields defined right within the variant. Even though it seems to be a cleaner approach, it comes with a hidden cost.
+
+\todo{A figure demonstrating this here?}
+
+As mentioned earlier, enums take up as much space as their largest variant. If the node types were declared as in figure \ref{todo}, the enum size will be equal to the size of \mintinline{rust}{RelaxedBranch}. It means that even when the tree is  balanced each node will reserve the space as if they were relaxed.
+
+The more space nodes use, the more likely it is that they will not fit into the CPU cache lines causing more lookups in RAM. This, in turn, directly impacts the performance in the negative way.
+
+To avoid the unnecessarily large memory footprint of the \mintinline{rust}{Node} enum, the decision was made to extract the node fields into structs as demonstrated in the figure \ref{fig:rrbtree-node}. By wrapping the struct instances into a smart pointer such as \rc{}, we explicitly move the allocation of the node to the heap memory.
+
+The size of the \rc{} pointer is independent of the type it encapsulates. Hence, the size of the \mintinline{rust}{Node} enum boils down to the size of the enum tag, the weak and strong reference count fields of \rc{}, and the actual pointer to the heap.
 
 % TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
 % TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator:
