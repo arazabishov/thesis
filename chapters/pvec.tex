@@ -150,16 +150,16 @@ Each node type has received its own struct definition. An eagle eyed reader will
             \node[fill=white, minimum width=26mm] {}; \\
         };
 
-        \node[draw, fill=blue!20, minimum width=14mm, minimum height=8mm, inner sep=4pt] [right=20mm of rcptr.east] (legptr) {ptr};
+        \node[draw, fill=blue!20, minimum width=14mm, minimum height=8mm, inner sep=4pt] [right=12mm of rcptr.east] (legptr) {ptr};
         \draw(legptr.east) node[right, draw=none] {4/8 bytes};
 
-        \node[draw, fill=green!20, minimum width=14mm, minimum height=8mm, inner sep=4pt] [below=4mm of legptr.south] (legsize) {size};
+        \node[draw, fill=green!20, minimum width=14mm, minimum height=8mm, inner sep=4pt] [below=6mm of legptr.south west, anchor=west] (legsize) {size};
         \draw(legsize.east) node[right, draw=none] {4/8 bytes};
 
-        \node[draw, fill=red!20, minimum width=20mm, minimum height=8mm, inner sep=4pt] [below=4mm of legsize.south] (legt) {T};
+        \node[draw, fill=red!20, minimum width=20mm, minimum height=8mm, inner sep=4pt] [below=6mm of legsize.south west, anchor=west] (legt) {T};
         \draw(legt.east) node[right, draw=none] {User defined type};
 
-        \node[draw, fill=yellow!40, minimum width=32mm, minimum height=8mm, inner sep=4pt] [below=4mm of legt.south] (legalloc) {allocation};
+        \node[draw, fill=yellow!40, minimum width=32mm, minimum height=8mm, inner sep=4pt] [below=6mm of legt.south west, anchor=west] (legalloc) {allocation};
         \draw(legalloc.east) node[right, draw=none] {Heap allocation};
     \end{tikzpicture}
 
@@ -189,7 +189,19 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
             text height=2ex
         },
     ]
-        \matrix[draw=none, inner sep=4pt] at (current page.north) (enum-var-relaxed-branch) {
+        \node[draw, fill=blue!20, minimum width=14mm, minimum height=8mm, inner sep=4pt] at (current page.north east) (legptr) {ptr};
+        \draw(legptr.east) node[right, draw=none] {4/8 bytes};
+
+        \node[draw, fill=green!20, minimum width=14mm, minimum height=8mm, inner sep=4pt] [below=6mm of legptr.south west, anchor=west] (legsize) {size};
+        \draw(legsize.east) node[right, draw=none] {4/8 bytes};
+
+        \node[draw, fill=red!20, minimum width=20mm, minimum height=8mm, inner sep=4pt] [below=6mm of legsize.south west, anchor=west] (legt) {T};
+        \draw(legt.east) node[right, draw=none] {User defined type};
+
+        \node[draw, fill=yellow!40, minimum width=32mm, minimum height=8mm, inner sep=4pt] [below=6mm of legt.south west, anchor=west] (legalloc) {allocation};
+        \draw(legalloc.east) node[right, draw=none] {Heap allocation};
+
+        \matrix[draw=none, inner sep=4pt] [below left=4mm and 8mm of legalloc.west] (enum-var-relaxed-branch) {
             \node[fill=green!20, minimum width=14mm] {tag}; &
             \node[fill=blue!20, minimum width=48mm] {\mintinline{rust}{Rc<RelaxedBranch<T>>}}; \\
         };
