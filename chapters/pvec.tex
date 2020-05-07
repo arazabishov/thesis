@@ -102,11 +102,9 @@ By using structs and enums in combination with \rc{}, we can finally bring every
 
 Each node type has received its own struct definition. An eagle eyed reader will notice that the \type{Node} enum in figure \ref{fig:rrbtree-node} could have been declared in a more concise way by having the node fields defined directly within the variant. Even though it seems to be a more intuitive approach, it comes at a hidden cost.
 
-% As demonstrated in figure \ref{fig:rrbtree-node}, the tree node can be represented by one of the three different types: \type{RelaxedBranch}, \type{Branch} or \type{Leaf}. Leaves hold values, while two other types reference other nodes.
-
 \paragraph{The enum size and the cache locality}
 
-\begin{figure}[!htbp]
+\begin{figure}[H]
     \centering
     \begin{tikzpicture}[
         font=\ttfamily,
@@ -230,7 +228,7 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
         \matrix[draw=none, inner sep=4pt] (branch) [below=8mm of relaxed-branch.south west, anchor=west] {
             \node[fill=green!20, minimum width=14mm] {strong}; &
             \node[fill=green!20, minimum width=14mm] {weak}; &
-            \node[fill=red!20, minimum width=22mm] {children}; &            
+            \node[fill=red!20, minimum width=22mm] {children}; &
             \node[fill=red!20, minimum width=14mm] {len}; \\
         };
         \begin{scope}[on background layer]
@@ -240,7 +238,7 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
         \matrix[draw=none, inner sep=4pt] (leaf) [below=8mm of branch.south west, anchor=west] {
             \node[fill=green!20, minimum width=14mm] {strong}; &
             \node[fill=green!20, minimum width=14mm] {weak}; &
-            \node[fill=red!20, minimum width=22mm] {elements}; &            
+            \node[fill=red!20, minimum width=22mm] {elements}; &
             \node[fill=red!20, minimum width=14mm] {len}; \\
         };
         \begin{scope}[on background layer]
@@ -254,6 +252,177 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
 
     \caption{The memory layout of the \rrbtree{} node.}
     \label{fig:memory-layout-of-rrbtree-node}
+\end{figure}
+
+The figure \ref{fig:memory-layout-of-rrbtree-node} is the visualization of how the enum and struct definitions of \rrbtree{} node are arranged in memory.
+
+\section{Pay only for the features you use}
+
+% todo: take text from another chapter: conclusion, for example?
+
+\subsection{Transience as the language feature}
+Popular persistent data structure libraries, such s immutable-js, or collections in the standard library of Clojure, often provide an interface that is radically different from the interface of the ephemeral data structures. For example:
+
+\begin{figure}[!htbp]
+
+    \centering
+    \begin{minted}{rust}
+        let mut pvec_1 = PersistentVec::new();
+        let pvec_2 = vec_1.push(42);
+        //  ^ a vector instance containing 42
+
+        let mut vec_1 = Vec::new();
+        vec_1.push(42);
+    \end{minted}
+
+    \caption{A common interface of a persistent vector.}
+    \label{fig:common-interface}
+\end{figure}
+
+As demonstrated, instead of updating the vector in place the operation returns a new instance that contains the change. When collection is setup like that, the library can guarantee that original vector will stay unmodified, eliminating a whole class of bugs such as race conditions.
+
+% * This design has its own flaws, such as performance hits due to the redundant copies created when constructing a vector
+% * The idea of transience was born in Clojure's programming language /ref{thesis}
+% * Instead of throwing out unused copies, don't create them in the first place
+% * Treating a persistent data structure as if it was mutable under safe conditions
+
+Rust's compiler, however, eliminates this class of bugs by forbidding simultaneous mutation of a value by enforcing ownership and borrowing rules. The ownership rule essentially means that object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Further than that, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
+
+This leads us to a question if the traditional persistent collection interface is needed in Rust. The short answer is no, because compiler guards developers from common mistakes. Nicholas D. Matsakis, the lead engineer behind the Rust's compiler, has discussed this question in his blog\footnote{\url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}.
+
+% * Okay, Rust's compiler can defend us from those bugs, what's next?
+% * So we know that too many copies is bad for performance
+% * Instead of having a persistent interface, we can have a standard one, that behaves as if data structure was mutable.
+% * This way we will avoid generating copies when not necessary and Rust's compiler will make sure that it is safe
+
+% * How is this related to transience? Is this transience? How transience is different?
+% * Okay, it is not, how would you call it then? Unique access optimization, because it relies on unique, mutable references for updates
+% * Provide an example of how it looks like, and what are the cost of operations
+
+% \todo{statically choosing representations: compiler flags + type aliases}
+% \todo{encourages experimentation with different vector types and their performance}
+% \todo{a feature that you don't need to pay for are efficient append / split operations}
+
+\subsection{Dynamic representation}
+\todo{how do vectors change their representation when concatenated or splitted}
+
+% - [ ]  Dynamic representation
+%     - [ ]  Spilling / inflation algorithm: moving chunks
+%         - [ ]  Spilling as technique with figures to demonstrate it
+%         - [ ]  Move and copy semantics of arrays between stack and heap
+
+A unique property of \pvec{} is that it features an interface identical to the standard vector, contrary to the conventional persistent interface that is significantly different.
+
+If two vector types have identical interfaces, in theory, they can be used interchangeably without any additional changes made to the program. Hence, it becomes possible to dynamically choose a vector type depending on the context and performance requirements.
+
+The dynamic representation explores this idea by using both the standard and tree-based vectors to ensure the best possible performance, depending on the use case.
+
+\subsubsection*{Deciding when to switch the representation}
+The standard vector is very fast in almost all operations due to its efficient, hardware friendly design. Exceptions are the operations that rely on copying, such as concat, split, and clone. The tree-based vector, on the other hand, offers effectively \bigo{1} clones and good all-around performance.
+
+To take the best of both worlds, a vector can start as the standard vector and when it is cloned, it will be transformed into the tree-based one. Essentially, by switching the representation only when cloning, we offset the cost of using trees until they are beneficial\footnote{Nicholas D. Matsakis proposed a variation of this idea as future work in his blog: \url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}. This optimization fits into the overall "Pay only for the features you use" idea, as it prevents the user from paying the abstraction cost until it is used.
+
+\subsubsection*{Switching the representation}
+Essentially, a persistent vector type -- \pvec{}, can be backed by two different vector types at runtime. It starts as \stdvec{}, and then switches to the \rrbvec{} on the first clone. The process of switching from one vector type to another is called \emph{spilling}, as it maps a contiguous chunk of memory into smaller pieces that are used as leaf nodes to build \rrbvec{}.
+
+\begin{figure}[!htbp]
+
+    \centering
+    \begin{minted}{rust}
+        struct PVec<T>(Representation<T>);
+
+        enum Representation<T> {
+            Flat(Vec<T>),
+            Tree(RrbVec<T>),
+        }
+    \end{minted}
+
+    \caption{Memory layout of \pvec{}.}
+    \label{fig:pvec-memory-representation}
+\end{figure}
+
+\pvec{} has two representations: \type{Flat} that is using \stdvec{}, and \type{Tree} that is backed by \rrbvec{}. The initial capacity of both representations is equal to the branching factor of 32 by default.
+
+% \begin{figure}[!htbp]
+
+%     \centering
+%     \begin{minted}{rust}
+%         fn spill(vec: &Vec<T>) -> RrbVec<T> {
+%             let mut tree = RrbTree::new();
+%             let mut chunks = vec.chunks_exact(BRANCH_FACTOR);
+
+%             for chunk in chunks.by_ref() {
+%                 tree.push(clone_arr!(chunk), chunk.len());
+%             }
+
+%             let mut tail = new_branch!();
+%             let mut tail_len = 0;
+
+%             for item in chunks.remainder() {
+%                 tail[tail_len] = Some(item.clone());
+%                 tail_len += 1;
+%             }
+
+%             RrbVec { tree, tail, tail_len, }
+%         }
+%     \end{minted}
+
+%     \caption{Memory layout of \pvec{}.}
+%     \label{fig:pvec-memory-representation}
+% \end{figure}
+
+As mentioned earlier, \pvec{} starts as the standard vector and spills to the tree-based one only when cloned. Spilling happens by converting the flat vector into an iterator of sub-arrays that are 32 elements wide and pushing them directly onto \rrbtree{} as leaf nodes. If the last chunk is smaller than 32, then it will be used as the tail for the new \rrbvec{}.
+
+One could have considered splitting up the original vector into chunks and reusing them instead of copying. Unfortunately, heap allocators do not have a mechanism for safely splitting an existing allocation into smaller ones.
+
+Additionally, the cost of spilling needs to be paid only once, and will be amortized by \bigo{1} consequent clones.
+
+\begin{figure}
+
+    \centering
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw, minimum width=6mm, minimum height=8mm, anchor=center},
+            font=\ttfamily,
+            nodes in empty cells,
+        },
+        edge/.style={->, shorten >= 4pt}
+    ]
+
+        \node[] (representation-flat) at (current page.north west) { \mintinline{rust}{Representation::Flat} };
+        \matrix[node, fill=green!10, inner sep=0pt] (vec) [below=6mm of representation-flat.south west, anchor=west] { 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 \\ };
+
+        \draw[|-|]([yshift=-4mm,xshift=1mm]vec-1-1.south west) -- node (c1) [below,font=\scriptsize,outer sep=0mm] {1} ([yshift=-4mm,xshift=-1mm]vec-1-4.south east);
+        \draw[|-|]([yshift=-4mm,xshift=1mm]vec-1-5.south west) -- node (c2) [below,font=\scriptsize,outer sep=0mm] {2} ([yshift=-4mm,xshift=-1mm]vec-1-8.south east);
+        \draw[|-|]([yshift=-4mm,xshift=1mm]vec-1-9.south west) -- node (c3) [below,font=\scriptsize,outer sep=0mm] {3} ([yshift=-4mm,xshift=-1mm]vec-1-10.south east);
+
+        \node[draw, dashed, inner sep=4mm, fit=(representation-flat) (c2) (vec) (vec)] (representation-flat-box) {};
+
+        \node[] (representation-tree) [below=42mm of representation-flat.south west, anchor=west] { \mintinline{rust}{Representation::Tree} };
+        \matrix[node, fill=color-node, inner sep=0pt] (node-1-1) [below=6mm of representation-tree.south] { 00 & 01 & & \\ };
+        \draw(node-1-1.north) node[above, draw=none] {root};
+
+        \matrix[node, fill=green!10, inner sep=0pt] (tail) [right=12mm of node-1-1.east] { 8 & 9 & & \\ };
+        \draw(tail.north) node[above, draw=none] {tail};
+
+        \matrix[node, fill=green!10, inner sep=0pt] (node-2-2) [below=8mm of node-1-1.south] { 4 & 5 & 6 & 7 \\ };
+        \matrix[node, fill=green!10, inner sep=0pt] (node-2-1) [left=2mm of node-2-2.west] { 0 & 1 & 2 & 3 \\ };
+
+        \draw[edge, out=225, in=45] (node-1-1-1-1.south) to (node-2-1.north);
+        \draw[edge, out=225, in=45] (node-1-1-1-2.south) to (node-2-2.north);
+
+        \draw[|-|]([yshift=-4mm,xshift=1mm]node-2-1-1-1.south west) -- node (b1) [below,font=\scriptsize,outer sep=0mm] {1} ([yshift=-4mm,xshift=-1mm]node-2-1-1-4.south east);
+        \draw[|-|]([yshift=-4mm,xshift=1mm]node-2-2-1-1.south west) -- node (b2) [below,font=\scriptsize,outer sep=0mm] {2} ([yshift=-4mm,xshift=-1mm]node-2-2-1-4.south east);
+        \draw[|-|]([yshift=-4mm,xshift=1mm]tail-1-1.south west) -- node (b3) [below,font=\scriptsize,outer sep=0mm] {3} ([yshift=-4mm,xshift=-1mm]tail-1-4.south east);
+
+        \node[draw, dashed, inner sep=4mm, fit=(representation-tree) (b2) (tail) (node-2-1)] (representation-tree-box) {};
+
+        \draw[edge, out=270, in=90] (representation-flat-box.south) to (representation-tree-box.north);
+    \end{tikzpicture}
+
+    \caption{Visualization of the switching representation.}
+    \label{fig:switching-representations}
 \end{figure}
 
 % TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
