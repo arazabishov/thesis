@@ -306,11 +306,6 @@ This leads us to a question if the traditional persistent collection interface i
 \subsection{Dynamic representation}
 \todo{how do vectors change their representation when concatenated or splitted}
 
-% - [ ]  Dynamic representation
-%     - [ ]  Spilling / inflation algorithm: moving chunks
-%         - [ ]  Spilling as technique with figures to demonstrate it
-%         - [ ]  Move and copy semantics of arrays between stack and heap
-
 A unique property of \pvec{} is that it features an interface identical to the standard vector, contrary to the conventional persistent interface that is significantly different.
 
 If two vector types have identical interfaces, in theory, they can be used interchangeably without any additional changes made to the program. Hence, it becomes possible to dynamically choose a vector type depending on the context and performance requirements.
@@ -343,41 +338,7 @@ Essentially, a persistent vector type -- \pvec{}, can be backed by two different
 
 \pvec{} has two representations: \type{Flat} that is using \stdvec{}, and \type{Tree} that is backed by \rrbvec{}. The initial capacity of both representations is equal to the branching factor of 32 by default.
 
-% \begin{figure}[!htbp]
-
-%     \centering
-%     \begin{minted}{rust}
-%         fn spill(vec: &Vec<T>) -> RrbVec<T> {
-%             let mut tree = RrbTree::new();
-%             let mut chunks = vec.chunks_exact(BRANCH_FACTOR);
-
-%             for chunk in chunks.by_ref() {
-%                 tree.push(clone_arr!(chunk), chunk.len());
-%             }
-
-%             let mut tail = new_branch!();
-%             let mut tail_len = 0;
-
-%             for item in chunks.remainder() {
-%                 tail[tail_len] = Some(item.clone());
-%                 tail_len += 1;
-%             }
-
-%             RrbVec { tree, tail, tail_len, }
-%         }
-%     \end{minted}
-
-%     \caption{Memory layout of \pvec{}.}
-%     \label{fig:pvec-memory-representation}
-% \end{figure}
-
-As mentioned earlier, \pvec{} starts as the standard vector and spills to the tree-based one only when cloned. Spilling happens by converting the flat vector into an iterator of sub-arrays that are 32 elements wide and pushing them directly onto \rrbtree{} as leaf nodes. If the last chunk is smaller than 32, then it will be used as the tail for the new \rrbvec{}.
-
-One could have considered splitting up the original vector into chunks and reusing them instead of copying. Unfortunately, heap allocators do not have a mechanism for safely splitting an existing allocation into smaller ones.
-
-Additionally, the cost of spilling needs to be paid only once, and will be amortized by \bigo{1} consequent clones.
-
-\begin{figure}
+\begin{figure}[!htbp]
 
     \centering
     \begin{tikzpicture} [
@@ -421,9 +382,15 @@ Additionally, the cost of spilling needs to be paid only once, and will be amort
         \draw[edge, out=270, in=90] (representation-flat-box.south) to (representation-tree-box.north);
     \end{tikzpicture}
 
-    \caption{Visualization of the switching representation.}
+    \caption{Visualization of how the vector representation is switched.}
     \label{fig:switching-representations}
 \end{figure}
+
+Spilling happens by converting the flat vector into an iterator of sub-arrays that are 32 elements wide and pushing them directly onto \rrbtree{} as leaf nodes. If the last chunk is smaller than 32, then it will be used as the tail for the new \rrbvec{}. See figure \ref{fig:switching-representations} that visualizes the transition.
+
+One could have considered splitting up the original vector into chunks and reusing them instead of copying. Unfortunately, heap allocators do not have a mechanism for safely splitting an existing allocation into smaller ones. The Rust's allocator interface\footnote{\url{https://doc.rust-lang.org/std/alloc/struct.System.html}} reflects this limitation by exposing functions that allow allocating and freeing memory but no subdivision of existing allocations.
+
+Additionally, the cost of spilling needs to be paid only once, and will be amortized by \bigo{1} consequent clones.
 
 % TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
 % TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator:
