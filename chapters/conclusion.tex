@@ -134,7 +134,7 @@ The strict borrow checker rules of the Rust's compiler introduce additional comp
 
 Alternatively, rather than keeping a stack of mutable pointers, one could use \rc{}. The side effect of this choice is that ownership of \rc{} demands to clone. This, in turn, increments the reference count. When the reference count is bigger than one, any attempts to acquire a mutable pointer will result in the clone of the underlying value. Since display and focus are updated only when the vector itself is modified, it will result in path-copying every time.
 
-The second option is to use the interior mutability pattern in Rust, or \refcell{}. \refcell{} is a container that enforces compile-time rules of the borrow checker at run-time. Offsetting these checks helps to implement the display, but also adds overhead to every other operation, as all tree nodes have to be decorated with \refcell{}.  
+The second option is to use the interior mutability pattern in Rust, or \refcell{}. \refcell{} is a container that enforces compile-time rules of the borrow checker at runtime. Offsetting these checks helps to implement the display, but also adds overhead to every other operation, as all tree nodes have to be decorated with \refcell{}.  
 
 Even though \emph{display} and \emph{focus} seem to optimize some specific use cases potentially, the additional implementation complexity could cause more bugs and harm performance of other operations making \rrbtree{} less efficient as a general-purpose data structure. 
 

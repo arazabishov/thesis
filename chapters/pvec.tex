@@ -1,44 +1,49 @@
 \newcommand{\boxptr}{\type{box}}
 
+\todo{Use the "thread safety" phrease consistently in the document}
+\todo{Define the types that are provided by pvec-rs}
+\todo{Define the API and methods that are implemented}
+
 \chapter{Persistent vector in Rust}
 
-This chapter discusses approaches to define a persistent vector in Rust, their advantages and disadvantages, and their influence on the data structure design:
+This chapter discusses the advantages and disadvantages of different approaches to defining the persistent vector in Rust, as well as their influence on the data structure design:
 
 \begin{itemize}
     \item First, we will take a look at the memory layout of \rrbtree{} and how it supports the implementation of cloning and path copying.
-    \item Then, the dynamic representation and unique access optimizations will be introduced in the context of Rust's ownership and borrowing rules.
-    \item At last, we will talk about the thread-safety\todo{Use the word consistently in the document} and the Rust requirements for sharing objects between threads.
+    \item Then, transience and dynamic representation optimizations will be introduced in the context of Rust's ownership and borrowing rules.
+    \item At last, we will talk about thread safety and the requirements for sharing objects between threads.
 \end{itemize}
 
 \section{Memory layout}
-To define a persistent vector in Rust, we first need to understand how different parts of it are connected in the computer memory, and which Rust constructs are the most suitable for their representation.
+To define the persistent vector in Rust, we first need to understand how different parts of the data structure can be represented in the computer memory, and which Rust constructs are the most suitable for this purpose.
 
-The backbone of a confluently persistent vector is \rrbtree{}, with auxiliary properties such as a tail, size, and height. \rrbtree{} consists of infinitely nested nodes, which form a directed acyclic graph\footnote{A graph is a set of nodes connected by edges. In a directed acyclic graph, the edges are connected so that each edge only goes one way without creating a cycle.} in memory.\todo{Add a figure}
+The foundation of a confluently persistent vector is \rrbtree{}, with additional fields such as a tail, size, and height. \rrbtree{} consists of infinitely nested nodes, which form a directed acyclic graph\footnote{A directed acyclic graph is a data structure that consists of nodes connected with directed edges, in which moving from node to node by following edges will never lead to the same node again.} in memory.
 
-Since the data structure can be arbitrarily large, the Rust compiler is not able to reliably measure its size during compilation. Hence, the static memory allocation on the stack is not possible without additional constraints, such as fixed capacity.
+As the persistent vector can be arbitrarily large, the Rust compiler is not able to measure its size during compilation. Hence, the memory allocation on the stack is not possible without additional constraints, such as the fixed vector capacity.
 
-In fact, the Rust compiler will abort the compilation if a \emph{recursive data type}\footnote{\url{https://doc.rust-lang.org/book/ch15-01-box.html\#enabling-recursive-types-with-boxes}} definition is encountered. A recursive data type is a type that contains itself, such as a tree node. The solution is to use dynamic memory allocation instead of static. Rust offers a special type of pointers for this purpose, such as \boxptr{}, \rc{}, etc.
+In fact, the Rust compiler will abort the compilation if a \emph{recursive data type}\footnote{\url{https://doc.rust-lang.org/book/ch15-01-box.html\#enabling-recursive-types-with-boxes}} definition is encountered. A recursive data type is a type that contains itself, such as a tree node. The solution is to use dynamic memory allocation instead of static. Rust offers a particular type of pointers for this purpose known as smart pointers, such as \boxptr{}, \rc{}, etc.
 
-As \rrbtree{} employs structural sharing, several tree instances might point to the same sub-trees. In other words, one node can be referenced by several other parent nodes simultaneously. Even though \boxptr{} enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer that supports a notion of shared ownership is known as \rc{} or reference counting pointer.
+As \rrbtree{} employs structural sharing, several tree instances might point to the same sub-tree. In other words, one node can be referenced by several parent nodes simultaneously. Even though \boxptr{} enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer that supports a notion of shared ownership is known as \rc{} or reference counting pointer.
 
 \subsection{Reference counting pointers}
-\todo{A diagram of its memory layout}
 In a nutshell, a reference counting pointer allows shared ownership of the object wrapped into it. Every time a potential owner needs a reference to the value, the pointer itself is cloned instead of the underlying object. The reference count is incremented on each clone, and decremented when a pointer goes out of the scope. If the reference count reaches zero, the underlying value is destroyed.
 
 \subsubsection*{Copy-on-write semantics}
-Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced during run-time rather than compile-time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other references do not exist.
+Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced during runtime rather than compile-time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other references do not exist.
 
-The \emph{make\_mut}\todo{Typesetting of methods} method that is available on \rc{} allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are other pointers to the same allocation, then \emph{make\_mut} will clone the inner value to a new allocation to ensure unique ownership. This is also referred to as \emph{copy-on-write} behavior. \todo{A diagram demonstrating semantics of rc}
+The \mintinline{rust}{Rc::make_mut} method allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are no other pointers to the value, then \mintinline{rust}{Rc::make_mut} immediately returns a mutable reference. Otherwise, it clones the inner value to a new allocation to ensure unique ownership and then returns a reference to it. This mechanism will be referred to as conditional \emph{copy-on-write} behavior.\todo{citation for copy-on-write semantics}
 
+\subsubsection*{Path copying}
+\todo{NTH: a diagram demonstrating semantics of rc}
+
+When updating the tree, the path leading from the root node to the affected leaf is copied to preserve the original tree from changes. The copy-on-write semantics of \rc{} is the foundation for the path copying algorithm implementation in \rrbtree{}.
+
+Rust permits updating objects only through mutable references. To update a value in the tree, one has to acquire a mutable reference to each node that forms a path to the value. Since nodes are decorated with \rc{} pointer, a safe way to acquire a mutable reference is by calling the \mintinline{rust}{Rc::make_mut} method. If the tree has been cloned prior to the update, this call will copy each node while descending from the root to the leaf node, effectively performing \emph{path copying}.
+
+\subsubsection*{Thread safety}
 % The standard library also offers an \emph{Arc<T>} type, which is very similar to Rc<T> with the difference that it uses atomic operations to synchronize accesses to its reference counts. This can make Arc<T> a little more expensive during run time, but it enables threads to share a value safely.
 
 % As a persistent vector is intended to be a part of a library, Arc would be a better choice as it creates a foundation for the data structure to be used in the multithreaded environment.
-
-\subsubsection*{Memory reclamation}
-
-\subsubsection*{Thread safety}
-
-\subsubsection*{Path copying}
 
 \subsection{Structures, enumerations and cache locality}
 With the knowledge of how \rc{} helps to manage the memory and its semantics we can move on to the definition of the \rrbtree{} node using the following Rust constructs:
@@ -394,4 +399,4 @@ Additionally, the cost of spilling needs to be paid only once, and will be amort
 
 % TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
 % TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator:
-% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant run-time.
+% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant runtime.
