@@ -1,58 +1,58 @@
 % NOTE: the reason why cache-invalidation makes a difference when comparing pvec vs stdvec, is because pvec causes more cache invalidations due to its size when tested sequentially. In tests with randomness, this distinction goes away as cache is invalidated anyways.
 
-% FUTURE WORK: size based representation? What are the caveats? 
+% FUTURE WORK: size based representation? What are the caveats?
 
 \chapter{Conclusions and future work}
 In this final chapter, I will look at the state and future of \pvecrs{} itself, as well as how the ideas explored in this project can be continued further.
 
 \section{Reflecting on contributions}
-This project explores and blends ideas at the intersection of persistent data structures and unique features of Rust to contribute a vector implementation that delivers good performance overall operations, including clone. It makes \pvecrs{} a viable alternative in applications where the fast clone operation is critical. 
+This project explores and blends ideas at the intersection of persistent data structures and unique features of Rust to contribute a vector implementation that delivers good performance overall operations, including clone. It makes \pvecrs{} a viable alternative in applications where the fast clone operation is critical.
 
-The list of vectors includes \rbvec{}, \rrbvec{}, and \pvec{}, all of which are based on \rrbtree{}. 
+The list of vectors includes \rbvec{}, \rrbvec{}, and \pvec{}, all of which are based on \rrbtree{}.
 
 \subsection{The effect of relaxation}
-The advantage of the relaxed \rbtree{} is the fast appends and splits. \rrbvec{} demonstrates significantly better performance for those operations compared to \rbvec{}, and even outperforms \stdvec{} for the large-sized vectors. 
+The advantage of the relaxed \rbtree{} is the fast appends and splits. \rrbvec{} demonstrates significantly better performance for those operations compared to \rbvec{}, and even outperforms \stdvec{} for the large-sized vectors.
 
-Frameworks for parallelism, such as \rayon{}, take advantage of multiple threads by dividing the work between them. Hence, fast append and split operations are critical for achieving good performance. Thus, \rrbtree{} enables vectors that perform well not only in the sequential but also in the parallel context. 
+Frameworks for parallelism, such as \rayon{}, take advantage of multiple threads by dividing the work between them. Hence, fast append and split operations are critical for achieving good performance. Thus, \rrbtree{} enables vectors that perform well not only in the sequential but also in the parallel context.
 
-The overhead of relaxation is present in other operations, but it is not significant enough to outweigh the benefits. Also, constraints are relaxed only when append or split is used, meaning that one does not have to pay the cost of the abstraction before using it. 
+The overhead of relaxation is present in other operations, but it is not significant enough to outweigh the benefits. Also, constraints are relaxed only when append or split is used, meaning that one does not have to pay the cost of the abstraction before using it.
 
 \subsection{Pay only for the features you use}
-The project draws inspiration from one of the Rust key features -- zero-cost abstractions. As demonstrated in the results and discussion chapter, \pvec{} starts as an ordinary, standard vector that delivers great performance for the core operations. When cloned, it employs a technique introduced in this paper called spilling, which transitions the vector from flat to the tree-based representation. When transitioned to a balanced \rrbvec{}, \pvec{} offers practically \bigo{1} performance for all operations, including clone, that gives developers confidence in using patterns that extensively rely on copying. 
+The project draws inspiration from one of the Rust key features -- zero-cost abstractions. As demonstrated in the results and discussion chapter, \pvec{} starts as an ordinary, standard vector that delivers great performance for the core operations. When cloned, it employs a technique introduced in this paper called spilling, which transitions the vector from flat to the tree-based representation. When transitioned to a balanced \rrbvec{}, \pvec{} offers practically \bigo{1} performance for all operations, including clone, that gives developers confidence in using patterns that extensively rely on copying.
 
 \paragraph{Dynamic representation}
-Tree-based vectors are very cheap to clone, but their core operations, even though very fast, do not match the performance of the standard vector due to the nuances of hardware architecture. The dynamic representation aims to offset this cost by using the standard vector, switching to the tree-based representation only when cloned. 
+Tree-based vectors are very cheap to clone, but their core operations, even though very fast, do not match the performance of the standard vector due to the nuances of hardware architecture. The dynamic representation aims to offset this cost by using the standard vector, switching to the tree-based representation only when cloned.
 
 Results show that dynamic representation effectively improves the performance of \pvec{} in the majority of tests, except append and split for large-sized vectors, where tree-based vectors clearly have an advantage. However, the \pvec{} as an abstraction, introduces a marginal overhead over the pure variants of its representations -- \stdvec{} and \rrbvec{}.
 
 \paragraph{Unique access}
-In the paper Improving RRB-Tree Performance through Transience \cite{improving-performance-through-transience}, the author mentions that correct use of transient types can be checked during compile-time in languages that have linear types \cite{linear-types-can-change-the-world}, such as Rust. 
+In the paper Improving RRB-Tree Performance through Transience \cite{improving-performance-through-transience}, the author mentions that correct use of transient types can be checked during compile-time in languages that have linear types \cite{linear-types-can-change-the-world}, such as Rust.
 
-This project implements unique access optimization, that is somewhat similar to transience, but is not entirely the same. For example, transients in Clojure\footnote{\url{https://clojure.org/reference/transients}} are created by calling a special function -- \emph{transient}, and converted back to persistent using \emph{persistent!}. Transient types are also thread confined in Clojure, meaning that they can't be modified outside of the thread where the transient was created. 
+This project implements unique access optimization, that is somewhat similar to transience, but is not entirely the same. For example, transients in Clojure\footnote{\url{https://clojure.org/reference/transients}} are created by calling a special function -- \emph{transient}, and converted back to persistent using \emph{persistent!}. Transient types are also thread confined in Clojure, meaning that they can't be modified outside of the thread where the transient was created.
 
-In Rust, a vector can be considered transient when it is accessed through a mutable reference without calling a special function such as \emph{transient}. The Rust's compiler ensures that the mutable reference is \emph{unique} and that the operation is safe. With that knowledge, the program can proceed to update vector in-place without creating copies -- transitively. Rust also allows moving objects between threads, so a vector instantiated on one thread can be updated on another. 
+In Rust, a vector can be considered transient when it is accessed through a mutable reference without calling a special function such as \emph{transient}. The Rust's compiler ensures that the mutable reference is \emph{unique} and that the operation is safe. With that knowledge, the program can proceed to update vector in-place without creating copies -- transitively. Rust also allows moving objects between threads, so a vector instantiated on one thread can be updated on another.
 
-The unique access optimization ensures that the data structure can be mutated in-place only when it is safe. If a vector was cloned before being updated, copy-on-write semantics of \rc{} would enforce path-copying leaving the source untouched. 
+The unique access optimization ensures that the data structure can be mutated in-place only when it is safe. If a vector was cloned before being updated, copy-on-write semantics of \rc{} would enforce path-copying leaving the source untouched.
 
-Benchmarks for mutative operations, such as push, pop, and update that included tests with and without clone showed that updating a data structure in-place was noticeably faster. 
+Benchmarks for mutative operations, such as push, pop, and update that included tests with and without clone showed that updating a data structure in-place was noticeably faster.
 
 Additionally, a "mutable" interface for \pvec{} that makes unique access optimization possible, also makes the API of \pvec{} identical to \stdvec{} and idiomatic to Rust.
 
 \paragraph{Idiomatic, ergonomic Rust interface}
-The idiomatic and ergonomic interface of \pvecrs{}, identical to the standard one, simplifies the integration of the library into existing codebases. A side effect of this design is that both types of vectors can be used interchangeably in a generic manner. For example, the vector type can be substituted during compile-time using feature flags without changing the source code. 
+The idiomatic and ergonomic interface of \pvecrs{}, identical to the standard one, simplifies the integration of the library into existing codebases. A side effect of this design is that both types of vectors can be used interchangeably in a generic manner. For example, the vector type can be substituted during compile-time using feature flags without changing the source code.
 
-Thread-safety is also an optional feature that can be enabled when compiling. This way, developers do not have to pay the cost of using the parallel vector features in sequential applications. 
+Thread-safety is also an optional feature that can be enabled when compiling. This way, developers do not have to pay the cost of using the parallel vector features in sequential applications.
 
 \section{Implementation state}
 \todo{Add usage numbers after publishing the library}
-While the core of \pvecrs{} outlined in this thesis can be considered complete, there are lots of features and optimizations that were intentionally left out of the scope due to the time constraints. I will continue implementing many of these features myself. 
+While the core of \pvecrs{} outlined in this thesis can be considered complete, there are lots of features and optimizations that were intentionally left out of the scope due to the time constraints. I will continue implementing many of these features myself.
 
 \subsection{Supporting all operations of Vec}
 The API surface of the \pvecrs{} does not expose the same set of methods as the standard vector does. Available methods are listed in the table \ref{tab:vec-implementations}.
 
 \begin{table}[H]
 
-    \centering    
+    \centering
     \begin{tabular} { | p{7cm} | p{6cm} | }
         \hline
         \mintinline[breaklines]{rust}{fn push(&mut self, e: T)} & Appends an element to the back of a collection \\ \hline
@@ -66,12 +66,12 @@ The API surface of the \pvecrs{} does not expose the same set of methods as the 
         \mintinline[breaklines]{rust}{fn into_iter(self) -> Self::IntoIter} & Creates an iterator from a value. \\ \hline
         \mintinline[breaklines]{rust}{fn into_par_iter(self) -> Self::Iter} & Converts self into a parallel iterator. \\ \hline
     \end{tabular}
-    
+
     \label{tab:vec-implementations}
     \caption{A table of supported methods.}
 \end{table}
 
-Having efficient appending and splitting allows us to implement several other operations, such as inserting or deleting an element at any index. The complexity of these operations is bound by the complexity of the discrete operations that will be used to implement them. Thus, uniform performance characteristics across core operations are critical for achieving good all-around performance for the general-purpose vector. 
+Having efficient appending and splitting allows us to implement several other operations, such as inserting or deleting an element at any index. The complexity of these operations is bound by the complexity of the discrete operations that will be used to implement them. Thus, uniform performance characteristics across core operations are critical for achieving good all-around performance for the general-purpose vector.
 
 For example, element insertion at the given index can be implemented by splitting the vector at the given index, pushing a new element into the left sub-vector, and then concatenating two sub-vectors back together.
 
@@ -80,13 +80,13 @@ Therefore, the operations that can be implemented by combining or re-using core 
 \subsection{Improving dynamic representation}
 
 \paragraph{Automatically switching to the flat representation}
-A distinct feature of \pvec{} is the ability to start as a standard vector and then switch to \rrbvec{} when cloned. However, there is no mechanism to switch back to the flat representation, for example, when all cloned instances are destroyed. 
+A distinct feature of \pvec{} is the ability to start as a standard vector and then switch to \rrbvec{} when cloned. However, there is no mechanism to switch back to the flat representation, for example, when all cloned instances are destroyed.
 
-One way to achieve this is by flattening the \rrbtree{} into a standard vector when the underlying tree is not shared with any clones. One could use Rust's destructors to observe when \pvec{} clones go out of the scope. The challenge is to be able to say when the tree is not shared anymore. A brute force approach would be traversing the tree and counting references, but obviously, it is very in-efficient. 
+One way to achieve this is by flattening the \rrbtree{} into a standard vector when the underlying tree is not shared with any clones. One could use Rust's destructors to observe when \pvec{} clones go out of the scope. The challenge is to be able to say when the tree is not shared anymore. A brute force approach would be traversing the tree and counting references, but obviously, it is very in-efficient.
 
-An annotated example of this optimization in use is provided in figure \ref{fig:switching-to-flat}. 
+An annotated example of this optimization in use is provided in figure \ref{fig:switching-to-flat}.
 
-\begin{figure}[H] 
+\begin{figure}[H]
     \centering
 
     \begin{minted}{rust}
@@ -94,7 +94,7 @@ An annotated example of this optimization in use is provided in figure \ref{fig:
         // ^ start as a standard Vec
 
         for i in 0..512 {
-            vec_1.push(i);            
+            vec_1.push(i);
         }
 
         vec_1 = vec_1.clone();
@@ -103,8 +103,8 @@ An annotated example of this optimization in use is provided in figure \ref{fig:
         let vec_2 = vec_1.clone();
         { // <-- moving vec_2 to the new scope
             vec_2
-        } // <-- vec_2 goes out of the scope and is 
-          // destroyed, vec_1 switches back to standard Vec           
+        } // <-- vec_2 goes out of the scope and is
+          // destroyed, vec_1 switches back to standard Vec
 
         // execution continues
     \end{minted}
@@ -114,35 +114,40 @@ An annotated example of this optimization in use is provided in figure \ref{fig:
 \end{figure}
 
 \paragraph{Starting as an array allocated on the stack}
-The flat vector representation is efficient because of its cache-friendly memory layout. Since the vector size is not known at the compile-time, it is allocated on the heap. In comparison to the stack, heap allocation is more complex and expensive as it requires the memory allocator to track and manage allocated blocks of memory. Additionally, heap-allocated objects are more likely to cause cache invalidation, as CPU will have to reach a memory segment that potentially is located far outside of its caches. 
+The flat vector representation is efficient because of its cache-friendly memory layout. Since the vector size is not known at the compile-time, it is allocated on the heap. In comparison to the stack, heap allocation is more complex and expensive as it requires the memory allocator to track and manage allocated blocks of memory. Additionally, heap-allocated objects are more likely to cause cache invalidation, as CPU will have to reach a memory segment that potentially is located far outside of its caches.
 
-In an attempt to improve the cache locality properties of the standard vector, authors of the \emph{SmallVec}\footnote{\url{https://docs.rs/smallvec/1.2.0/smallvec/}} library introduced a vector implementation that stores a certain number of elements on the stack, and falls back to the heap for larger sizes. 
+In an attempt to improve the cache locality properties of the standard vector, authors of the \emph{SmallVec}\footnote{\url{https://docs.rs/smallvec/1.2.0/smallvec/}} library introduced a vector implementation that stores a certain number of elements on the stack, and falls back to the heap for larger sizes.
 
-The dynamic representation can be extended with the new representation type that allocates vector on the stack. The vector first will be allocated on the stack, then spill to the heap when exceeding a certain size threshold, and switched to \rrbvec{} when cloned. 
+The dynamic representation can be extended with the new representation type that allocates vector on the stack. The vector first will be allocated on the stack, then spill to the heap when exceeding a certain size threshold, and switched to \rrbvec{} when cloned.
 
 One has to be cautious in implementing this optimization. Internally, \pvec{} is backed by the \emph{Representation} enum, and in Rust, the enum size is bounded by its largest variant. The variant that holds the stack-allocated buffer will quickly supersede \emph{Flat} and \emph{Tree} representations if set to be sufficiently large, increasing the overall memory footprint of \pvec{}.
 
 \subsection{Focus and display optimizations}
 The notion of \emph{focus} was introduced in Scala's immutable vector implementation and was further studied in \cite{rrb-vector-practical-general-purpose-im-sequence}. Instead of keeping track only of the vector \emph{tail}, the focus is generalized to work with the leaf node which was last modified. The basis for this is the principle of spatial locality, a heuristic that assumes that collocated elements are more likely to be accessed one after another.
 
-Since the vector has to be thread-safe, focus either has to be modified when the vector itself is modified or to be protected from the concurrent access. The latter comes at additional performance and maintenance costs. 
+Since the vector has to be thread-safe, focus either has to be modified when the vector itself is modified or to be protected from the concurrent access. The latter comes at additional performance and maintenance costs.
 
-\emph{Display} is a way to keep track of the entire branch of the tree, from the root to a leaf, where a leaf is the \emph{focused} node. Introducing display to \rrbtree{} requires additional coordination when the tree is modified. 
+\emph{Display} is a way to keep track of the entire branch of the tree, from the root to a leaf, where a leaf is the \emph{focused} node. Introducing display to \rrbtree{} requires additional coordination when the tree is modified.
 
 \paragraph{Limitations of Rust}
-The strict borrow checker rules of the Rust's compiler introduce additional complexity in implementing the \emph{display}. It is forbidden to acquire and keep mutable references to the node and its children simultaneously. That is a necessary property for display, which essentially is a stack of pointers to nodes that form a path from the root to the leaf nodes. 
+The strict borrow checker rules of the Rust's compiler introduce additional complexity in implementing the \emph{display}. It is forbidden to acquire and keep mutable references to the node and its children simultaneously. That is a necessary property for display, which essentially is a stack of pointers to nodes that form a path from the root to the leaf nodes.
 
 Alternatively, rather than keeping a stack of mutable pointers, one could use \rc{}. The side effect of this choice is that ownership of \rc{} demands to clone. This, in turn, increments the reference count. When the reference count is bigger than one, any attempts to acquire a mutable pointer will result in the clone of the underlying value. Since display and focus are updated only when the vector itself is modified, it will result in path-copying every time.
 
-The second option is to use the interior mutability pattern in Rust, or \refcell{}. \refcell{} is a container that enforces compile-time rules of the borrow checker at runtime. Offsetting these checks helps to implement the display, but also adds overhead to every other operation, as all tree nodes have to be decorated with \refcell{}.  
+The second option is to use the interior mutability pattern in Rust, or \refcell{}. \refcell{} is a container that enforces compile-time rules of the borrow checker at runtime. Offsetting these checks helps to implement the display, but also adds overhead to every other operation, as all tree nodes have to be decorated with \refcell{}.
 
-Even though \emph{display} and \emph{focus} seem to optimize some specific use cases potentially, the additional implementation complexity could cause more bugs and harm performance of other operations making \rrbtree{} less efficient as a general-purpose data structure. 
+Even though \emph{display} and \emph{focus} seem to optimize some specific use cases potentially, the additional implementation complexity could cause more bugs and harm performance of other operations making \rrbtree{} less efficient as a general-purpose data structure.
 
 Especially in Rust, for which the options listed above require either using the unsafe subset of the language features, or sacrificing the simplicity, and possibly the reliability and performance. Adding \emph{focus} and \emph{display} to \rrbvec{} is therefore left as future work.
 
 \section{Towards the library of persistent data structures for Rust}
-Vector is only one of many other general-purpose data structures provided by the Rust standard library, such as \emph{LinkedList}, \emph{HashMap}, \emph{HashSet}, and others. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, hash array mapped tries\cite{ideal-hash-trees} can be used as a foundation for \emph{HashMap}. 
+Vector is only one of many other general-purpose data structures provided by the Rust standard library, such as \emph{LinkedList}, \emph{HashMap}, \emph{HashSet}, and others. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, hash array mapped tries\cite{ideal-hash-trees} can be used as a foundation for \emph{HashMap}.
 
-In fact, there are other projects that implement persistent collections for Rust today, such as \imrs{}\footnote{\url{https://docs.rs/im/14.3.0/im/}} and \rpds{}\footnote{\url{https://docs.rs/rpds/0.7.0/rpds/}}. Even though other libraries provide a wider selection of collections, they do not provide the same combination of ergonomic interface and performance as \pvecrs{}. 
+In fact, there are other projects that implement persistent collections for Rust today, such as \imrs{}\footnote{\url{https://docs.rs/im/14.3.0/im/}} and \rpds{}\footnote{\url{https://docs.rs/rpds/0.7.0/rpds/}}. Even though other libraries provide a wider selection of collections, they do not provide the same combination of ergonomic interface and performance as \pvecrs{}.
 
 \todo{Expand on dynamic representation for other data structures}
+
+\begin{center}
+    \vspace*{1cm}
+    \includegraphics[width=6cm, angle=0, trim=10 10 10 10, clip]{images/ferris-waving.png}
+\end{center}
