@@ -1,6 +1,7 @@
 % TODO: you should be using terms flat and tree representation (to match with the documentation)
 % TODO: figure out how to make all tables consistently wide across the thesis
 % TODO: consistent references (the format of author names, years, pages, etc)
+% TODO: make sure that pre-face is padded correctly for printing
 
 \documentclass[12pt,a4paper,english,twoside,openright]{report}
 \usepackage{parskip}
@@ -18,6 +19,7 @@
 \renewcommand{\sectionmark}[1]{ \markright{\thesection\ #1}{} }
 \fancyhead[RE,LO]{\rightmark}
 
+\usepackage{ragged2e}
 \usepackage{adjustbox}
 \usepackage{float}
 % \floatstyle{boxed}
