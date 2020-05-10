@@ -1,11 +1,42 @@
-\chapter{Introduction}
+% The experience of dealing with these errors often can be frustrating, especially for programmers new to Rust.
 
-% TODO: Optional<Add a point to introduction to describe what is RefCell>
-% TODO: Linear types (from Jean's work):
-% Earlier work has lead to the definition of linear types, a way to define mutable types in a similar fashion as transients, with focus on correctness [20]. A linear type can only be used once, although relaxed constraints provide means to temporarily define a linear type as nonlinear, which gives users read capabilities without “using” the instance. In contrast, a transient is an affine type, where the function persistent! converts the affine nodes permanently to nonlinear, persistent nodes. 
-% TODO: Linear types can change the world
+% However, the Rust developers have spent a large amount of time working to improve the error messages to ensure that they are clear and actionable. Don’t let your eyes gloss over while reading Rust errors!
+
+\chapter{Introduction}
+% Total volume of the introduction should not exceed 5-6 paragraphs
+
+% 1. Why Rust is cool and worth your time. Why: a, b, c
+Rust is a modern, open-source programming language with a focus on memory safety and performance. Its rich type system not only eliminates several classes of bugs but also makes the language powerful and expressive for building high-level programs such as web servers and command-line interface applications. With direct access to computer memory and hardware, Rust is a great language for embedded and low-level programming as well.
+
+% 2. What are the challenges of working with Rust? a, b, c
+However, due to the emphasis on memory safety and rigorous checks enforced by the compiler, it is common to get errors when compiling a Rust program. One of the rules is the forbidden simultaneous sharing and mutation of an object. Often, errors caused by this rule can be avoided by better design, but sometimes, the best resolution is to clone the value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of time and space. Thus, resorting to it as a solution, especially for large-sized collections might be in-efficient. 
+
+% 3. Persistent data structures can help: why, and how? a, b, c
+Persistent data structures are the data structures that provide access to all their previous versions. Often persistence is achieved through copying, and thus, various data structure designs have been developed throughout the years to optimize for this operation. The standard library of the Scala programming language\footnote{\url{https://www.scala-lang.org/}} provides a persistent vector implementation that is efficient not only when copied but also across all operations.
+
+% 4. Okay, now we understand what are the challenges, and why Rust and persistent 
+%      data structures are a match made in heaven. What is my role in this story?
+This thesis presents \pvecrs{}, a project that contributes a vector implementation with efficient clone operation that borrows ideas from persistent data structures. The project explores novel approaches to optimize vector’s performance by leveraging type system of Rust, as well as aiming to achieve convenient, idiomatic interface familiar to developers. The proposed optimizations are evaluated and discussed based on results of the sequential and parallel tests.
+
+% 5. Let's learn a little bit more about Rust and Persistent data structures first
+In this introductory chapter, we will look at the background for the \pvecrs{} project. First, in section \ref{sec:rust}, we will look at the Rust programming language. Then, in section \ref{sec:psds}, we will take a closer look at persistent data structures and their categories. Finally, section \ref{sec:contributions} gives an overview of the contributions made in this project.
+
+In chapter 2, the data structure that serves as the foundation for the persistent vector in Rust -- the RRB-Tree, is presented. In chapter 3, the \pvecrs{} project, its interface, and optimizations specific to Rust are discussed in detail. Chapter 3 focuses on the performance evaluation of the data structures and discusses ways in which it could be extended and improved.
+
+% Take a look at the paper about fork/join
+% Stack, Heap, and garbage collection
+
+\section{The Rust programming language}
+\label{sec:rust}
+
+\subsection{Ownership and borrowing}
+\todo{Ownership and borrowing}
+
+\subsection{Reference counting and memory management}
+\todo{Reference counting and memory management}
 
 \section{Persistent data structures}
+\label{sec:psds}
 
 A vast majority of modern programming languages are equipped with a standard library --- a set of constructs and utilities aimed to improve the developer's productivity. 
 
@@ -33,14 +64,6 @@ Later Phill Bagwell introduced a confluently persistent vector based on Relaxed 
 
 The project presented in the thesis contributes an efficient persistent vector implementation for Rust based on Relaxed Radix Balanced Tree, which takes advantage of the Rust's type system to improve performance, guarantee thread safety and provide an idiomatic application programming interface. In order to ensure the best possible average performance, its internal representation switches from standard vector to RRB-Tree during runtime. 
 
-\section{The Rust programming language}
-\todo{The Rust programming language}
-
-\subsection{Ownership and borrowing}
-\todo{Ownership and borrowing}
-
-\subsection{Reference counting and memory management}
-\todo{Reference counting and memory management}
-
 \section{Contributions}
+\label{sec:contributions}
 \todo{Contributions}
