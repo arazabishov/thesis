@@ -1,35 +1,25 @@
 \chapter{Introduction}
 
-% 1. Why Rust is cool and worth your time. Why: a, b, c
-Rust is a modern, open-source programming language with a focus on memory safety and performance. Its rich type system not only eliminates several classes of bugs but also makes the language powerful and expressive for building high-level programs such as web servers and command-line interface applications. With direct access to computer memory and hardware, Rust is a great language for embedded and low-level programming as well.
+Rust is a modern, open-source programming language with a focus on memory safety and performance. Its rich type system not only eliminates several classes of bugs but also makes the language powerful and expressive for building high-level programs such as web servers and command-line interface applications. With direct access to computer memory and hardware, Rust is an excellent language for embedded and low-level programming as well.
 
-% 2. What are the challenges of working with Rust? a, b, c
 However, due to the emphasis on memory safety and rigorous checks enforced by the compiler, it is common to get errors when compiling a Rust program. One of the rules is the forbidden simultaneous sharing and mutation of an object. Often, errors caused by this rule can be avoided by better design, but sometimes, the best resolution is to clone the value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of time and space. Thus, resorting to it as a solution, especially for large-sized collections might be in-efficient.
 
-% 3. Persistent data structures can help: why, and how? a, b, c
 Persistent data structures are the data structures that provide access to all their previous versions. Often persistence is achieved through copying, and thus, various data structure designs have been developed throughout the years to optimize for this operation. The standard library of the Scala programming language\footnote{\url{https://www.scala-lang.org/}} provides a persistent vector implementation that is efficient not only when copied but also across all operations.
 
-% 4. Okay, now we understand what are the challenges, and why Rust and persistent
-%      data structures are a match made in heaven. What is my role in this story?
-This thesis presents \pvecrs{}, a project that contributes a vector implementation with efficient clone operation that borrows ideas from persistent data structures. The project explores novel approaches to optimize vector’s performance by leveraging type system of Rust, as well as aiming to achieve convenient, idiomatic interface familiar to developers. The proposed optimizations are evaluated and discussed based on results of the sequential and parallel tests.
+This thesis presents \pvecrs{}, a project that contributes a vector implementation with efficient clone operation that borrows ideas from persistent data structures. The project explores novel approaches to optimize the vector’s performance by leveraging the type system of Rust, as well as aiming to achieve convenient, idiomatic interface familiar to developers. The proposed optimizations are evaluated and discussed based on the results of the sequential and parallel tests.
 
-% 5. Let's learn a little bit more about Rust and Persistent data structures first
 In this introductory chapter, we will look at the background for the \pvecrs{} project. First, in section \ref{sec:rust}, we will look at the Rust programming language. Then, in section \ref{sec:psds}, we will take a closer look at persistent data structures and their categories. Finally, section \ref{sec:contributions} gives an overview of the contributions made in this project.
 
 \section{The Rust programming language}
 \label{sec:rust}
 
-% 1. Rust is a new programming language developed at Mozilla that offers high level constructs such as a, b, and c
-Rust is a relatively new programming language developed at Mozilla that favors reliability and performance. It is a statically type language with type inference, with high-level constructs such as closures, pattern matching and algebraic data types. At the same time, Rust gives the option to control low-level details, such as memory management, without all the unsafety traditionally associated with it.
+Rust is a relatively new programming language developed at Mozilla that favors reliability and performance. It is a statically typed language with type inference, with high-level constructs such as closures, pattern matching, and algebraic data types. At the same time, Rust gives the option to control low-level details, such as memory management, without all the unsafety traditionally associated with it.
 
-% 2. At the same time, it offers low-level control to do: a, b, c; that makes it a viable alternative to C/C++
-Rust does not have a garbage collector and can be configured without standard library, allowing it to be used for programming microcontrollers, operating systems and drivers, the domain that has been occupied mainly by C/C++. It avoids the tradeoff between control and safety by statically checking memory correctness at compile-time without introducing any runtime overhead \cite{reed-patina}.
+Rust does not have a garbage collector and can be configured without the standard library, allowing it to be used for programming microcontrollers, operating systems, and drivers, the domain that has been occupied mainly by C/C++. It avoids the tradeoff between control and safety by statically checking memory correctness at compile-time without introducing any runtime overhead \cite{reed-patina}.
 
-% 5. It guarantees memory safety through its type system, and here is how.
 The advanced type system of Rust guarantees memory safety by enforcing ownership and borrowing rules, making Rust a unique programming language that helps to write fast, safe and reliable software.
 
-% 6. This project is written in Rust. The following sections will introduce relevant parts of the language. For more details read the book.
-The project presented in the thesis, \pvecrs{}, contributes the persistent vector to the Rust programming language. The following sections are a very basic introduction to the relevant parts of Rust touched in this thesis. For a more in-depth overview of the more advanced language features, see the Rust book\footnote{\url{https://doc.rust-lang.org/book/}}.
+The project presented in the thesis, \pvecrs{}, contributes the persistent vector to the Rust programming language. The following sections are a basic introduction to the relevant parts of Rust touched in this thesis. For a more in-depth overview of the more advanced language features, see the Rust book\footnote{\url{https://doc.rust-lang.org/book/}}.
 
 \subsection{Ownership and borrowing}
 
@@ -52,7 +42,7 @@ Borrowing in Rust is the act of creating references to an object. The compiler c
 
 Ownership and borrowing rules are demonstrated in listing \ref{lst:ownership-and-borrowing} that was taken from \cite{linus-parallelization}. On line 2, a new vector is created and assigned to the \mintinline{rust}{vec} variable. Since \mintinline{rust}{vec} owns the object, it is allowed to mutate it by pushing a value on line 3.
 
-\begin{listing}[!htbp]
+\begin{listing}[!ht]
 
     \centering
     \begin{minted}[
@@ -98,7 +88,7 @@ Ownership and borrowing rules are demonstrated in listing \ref{lst:ownership-and
 
 On lines 6 and 7, two references are created with the \mintinline{rust}{&} operator. One of them is borrowed by the \mintinline{rust}{borrow} function, with the \mintinline{rust}{vec} still being the owner. When \mintinline{rust}{borrow} returns, the reference goes out of the scope first, and then the same happens to \mintinline{rust}{vecref} a line later. The two references are a demonstration of the possibility to simultaneously create more than one immutable reference to the same object.
 
-On line 10 a new mutable reference is created with the \mintinline{rust}{&mut} operator. While data is borrowed mutably no other references can exist. When \mintinline{rust}{borrow_mut} returns the reference goes of the scope.
+On line 10 a new mutable reference is created with the \mintinline{rust}{&mut} operator. While data is borrowed mutably, no other references can exist. When \mintinline{rust}{borrow_mut} returns the reference goes of the scope.
 
 When the function \mintinline{rust}{take} is invoked the ownership to the \mintinline{rust}{vec} object is transferred to the variable \mintinline{rust}{my_data}. The \emph{move} happens because \mintinline{rust}{take} accepts the object by value rather than by a reference. Compiler will error on attempt to use \mintinline{rust}{vec} after it has been moved on line 13.
 
@@ -108,19 +98,16 @@ Rust has a second language hidden inside it that does not enforce memory safety 
 The \pvecrs{} project was designed in the way that it does not require unsafe Rust features. It was done intentionally to minimize the risk of introducing bugs.
 
 \subsection{Memory management: the stack and the heap}
-In programming languages such as Java, there is no distinction between the stack and the heap memory, because language abstracts them away from a developer. But in a systems programming language like Rust, whether a value is on the stack or the heap has more of an effect on how the language behaves and why you have to make certain decisions.
+In programming languages such as Java, there is no distinction between the stack and the heap memory, because language abstracts them away from a developer. However, in a systems programming language like Rust, whether a value is on the stack or the heap affects the language behavior.
 
-The stack is very fast and is where memory is allocated in Rust by default. But the allocation is local to a function call and is limited in size. The heap, on the other hand, is slower and is explicitly allocated by your program. But it’s effectively unlimited in size and is globally accessible \cite{rust-book-2e}.
+The stack is very fast and is where memory is allocated in Rust by default. The allocation is local to a function call and is limited in size. The heap, on the other hand, is slower and is explicitly allocated by program, but it is virtually unlimited in size and is globally accessible \cite{rust-book-2e}.
 
 The following section gives an overview of how Rust supports heap allocation.
 
 \subsubsection*{Smart pointers}
-\emph{Smart pointers} are data structures that not only act like a pointer but also have additional metadata and capabilities.
+\emph{Smart pointers} are data structures that not only act as a pointer but also have additional metadata and capabilities.
 
-\paragraph{Box}
-The most straightforward smart pointer is \type{Box<T>} that allows storing data on the heap rather than the stack.
-
-\begin{listing}[!htbp]
+\begin{listing}[!ht]
 
     \centering
     \begin{minted}[
@@ -134,19 +121,22 @@ The most straightforward smart pointer is \type{Box<T>} that allows storing data
         fn main() {
             let b = Box::new(5); // <- 5 will be stored on the heap.
             println!("b = {}", b);
-        }
+        } // <- Goes out of the scope.
     \end{minted}
 
     \caption{Example of using box smart pointer.}
     \label{lst:box}
 \end{listing}
 
+\paragraph{Box}
+The most straightforward smart pointer is \type{Box<T>} that allows storing data on the heap rather than the stack.
+
 When box pointer in listing \ref{lst:box} goes out of the scope on line 4, corresponding heap allocation gets freed as well.
 
 \paragraph{Rc or reference counting}
 There are cases when a single object might have multiple owners. In graph data structures, multiple edges might point to the same node, and that node is conceptually owned by all of the edges that point to it. A node should not be cleaned up unless it does not have any edges pointing to it \cite{rust-book-2e}.
 
-\begin{listing}[!htbp]
+\begin{listing}[!ht]
 
     \centering
     \begin{minted}[
@@ -217,7 +207,7 @@ Note that \type{Rc<T>} is only for use in single-threaded scenarios. \type{Arc<T
     \label{lst:struct}
 \end{listing}
 
-Structs is the most common way to declare complex custom data types in Rust without introducing runtime overhead. A \emph{struct}, or \emph{structure}, is a custom data type that lets you name and package together multiple related values that make up a meaningful group\footnote{\url{https://doc.rust-lang.org/book/ch05-00-structs.html}}.
+Structs are the most common way to declare complex custom data types in Rust without introducing runtime overhead. A \emph{struct}, or \emph{structure}, is a custom data type that lets you name and package together multiple related values that make up a meaningful group\footnote{\url{https://doc.rust-lang.org/book/ch05-00-structs.html}}.
 
 \subsubsection*{Enums}
 
@@ -286,7 +276,7 @@ Structs is the most common way to declare complex custom data types in Rust with
     \label{lst:trait}
 \end{listing}
 
-A \emph{trait} is a language feature that tells the Rust compiler about functionality a type must provide. Conceptually it is similar to an interface in Java. One of the trait's superpowers is the ability to implement them for types you do not own. Traits support default function implementations, as well as inheritance. Listing \ref{lst:trait} shows how traits can be used to define the common contract between several data types.
+A \emph{trait} is a language feature that tells the Rust compiler about functionality a type must provide. Conceptually it is similar to an interface in Java. One of the trait's superpowers is the ability to implement them for foreign types. Traits support default function implementations, as well as inheritance. Listing \ref{lst:trait} shows how traits can be used to define the common contract between several data types.
 
 \section{Persistent data structures}
 \label{sec:psds}
