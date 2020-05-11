@@ -1,7 +1,3 @@
-% The experience of dealing with these errors often can be frustrating, especially for programmers new to Rust.
-
-% However, the Rust developers have spent a large amount of time working to improve the error messages to ensure that they are clear and actionable. Don’t let your eyes gloss over while reading Rust errors!
-
 \chapter{Introduction}
 \todo{The parallel vector extensions in a better way}
 \todo{Interaction with community and Niko}
@@ -115,20 +111,10 @@ On line 10 a new mutable reference is created with the \mintinline{rust}{&mut} o
 
 When the function \mintinline{rust}{take} is invoked the ownership to the \mintinline{rust}{vec} object is transferred to the variable \mintinline{rust}{my_data}. The \emph{move} happens because \mintinline{rust}{take} accepts the object by value rather than by a reference. Compiler will error on attempt to use \mintinline{rust}{vec} after it has been moved on line 13.
 
-\paragraph{Eliminating data races and use after free bugs}
-% When choosing a programming language developers usually have to choose between managing the memory manually or having a built in garbage collector do it for them. Manually managing memory, like in C/C++, provides a certain amount of control. Manually managing memory gives the ability to specify exactly when to allocate and free as well as what to do with it. This freedom comes at the cost of responsibility and error prone code. On the other hand, garbage collectors mitigate the common errors, but at the cost of lost control and usually with some performance penalty. Most modern languages are more or less making a tradeoff between control and safety. [17]
+\paragraph{Unsafe Rust}
+Rust has a second language hidden inside it that does not enforce memory safety guarantees: it is called \emph{unsafe} Rust. Rust forces developers to find a safer solution to problematic code or mark it as unsafe and thus highlight the code as a potential source of problems during future debugging.
 
-% Rust solves the use after free problem by introducing the concepts of ownership and borrowing. Ownership means that there is always a clear owner of a piece of data, and when the data goes out of scope, meaning the owner is done with it, Rust automatically frees it. Rust can automatically free the data since the compiler has already checked that any references created to it has gone out of scope before the data itself. Borrowing in Rust is the act of creating a reference to a piece of data. The compiler checks that references always go out of scope before the data they are pointing to, giving an error if it does not, thus guaranteeing that references will never be dangling pointers. [18]
-
-% Rust solves the issue of data races by only allowing mutation2 of data when no aliases for that data exist. Either the owner of the data can mutate it or someone holding the exclusive mutable reference to it. A mutable reference to data can be created when no other references exist, and during the lifetime of that reference no other references can be created to that same data. [17]
-
-% Today it is common knowledge within the computer science community that the way to speed up computations is to make them parallel and make use of the many cores that modern processors have. However, writing parallel software is difficult, since it is complex to avoid deadlocks and race conditions, as described by Sutter [1]. Much of what makes it difficult is shared state, where multiple threads of execution access the same memory location. If a thread writes to a memory location at the same time as another thread reads or writes to it, content will not be consistent and likely produce an error. [2]
-
-A data race is when multiple threads reference the same data, and one thread writes to that data at the same time as another thread accesses it.
-
-Use after free bugs happen when a reference is taken to some data that no longer exists and points to an invalid memory address.
-
-Rust eliminates both classes of bugs by failing compilation when ownership and borrowing rules are violated.
+The \pvecrs{} project was designed in the way that it does not require unsafe Rust features. It was done intentionally to minimize the risk of introducing bugs.
 
 \subsection{Memory management: the stack and the heap}
 In programming languages such as Java, there is no distinction between the stack and the heap memory, because language abstracts them away from a developer. But in a systems programming language like Rust, whether a value is on the stack or the heap has more of an effect on how the language behaves and why you have to make certain decisions.
@@ -140,6 +126,7 @@ The following section gives an overview of how Rust supports heap allocation.
 \subsubsection*{Smart pointers}
 \emph{Smart pointers} are data structures that not only act like a pointer but also have additional metadata and capabilities.
 
+\paragraph{Box}
 The most straightforward smart pointer is \type{Box<T>} that allows storing data on the heap rather than the stack.
 
 \begin{listing}[!htbp]
@@ -165,6 +152,9 @@ The most straightforward smart pointer is \type{Box<T>} that allows storing data
 
 When box pointer in listing \ref{lst:box} goes out of the scope on line 4, corresponding heap allocation gets freed as well.
 
+\paragraph{Rc or reference counting}
+There are cases when a single object might have multiple owners. In graph data structures, multiple edges might point to the same node, and that node is conceptually owned by all of the edges that point to it. A node should not be cleaned up unless it does not have any edges pointing to it.
+
 \begin{listing}[!htbp]
 
     \centering
@@ -179,18 +169,21 @@ When box pointer in listing \ref{lst:box} goes out of the scope on line 4, corre
         fn main() {
             let mut rc = Rc::new(Vec::new());
             // ^ Wrapping the vec instance into rc pointer
-        
+
             Rc::make_mut(&mut rc).push(42);
             // ^ Ref count is 1, push succeeds without cloning.
-        
+
             take(rc.clone()); // <- Ref count is incremented to 2.
-            Rc::make_mut(&mut rc).push(37); // <- Updating the original 'vec'.            
-        } <- 'rc' is decremented to 0 and dropped
-        
-        fn take(mut my_rc: Rc<Vec<i32>>) {            
-            Rc::make_mut(&mut my_rc).push(99); 
-            // ^ Mutating the object with ref count of 2 
-            // will clone the wrapped value and then update it.     
+            Rc::make_mut(&mut rc).push(37); // <- Updating the original 'vec'.
+        } // <- 'rc' is decremented to 0 and dropped
+
+        fn take(mut my_rc: Rc<Vec<i32>>) {
+            println!("val={:?}", my_rc.get(0));
+            // ^ Reading values does not cause clone
+
+            Rc::make_mut(&mut my_rc).push(99);
+            // ^ Mutating the object with ref count of 2
+            // will clone the wrapped value and then update it.
         } // ‘my_rc' is decremented to 0 and dropped.
     \end{minted}
 
@@ -198,15 +191,111 @@ When box pointer in listing \ref{lst:box} goes out of the scope on line 4, corre
     \label{lst:rc}
 \end{listing}
 
-% TODO: smart pointer types
+To enable multiple ownership, Rust has a type called \type{Rc<T>}, which is an abbreviation for reference counting. The \type{Rc<T>} type keeps track of the number of references to a value that determines whether or not a value is still in use. If there are zero references to a value, the value can be cleaned up without any references becoming invalid.
 
-% \subsection{Safe and unsafe flavors of Rust}
-% Using unsafe code is not something that should be avoided in Rust, but the amount of code that is unsafe should be kept relatively low for easier debugging. Rust forces the developers to find a safer solution to problematic code or mark it as unsafe and thus highlight the code as a potential source of problems during future debugging.
+Listing \ref{lst:rc} demonstrates how multiple ownership works using the \type{Rc<T>} pointer. On line 2, a vector is created and wrapped into reference counting pointer immediately. On the first call to \mintinline{rust}{Rc::make_mut} method, the number 42 is pushed onto the vector.
 
-% \subsection{Send + Sync traits and threads}
-% ## Modern challenges with parallelism
+The \mintinline{rust}{rc} variable is cloned before it is passed to \mintinline{rust}{take} by value, causing the reference count to be incremented to 2. It is important to note that the underlying vector object is not cloned until line 16, where \mintinline{rust}{Rc::make_mut} function clones the inner value to ensure unique ownership. When \mintinline{rust}{take} is finished, both \mintinline{rust}{my_rc} and the newly copied vector go out of the scope and destroyed.
+
+The execution continues on line 9, where \mintinline{rust}{main} proceeds updating the vector. In this case, \mintinline{Rust}{Rc::make_mut} is not causing a clone because the underlying vector has only a single reference to it.
+
+Note that \type{Rc<T>} is only for use in single-threaded scenarios. \type{Arc<T>} that stands for atomic reference counting should be used in a multi-threaded environment instead.
 
 \subsection{Enums, structs and traits}
+
+\subsubsection*{Structs}
+
+\begin{listing}[!htbp]
+
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
+        struct Book {
+            author: String,
+            name: String
+        }
+    \end{minted}
+
+    \caption{A basic Rust struct}
+    \label{lst:struct}
+\end{listing}
+
+Structs is the most common way to declare complex custom data types in Rust without introducing runtime overhead. A \emph{struct}, or \emph{structure}, is a custom data type that lets you name and package together multiple related values that make up a meaningful group\footnote{\url{https://doc.rust-lang.org/book/ch05-00-structs.html}}.
+
+\subsubsection*{Enums}
+
+\begin{listing}[!htbp]
+
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
+        struct Point(isize, isize);
+
+        enum Shape {
+            Rectangle {
+                p_1: Point,
+                p_2: Point
+            },
+            Triangle {
+                p_1: Point,
+                p_2: Point,
+                p_3: Point
+            }
+        };
+    \end{minted}
+
+    \caption{A basic Rust enum}
+    \label{lst:enum}
+\end{listing}
+
+\emph{Enums} or \emph{enumerations}, are used to define a custom data type by enumerating its possible variants, where each variant might have different data associated with it. The size of an enum instance is equal to the maximum size of its variants. For example, \mintinline{rust}{Shape::Rectangle} will be allocated the same amount of memory as \mintinline{rust}{Shape::Triangle}, even though it contains only two points.
+
+\subsubsection*{Traits}
+
+\begin{listing}[!htbp]
+
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
+        struct Email(String);
+        struct Tweet(String);
+
+        trait Message {
+            fn send();
+        }
+
+        impl Message for Email {
+            fn send() { /* sending email */ }
+        }
+
+        impl Message for Tweet {
+            fn send() { /* sending tweet */ }
+        }
+    \end{minted}
+
+    \caption{A basic Rust trait}
+    \label{lst:trait}
+\end{listing}
+
+A \emph{trait} is a language feature that tells the Rust compiler about functionality a type must provide. Conceptually it is similar to an interface in Java. One of the trait's superpowers is the ability to implement them for types you do not own. Traits support default function implementations, as well as inheritance. Listing \ref{lst:trait} shows how traits can be used to define the common contract between several data types.
 
 \section{Persistent data structures}
 \label{sec:psds}
