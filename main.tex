@@ -22,8 +22,6 @@
 \usepackage{ragged2e}
 \usepackage{adjustbox}
 \usepackage{float}
-% \floatstyle{boxed}
-% \restylefloat{figure}
 
 \usepackage[
   colorinlistoftodos,
@@ -71,18 +69,6 @@
 \addbibresource{refs.bib}
 \setlength\bibitemsep{\baselineskip}
 
-% \usepackage[
-%   pdftitle={Rust types from JSON samples},
-%   pdfauthor={Erik Vesteraas},
-%   unicode=true,
-%   colorlinks=true,
-%   linkcolor=black,
-%   urlcolor=mygreen,
-%   citecolor=mygreen
-% ]{hyperref}
-% \urlstyle{same}
-
-% hidelinks=true
 \usepackage[
   pdftitle={An RRB-Tree based vector for Rust},
   pdfauthor={Araz Abishov},
@@ -97,7 +83,7 @@
 
 \raggedbottom
 
-\newcommand{\type}[1]{\emph{\textbf{#1}}}
+\newcommand{\type}[1]{\mintinline{rust}{#1}}
 \newcommand{\crate}[1]{\emph{\textbf{#1}}}
 
 \newcommand{\bigo}[1]{$\mathcal{O}(#1)$}
@@ -111,23 +97,23 @@
 
 % Used to refer to the RRB-Tree type
 % provided by pvec-rs.
-\newcommand{\rrbtree}{\type{rrbtree}}
+\newcommand{\rrbtree}{\type{RrbTree}}
 
 % This macro is used to refer to the RRB-Tree
 % as a concept, rather than a concrete type
 % provided by pvec-rs.
-\newcommand{\treerrb}{\emph{RRB-Tree}}
+\newcommand{\treerrb}{RRB-Tree}
 
-\newcommand{\refcell}{\type{refcell}}
-\newcommand{\arc}{\type{arc}}
-\newcommand{\rc}{\type{rc}}
+\newcommand{\refcell}{\type{RefCell}}
+\newcommand{\arc}{\type{Arc}}
+\newcommand{\rc}{\type{Rc}}
 
-\newcommand{\rbtree}{\type{rbtree}}
-\newcommand{\rbvec}{\type{rbvec}}
-\newcommand{\rrbvec}{\type{rrbvec}}
-\newcommand{\pvec}{\type{pvec}}
-\newcommand{\imrsvec}{\type{imvec}}
-\newcommand{\stdvec}{\type{vec}}
+\newcommand{\rbtree}{\type{RbTree}}
+\newcommand{\rbvec}{\type{RbVec}}
+\newcommand{\rrbvec}{\type{RrbVec}}
+\newcommand{\pvec}{\type{PVec}}
+\newcommand{\imrsvec}{\type{ImVec}}
+\newcommand{\stdvec}{\type{Vec}}
 
 \newcommand{\m}{$m$}
 \newcommand{\h}{$h$}

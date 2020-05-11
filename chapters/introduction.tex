@@ -306,9 +306,9 @@ Inspired by Bagwell's paper Ideal Hash Trees\cite{ideal-hash-trees}, Rick Hickey
 
 The persistent vector is a \emph{bit-array mapped trie}, or simply a "wide" tree with a high branching factor. Thus, tries are very shallow, being at most 7 levels deep when the branching factor is equal to 32, offering effectively constant time for almost all operations. Wide nodes and shallow height also help to improve cache locality and to reduce the cache misses.
 
-Later, Bagwell and Rompf introduced \emph{relaxed radix balanced tree} that was based on the design of the Clojure's persistent vector \cite{efficient-immutable-vectors}. RRB-Tree offers efficient concatenation and splitting, enabling vectors to be suitable data structures for parallel processing. Later it became a foundation for the parallel vector in the Scala's standard library \cite{rrb-vector-practical-general-purpose-im-sequence}.
+Later, Bagwell and Rompf introduced \emph{relaxed radix balanced tree} that was based on the design of the Clojure's persistent vector \cite{efficient-immutable-vectors}. \treerrb{} offers efficient concatenation and splitting, enabling vectors to be suitable data structures for parallel processing. Later it became a foundation for the parallel vector in the Scala's standard library \cite{rrb-vector-practical-general-purpose-im-sequence}.
 
-The RRB-Tree data structure is used to implement the persistent vector in \pvecrs{} and is explored further in chapter \ref{chapter:persistent-vector}.
+The \treerrb{} data structure is used to implement the persistent vector in \pvecrs{} and is explored further in chapter \ref{chapter:persistent-vector}.
 
 \section{Goals and contributions}
 \label{sec:contributions}
@@ -316,10 +316,10 @@ The purpose of this thesis is to explore and evaluate novel ideas for optimizati
 
 The following contributions are made in this thesis:
 \begin{itemize}
-    \item The persistent vector implementation based on RRB-Tree with efficient concatenation and splitting to make it a reasonable data structure to use for parallel programming.
+    \item The persistent vector implementation based on \treerrb{} with efficient concatenation and splitting to make it a reasonable data structure to use for parallel programming.
     \item An extension for the data parallelism library -- Rayon, fused with the persistent vector to create an efficient general-purpose parallel vector.
     \item Describing and implementing novel optimizations specific to Rust, specifically: \emph{dynamic representation} and \emph{unique access} optimizations.
     \item The extensive performance evaluation of the contributed persistent and parallel vectors, as well as the effectiveness of the proposed optimizations.
 \end{itemize}
 
-Chapter \ref{chapter:radix-balanced-tree} gives an overview of the RRB-Tree data structure that serves as the foundation for the persistent vector. In chapter \ref{chapter:persistent-vector}, the \pvecrs{} project, its interface, and optimizations specific to Rust are presented in detail. The chapter \ref{chapter:methodology} focuses on the performance evaluation of the persistent vector followed by the chapter with results.
+Chapter \ref{chapter:radix-balanced-tree} gives an overview of the \treerrb{} data structure that serves as the foundation for the persistent vector. In chapter \ref{chapter:persistent-vector}, the \pvecrs{} project, its interface, and optimizations specific to Rust are presented in detail. The chapter \ref{chapter:methodology} focuses on the performance evaluation of the persistent vector followed by the chapter with results.
