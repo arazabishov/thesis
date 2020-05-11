@@ -1,9 +1,4 @@
 \chapter{Introduction}
-\todo{The parallel vector extensions in a better way}
-\todo{Interaction with community and Niko}
-\todo{Check that you're consistently using straight or curly quotes}
-
-% Total volume of the introduction should not exceed 5-6 paragraphs
 
 % 1. Why Rust is cool and worth your time. Why: a, b, c
 Rust is a modern, open-source programming language with a focus on memory safety and performance. Its rich type system not only eliminates several classes of bugs but also makes the language powerful and expressive for building high-level programs such as web servers and command-line interface applications. With direct access to computer memory and hardware, Rust is a great language for embedded and low-level programming as well.
@@ -115,7 +110,7 @@ The \pvecrs{} project was designed in the way that it does not require unsafe Ru
 \subsection{Memory management: the stack and the heap}
 In programming languages such as Java, there is no distinction between the stack and the heap memory, because language abstracts them away from a developer. But in a systems programming language like Rust, whether a value is on the stack or the heap has more of an effect on how the language behaves and why you have to make certain decisions.
 
-The stack is very fast and is where memory is allocated in Rust by default. But the allocation is local to a function call and is limited in size. The heap, on the other hand, is slower and is explicitly allocated by your program. But it’s effectively unlimited in size and is globally accessible.
+The stack is very fast and is where memory is allocated in Rust by default. But the allocation is local to a function call and is limited in size. The heap, on the other hand, is slower and is explicitly allocated by your program. But it’s effectively unlimited in size and is globally accessible \cite{rust-book-2e}.
 
 The following section gives an overview of how Rust supports heap allocation.
 
@@ -149,7 +144,7 @@ The most straightforward smart pointer is \type{Box<T>} that allows storing data
 When box pointer in listing \ref{lst:box} goes out of the scope on line 4, corresponding heap allocation gets freed as well.
 
 \paragraph{Rc or reference counting}
-There are cases when a single object might have multiple owners. In graph data structures, multiple edges might point to the same node, and that node is conceptually owned by all of the edges that point to it. A node should not be cleaned up unless it does not have any edges pointing to it.
+There are cases when a single object might have multiple owners. In graph data structures, multiple edges might point to the same node, and that node is conceptually owned by all of the edges that point to it. A node should not be cleaned up unless it does not have any edges pointing to it \cite{rust-book-2e}.
 
 \begin{listing}[!htbp]
 
@@ -296,31 +291,34 @@ A \emph{trait} is a language feature that tells the Rust compiler about function
 \section{Persistent data structures}
 \label{sec:psds}
 
-A vast majority of modern programming languages are equipped with a standard library --- a set of constructs and utilities aimed to improve the developer's productivity.
+\emph{Ephemeral} data structures are data structures that do not keep the history of their versions. Once an ephemeral data structure is modified, there is no mechanism to go back to previous states. This behavior is typical for collections provided by the standard library of modern general-purpose programming languages.
 
-A significant part of standard library consists of commonly used data structures such as lists, sets, and maps, which often provide operations for reading and writing data.
+\emph{Persistent} data structures, on the other hand, are set up in a different way to allow access to any version, old or new, at any time \cite{making-data-structures-persistent}. Persistent data structures were adopted in the functional programming languages such as Scala\footnote{\url{https://www.scala-lang.org/}} and Clojure\footnote{\url{https://clojure.org/}}.
 
-Modifying or \emph{mutating} an \emph{ephemeral} data structure implies that we no longer will have access to its older version. In contrast, a \emph{persistent} data structure allows access to any version, old or new, at any time \cite{making-data-structures-persistent}.
-
-Persistent data structures could be classified based on the operations which they offer over their versions:
+\subsection{Persistence categories}
+Persistent data structures are categorized based on the operations which they offer over their versions:
 \begin{itemize}
-    \item \textit{Partial persistence} --- In this persistence model, we can query any previous version of the data structure, but we can update only the newest version. The versions are linearly ordered.
-    \item \textit{Full persistence} --- Both access and updates are allowed on all versions. The versions can be visualized as a branching tree.
-    \item \textit{Confluent persistence} --- In addition to the previous operations, it offers combination operation to merge more than one previous version to output a new single version. The versions form a directed acyclic graph \cite{fully-persistent-lists-with-catenation}.
-    \item \textit{Functional persistence} --- This model takes its name from functional programming where objects are immutable. In comparison to the previous models, it prohibits change of the internal representation of the data structure \cite{purely-functional-data-structures}.
+    \item \textit{Partial persistence} --- Read-only access to any previous version of the data structure with the ability to update only the newest one. The versions are ordered linearly.
+    \item \textit{Full persistence} --- Read and write operations are available for all versions. The versions are structured as a tree.
+    \item \textit{Confluent persistence} --- Full persistence with ability to merge several previous versions into a single new one. The versions form a directed acyclic graph \cite{fully-persistent-lists-with-catenation}.
+    \item \textit{Functional persistence} --- This model takes its name from functional programming, where objects are immutable. In comparison to the previous models, it prohibits change of the internal representation of the data structure \cite{purely-functional-data-structures}.
 \end{itemize}
 
-While persistence can be achieved by simple copying, the performance of a modification operation quickly becomes unacceptable. This led to research and development of more efficient solutions, which were often designed to solve particular problems. A lack of general purpose collections, which guarantee uniformly good performance across different operations, results in challenges with software development.
+\subsection{Achieving persistence}
+While persistence can be achieved by copying, the cost of write operations quickly becomes unacceptable. Functional programming languages that have immutable data structures by design were at the forefront of the research for a more efficient alternative.
 
-A persistent \emph{vector}, also known as a one-dimensional growable array, is very inefficient if implemented naively. Each update operation will cause a full copy of the underlying array, consuming additional amount of memory and processor time.
+Multiple data structure designs were proposed, often offering good performance for particular operations with the focus on particular use cases. For example, a singly linked list guarantees \bigo{1} performance for adding or removing elements at the head, but suffers from the worst case \bigo{n} random access operations.
 
-However most operations modify only some parts of data structures, a complete copy is redundant. A better approach is to exploit the similarity between the new and old versions by \emph{sharing} structure between them. For example, instead of representing a data structure as a single block of memory, it could be broken down into smaller pieces or \emph{nodes}, which are linked together in the form of a \emph{tree}. Since modifications only apply to some nodes, the rest of them still remain unchanged and can be shared without copying.
+\subsection{Tries}
+Since most write operations modify only some parts of a data structure, a complete copy is often unnecessary. A better approach is to use the similarity between the new and old versions by \emph{sharing} structure between them. For example, instead of using a single memory block to represent a data structure, it can be split into smaller pieces or \emph{nodes} linked together as a \emph{tree}. Since modifications only apply to some nodes, the rest of them remain unchanged and can be shared without copying.
 
-The first persistent vector implementation which offered good performance across a broad range of operations was introduced by Rich Hickey in the Clojure programming language. It was based on Phil Bagwell's Hash Array Mapped Trie \cite{ideal-hash-trees}, which offers practically constant runtime for push, update, and access operations, and it is a \emph{fully} persistent data structure.
+Inspired by Bagwell's paper Ideal Hash Trees\cite{ideal-hash-trees}, Rick Hickey pioneered the first persistent vector to offer uniformly good performance across different operations comparable to mutable vectors for the Clojure programming language. The Clojure's vector is \emph{fully} persistent, as it allows us to read and write to all versions.
 
-Later Phill Bagwell introduced a confluently persistent vector based on Relaxed Radix Balanced Tree \cite{efficient-immutable-vectors}, which has improved performance of the concatenation operation significantly and became a foundation for Scala's standard library vector implementation.
+The persistent vector is a \emph{bit-array mapped trie}, or simply a "wide" tree with a high branching factor. Thus, tries are very shallow, being at most 7 levels deep when the branching factor is equal to 32, offering effectively constant time for almost all operations. Wide nodes and shallow height also help to improve cache locality and to reduce the cache misses.
 
-The project presented in the thesis contributes an efficient persistent vector implementation for Rust based on Relaxed Radix Balanced Tree, which takes advantage of the Rust's type system to improve performance, guarantee thread safety and provide an idiomatic application programming interface. In order to ensure the best possible average performance, its internal representation switches from standard vector to RRB-Tree during runtime.
+Later, Bagwell and Rompf introduced \emph{relaxed radix balanced tree} that was based on the design of the Clojure's persistent vector \cite{efficient-immutable-vectors}. RRB-Tree offers efficient concatenation and splitting, enabling vectors to be suitable data structures for parallel processing. Later it became a foundation for the parallel vector in the Scala's standard library \cite{rrb-vector-practical-general-purpose-im-sequence}.
+
+The RRB-Tree data structure is used to implement the persistent vector in \pvecrs{} and is explored further in chapter \ref{chapter:persistent-vector}.
 
 \section{Goals and contributions}
 \label{sec:contributions}
@@ -330,7 +328,7 @@ The following contributions are made in this thesis:
 \begin{itemize}
     \item The persistent vector implementation based on RRB-Tree with efficient concatenation and splitting to make it a reasonable data structure to use for parallel programming.
     \item An extension for the data parallelism library -- Rayon, fused with the persistent vector to create an efficient general-purpose parallel vector.
-    \item Describing and implementing novel optimizations specific to Rust, specifically: dynamic representation and unique access optimizations.
+    \item Describing and implementing novel optimizations specific to Rust, specifically: \emph{dynamic representation} and \emph{unique access} optimizations.
     \item The extensive performance evaluation of the contributed persistent and parallel vectors, as well as the effectiveness of the proposed optimizations.
 \end{itemize}
 
