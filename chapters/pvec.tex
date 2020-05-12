@@ -1,12 +1,192 @@
 \newcommand{\boxptr}{\type{box}}
 
 \todo{Use the "thread safety" phrease consistently in the document}
-\todo{Define the types that are provided by pvec-rs}
-\todo{Define the API and methods that are implemented}
 \todo{Reference the software project: c-rrb}
+\todo{Introduce what is crate / cargo in the Rust introduction}
 
 \chapter{Persistent vector in Rust}
-\label{chapter:persistent-vector}
+\label{chapter:persistent-vector-in-rust}
+
+\todo{Define the types that are provided by pvec-rs}
+\todo{Define the API and methods that are implemented}
+
+\section{Presentation of the project}
+
+%  - Intro
+    %  - Where to find documentation, crates, etc.
+The \pvecrs{} project consists of three crates:
+\begin{itemize}
+    \item The library crate with the persistent vector implementation.
+    \item A binary application for measuring the memory footprint of the data structure.
+    \item A web application for visualization of the data structure in the browser.
+\end{itemize}
+
+%  - Structure
+    %  - Which modules and files does it consist of?
+The folder structure of the library is demonstrated in listing \todo{ref}. A link to the library source code, as well as documentation, and the web application for visualization can be found at: \todo{href}.
+
+\begin{figure}[!htbp]
+
+    \definecolor{folderbg}{RGB}{124,166,198}
+    \definecolor{folderborder}{RGB}{110,144,169}
+
+    \def\Size{4pt}
+    \tikzset{
+        folder/.pic={
+            \filldraw[draw=folderborder,top color=folderbg!50,bottom color=folderbg]
+                (-1.05*\Size,0.2\Size+5pt) rectangle ++(.75*\Size,-0.2\Size-5pt);
+            \filldraw[draw=folderborder,top color=folderbg!50,bottom color=folderbg]
+                (-1.15*\Size,-\Size) rectangle (1.15*\Size,\Size);
+        },
+        file/.pic={
+            \filldraw [draw=folderborder, top color=folderbg!5, bottom color=folderbg!10]
+                (-\Size,.4*\Size+5pt) coordinate (a) |- (\Size,-1.2*\Size) coordinate (b) -- ++(0,1.6*\Size) coordinate (c) -- ++(-5pt,5pt) coordinate (d) -- cycle (d) |- (c) ;
+      },
+    }
+
+    \centering
+    \begin{forest}
+        for tree={
+          font=\ttfamily,
+          grow'=0,
+          child anchor=west,
+          parent anchor=south,
+          anchor=west,
+          calign=first,
+          inner xsep=8pt,
+          edge path={
+            \noexpand\path [draw, \forestoption{edge}]
+                (!u.south west) +(7.5pt,0) |- (.child anchor) pic {folder} \forestoption{edge label};
+          },
+          file/.style={
+              edge path={
+                \noexpand\path [draw, \forestoption{edge}]
+                    (!u.south west) +(7.5pt,0) |- (.child anchor) pic {file} \forestoption{edge label};
+              },
+          },
+          before typesetting nodes={
+            if n=1
+              {insert before={[,phantom]}}
+              {},
+          },
+          fit=band,
+          before computing xy={l=15pt},
+        }
+      [
+        [pvec-rs
+            [config]
+            [lib
+            [access]
+            [plugin]
+            [file.txt,file]
+            ]
+            [templates]
+            [tests]
+        ]        
+      ]
+      \end{forest}
+
+    \caption{Definition of the \rrbtree{} node.}
+    \label{fig:rrbtree-node}
+\end{figure}
+
+
+
+        % for tree={grow’=0,draw},
+        % forked edges,
+        % [/
+        %     [home
+        %         [saso
+        %             [Download]
+        %             [Tex]
+        %         ]
+        %         [alja]
+        %         [joe]
+        %     ]
+        %     [usr
+        %         [bin]
+        %         [share]
+        %     ]
+        % ]
+
+        % \forestset{
+        %     declare dimen={fork sep}{0.5em},
+        %     forked edge’/.style={
+        %         edge={rotate/.option=!parent.grow},
+        %         edge path’={(!u.parent anchor) -- ++(\forestoption{fork sep},0) |- (.child anchor)},
+        %     },
+        %     forked edge/.style={
+        %         on invalid={fake}{!parent.parent anchor=children},
+        %         child anchor=parent,
+        %         forked edge’,
+        %     },
+        %     forked edges/.style={for nodewalk={#1}{forked edge}},
+        %     forked edges/.default=tree
+        % }
+
+        % \forestset{
+        %     declare dimen register=folder indent,
+        %     folder indent=.45em,
+        %     folder/.style={
+        %         parent anchor=-children last,
+        %         anchor=parent first,
+        %         calign=child,
+        %         calign primary child=1,
+        %         for children={
+        %             child anchor=parent,
+        %             anchor=parent first,
+        %             edge={
+        %                 rotate/.option=!parent.grow
+        %             },
+        %             edge path'/.expanded={
+        %                 ([xshift=\forestregister{folder indent}]!u.parent anchor) |- (.child anchor)
+        %             },
+        %         },
+        %         after packing node={
+        %             if n children=0{}{
+        %                 tempdiml=l_sep()-l("!1"),
+        %                 tempdims={
+        %                     -abs(max_s("","")-min_s("",""))-s_sep()
+        %                 },
+        %                 for children={
+        %                     l+=tempdiml,
+        %                     s+=tempdims()*(reversed()-0.5)*2,
+        %                 },
+        %             },
+        %         },
+        %     }
+        % }
+
+        % \begin{forest}
+        %     for tree={grow'=0,folder,draw}
+        %     [/
+        %         [home
+        %             [saso
+        %                 [Download]
+        %                 [Tex]
+        %             ]
+        %             [alja]
+        %             [joe]
+        %         ]
+        %         [usr
+        %             [bin]
+        %             [share]
+        %         ]
+        %     ]
+        % \end{forest}
+
+% for tree={grow’=0,folder,draw}
+\subsection{Using the library}
+%  - API
+    %  - Which types does it expose?
+    %  - Which methods / traits does it provide?
+%  - How to build / compile / use the library?
+
+\subsection{Configurability}
+
+
+\subsection{Visualization}
+%  - Which demos / features does it have?
 
 This chapter discusses the advantages and disadvantages of different approaches to defining the persistent vector in Rust, as well as their influence on the data structure design:
 
