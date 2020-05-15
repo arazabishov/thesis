@@ -101,7 +101,7 @@ It is compatible with the stable release of the Rust compiler. Thus, Criterion w
 Other less popular frameworks, such as \emph{bencher}\footnote{\url{https://crates.io/crates/bencher}} and \emph{easybench}\footnote{\url{https://crates.io/crates/easybench}}, were not considered due to the lack of features necessary for the experiment, such as setup routines, optional measurement of \emph{drop} outlier detection, et cetera.
 
 \subsection{Configuration and input size}
-All tree-based vector implementations, such as \rbvec{}, \rrbvec{}, \pvec{}, and \imrsvec{}, were configured to use a branching factor of 32, as it provides the best tradeoff for the performance of both read and write operations \cite{efficient-immutable-vectors}.
+All tree-based vector implementations, such as \rbvec{}, \rrbvec{} and \pvec{} were configured to use a branching factor of 32, as it provides the best tradeoff for the performance of both read and write operations \cite{efficient-immutable-vectors}.
 
 Each benchmark was executed against a range of input arguments. The input range is specified on the case by case basis depending on the benchmark.
 
@@ -308,7 +308,7 @@ To execute parallel benchmarks, the user needs to pass both the \arc{} and \emph
     \label{fig:parallel-benches}
 \end{figure}
 
-Criterion can also generate HTML report that includes charts created by \emph{gnuplot}\footnote{\url{http://www.gnuplot.info/}}. Results can be found in the \mintinline{bash}{pvec-rs/target/criterion} directory, and if \emph{gnuplot} is available, the HTML report will be located in the \mintinline{bash}{report/index.html} subdirectory.
+Criterion can also generate HTML report that includes charts created by \emph{gnuplot}\footnote{\url{http://www.gnuplot.info/}}. Results can be found in the \dir{pvec-rs/target/criterion} directory, and if \emph{gnuplot} is available, the HTML report will be located in the \dir{report/index.html} subdirectory.
 
 For more information on available options and parameters for Criterion, please consult the library documentation\footnote{\url{https://docs.rs/criterion/0.3.1/criterion/}}.
 
@@ -333,4 +333,4 @@ Memory benchmarks produce consistent and reproducible results. Hence it is enoug
     \label{fig:memory-benches}
 \end{figure}
 
-The generated report is located in the \mintinline{bash}{pvec-rs/target/release/report} directory, and it is subdivided into folders, each named after the benchmark. Each folder contains csv\footnote{Comma-separated values} files, where each file is name after the evaluated vector type. The report file contains two columns corresponding to the input size and the memory footprint in bytes.
+The generated report is located in the \dir{pvec-rs/target/release/report} directory, and it is subdivided into folders, each named after the benchmark. Each folder contains csv\footnote{Comma-separated values} files, where each file is name after the evaluated vector type. The report file contains two columns corresponding to the input size and the memory footprint in bytes.

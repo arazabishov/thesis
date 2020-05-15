@@ -1,5 +1,5 @@
 % TODO: you should be using terms flat and tree representation (to match with the documentation)
-% TODO: figure out how to make all tables consistently wide across the thesis
+% TODO: figure out how to make all tables consistently wide across the thesis: 130mm
 % TODO: consistent references (the format of author names, years, pages, etc)
 % TODO: make sure that pre-face is padded correctly for printing
 
@@ -22,6 +22,9 @@
 \usepackage{ragged2e}
 \usepackage{adjustbox}
 \usepackage{float}
+
+\usepackage{multirow, array}
+\usepackage{arydshln}
 
 \usepackage[
   colorinlistoftodos,
@@ -84,7 +87,9 @@
 
 \raggedbottom
 
-\newcommand{\type}[1]{\mintinline{rust}{#1}}
+\newcommand{\dir}[1]{\mintinline{bash}{#1}}
+\newcommand{\rust}[1]{\mintinline{rust}{#1}}
+\newcommand{\type}[1]{\rust{#1}}
 \newcommand{\crate}[1]{\emph{\textbf{#1}}}
 
 \newcommand{\bigo}[1]{$\mathcal{O}(#1)$}
@@ -106,6 +111,7 @@
 \newcommand{\treerrb}{RRB-Tree}
 
 \newcommand{\refcell}{\type{RefCell}}
+\newcommand{\boxptr}{\type{Box}}
 \newcommand{\arc}{\type{Arc}}
 \newcommand{\rc}{\type{Rc}}
 

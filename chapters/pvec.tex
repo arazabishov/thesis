@@ -1,200 +1,202 @@
-\newcommand{\boxptr}{\type{box}}
-
 \todo{Use the "thread safety" phrease consistently in the document}
 \todo{Reference the software project: c-rrb}
 \todo{Introduce what is crate / cargo in the Rust introduction}
 
-\chapter{Persistent vector in Rust}
-\label{chapter:persistent-vector-in-rust}
+\chapter{Persistent vectors in Rust}
+\label{chapter:persistent-vectors-in-rust}
 
-\todo{Define the types that are provided by pvec-rs}
-\todo{Define the API and methods that are implemented}
+%  - Where to find documentation, crates, etc.
+% A link to the library source code, documentation, and the web application for visualization can be found at: \url{https://abishov.com/pvec-rs}.
 
-\section{Presentation of the project}
+The purpose of this chapter is bifold: to present the \pvecrs{} project and to discuss its unique design traits in the context of Rust. First, we will take a look at the project structure, the types offered by the library, and how it can be configured.
 
-%  - Intro
-    %  - Where to find documentation, crates, etc.
-The \pvecrs{} project consists of three crates:
-\begin{itemize}
-    \item The library crate with the persistent vector implementation.
-    \item A binary application for measuring the memory footprint of the data structure.
-    \item A web application for visualization of the data structure in the browser.
-\end{itemize}
-
-%  - Structure
-    %  - Which modules and files does it consist of?
-The folder structure of the library is demonstrated in listing \todo{ref}. A link to the library source code, as well as documentation, and the web application for visualization can be found at: \todo{href}.
-
-\begin{figure}[!htbp]
-
-    \definecolor{folderbg}{RGB}{124,166,198}
-    \definecolor{folderborder}{RGB}{110,144,169}
-
-    \def\Size{4pt}
-    \tikzset{
-        folder/.pic={
-            \filldraw[draw=folderborder,top color=folderbg!50,bottom color=folderbg]
-                (-1.05*\Size,0.2\Size+5pt) rectangle ++(.75*\Size,-0.2\Size-5pt);
-            \filldraw[draw=folderborder,top color=folderbg!50,bottom color=folderbg]
-                (-1.15*\Size,-\Size) rectangle (1.15*\Size,\Size);
-        },
-        file/.pic={
-            \filldraw [draw=folderborder, top color=folderbg!5, bottom color=folderbg!10]
-                (-\Size,.4*\Size+5pt) coordinate (a) |- (\Size,-1.2*\Size) coordinate (b) -- ++(0,1.6*\Size) coordinate (c) -- ++(-5pt,5pt) coordinate (d) -- cycle (d) |- (c) ;
-      },
-    }
-
-    \centering
-    \begin{forest}
-        for tree={
-          font=\ttfamily,
-          grow'=0,
-          child anchor=west,
-          parent anchor=south,
-          anchor=west,
-          calign=first,
-          inner xsep=8pt,
-          edge path={
-            \noexpand\path [draw, \forestoption{edge}]
-                (!u.south west) +(7.5pt,0) |- (.child anchor) pic {folder} \forestoption{edge label};
-          },
-          file/.style={
-              edge path={
-                \noexpand\path [draw, \forestoption{edge}]
-                    (!u.south west) +(7.5pt,0) |- (.child anchor) pic {file} \forestoption{edge label};
-              },
-          },
-          before typesetting nodes={
-            if n=1
-              {insert before={[,phantom]}}
-              {},
-          },
-          fit=band,
-          before computing xy={l=15pt},
-        }
-      [
-        [pvec-rs
-            [config]
-            [lib
-            [access]
-            [plugin]
-            [file.txt,file]
-            ]
-            [templates]
-            [tests]
-        ]        
-      ]
-      \end{forest}
-
-    \caption{Definition of the \rrbtree{} node.}
-    \label{fig:rrbtree-node}
-\end{figure}
-
-
-
-        % for tree={grow’=0,draw},
-        % forked edges,
-        % [/
-        %     [home
-        %         [saso
-        %             [Download]
-        %             [Tex]
-        %         ]
-        %         [alja]
-        %         [joe]
-        %     ]
-        %     [usr
-        %         [bin]
-        %         [share]
-        %     ]
-        % ]
-
-        % \forestset{
-        %     declare dimen={fork sep}{0.5em},
-        %     forked edge’/.style={
-        %         edge={rotate/.option=!parent.grow},
-        %         edge path’={(!u.parent anchor) -- ++(\forestoption{fork sep},0) |- (.child anchor)},
-        %     },
-        %     forked edge/.style={
-        %         on invalid={fake}{!parent.parent anchor=children},
-        %         child anchor=parent,
-        %         forked edge’,
-        %     },
-        %     forked edges/.style={for nodewalk={#1}{forked edge}},
-        %     forked edges/.default=tree
-        % }
-
-        % \forestset{
-        %     declare dimen register=folder indent,
-        %     folder indent=.45em,
-        %     folder/.style={
-        %         parent anchor=-children last,
-        %         anchor=parent first,
-        %         calign=child,
-        %         calign primary child=1,
-        %         for children={
-        %             child anchor=parent,
-        %             anchor=parent first,
-        %             edge={
-        %                 rotate/.option=!parent.grow
-        %             },
-        %             edge path'/.expanded={
-        %                 ([xshift=\forestregister{folder indent}]!u.parent anchor) |- (.child anchor)
-        %             },
-        %         },
-        %         after packing node={
-        %             if n children=0{}{
-        %                 tempdiml=l_sep()-l("!1"),
-        %                 tempdims={
-        %                     -abs(max_s("","")-min_s("",""))-s_sep()
-        %                 },
-        %                 for children={
-        %                     l+=tempdiml,
-        %                     s+=tempdims()*(reversed()-0.5)*2,
-        %                 },
-        %             },
-        %         },
-        %     }
-        % }
-
-        % \begin{forest}
-        %     for tree={grow'=0,folder,draw}
-        %     [/
-        %         [home
-        %             [saso
-        %                 [Download]
-        %                 [Tex]
-        %             ]
-        %             [alja]
-        %             [joe]
-        %         ]
-        %         [usr
-        %             [bin]
-        %             [share]
-        %         ]
-        %     ]
-        % \end{forest}
-
-% for tree={grow’=0,folder,draw}
-\subsection{Using the library}
-%  - API
-    %  - Which types does it expose?
-    %  - Which methods / traits does it provide?
-%  - How to build / compile / use the library?
-
-\subsection{Configurability}
-
-
-\subsection{Visualization}
-%  - Which demos / features does it have?
-
-This chapter discusses the advantages and disadvantages of different approaches to defining the persistent vector in Rust, as well as their influence on the data structure design:
+Then, we will take a look at the design and optimizations of the persistent vector implementation in Rust and their specifics:
 
 \begin{itemize}
     \item First, we will take a look at the memory layout of \rrbtree{} and how it supports the implementation of cloning and path copying.
     \item Then, transience and dynamic representation optimizations will be introduced in the context of Rust's ownership and borrowing rules.
     \item At last, we will talk about thread safety and the requirements for sharing objects between threads.
 \end{itemize}
+
+\section{Presentation of the project}
+The \pvecrs{} project consists of three crates:
+\begin{itemize}
+    \item The library crate itself with the persistent vector implementation.
+    \item \crate{web-vis}: a web application for visualization of the data structure in the browser.
+    \item \crate{benches-mem}: The benchmarking application for measuring the memory footprint of persistent vectors. Its usage is described in detail in Chapter \ref{chapter:methodology}.
+\end{itemize}
+
+The structure of the library is demonstrated in Listing \ref{lst:library-structure}. The \dir{pvec-rs} directory is the root of the library crate. The definition of \rrbtree{}, \rbvec{}, \rrbvec{}, and \pvec{} are all located under the \dir{src} folder. The \dir{benches} and \dir{tests} folders are for runtime benchmarks and integration tests correspondingly.
+
+\begin{figure}[!htbp]
+    \definecolor{folderbg}{RGB}{124, 166, 198}
+    \definecolor{folderborder}{RGB}{110, 144, 169}
+
+    \def\Size{4pt}
+    \tikzset{
+        folder/.pic={
+            \filldraw[draw=folderborder, top color=folderbg!50, bottom color=folderbg]
+                (-1.05*\Size, 0.2\Size+5pt) rectangle ++(.75*\Size, -0.2\Size-5pt);
+            \filldraw[draw=folderborder, top color=folderbg!50, bottom color=folderbg]
+                (-1.15*\Size, -\Size) rectangle (1.15*\Size, \Size);
+        },
+        file/.pic={
+            \filldraw[draw=folderborder, top color=folderbg!5, bottom color=folderbg!10]
+                (-\Size, .4*\Size+5pt) coordinate(a) |- (\Size, -1.2*\Size) coordinate(b) -- ++(0, 1.6*\Size) coordinate(c) -- ++(-5pt, 5pt) coordinate(d) -- cycle(d) |- (c);
+        },
+    }
+
+    \centering
+    \begin{forest}
+        for tree={
+            font=\ttfamily,
+            grow'=0,
+            child anchor=west,
+            parent anchor=south,
+            anchor=west,
+            calign=first,
+            inner xsep=8pt,
+            edge path={
+            \noexpand\path [draw, \forestoption{edge}]
+                (!u.south west) +(7.5pt,0) |- (.child anchor) pic {folder} \forestoption{edge label};
+            },
+            file/.style={
+                edge path={
+                \noexpand\path [draw, \forestoption{edge}]
+                    (!u.south west) +(7.5pt, 0) |- (.child anchor) pic {file} \forestoption{edge label};
+                },
+            },
+            before typesetting nodes={
+            if n=1
+                {insert before={[,phantom]}}
+                {},
+            },
+            fit=band,
+            before computing xy={l=15pt},
+        }
+        [
+            [pvec-rs
+                [benches, label=right:- runtime benchmarks
+                ]
+                [benches-mem, label=right:- memory benchmarks
+                ]
+                [src, label=right:- the library source code
+                ]
+                [tests, label=right:- integration tests
+                ]
+                [web-vis, label=right:- visualization crate
+                ]
+                [Cargo.toml, file, label=right:- package manifest
+                ]
+            ]
+        ]
+        \end{forest}
+
+    \caption{The folder structure of \pvecrs{}}
+    \label{lst:library-structure}
+\end{figure}
+
+\subsection{Configurability}
+The \pvecrs{} project can be configured using the feature flags described in Table \ref{tab:feature-flags}.
+
+\begin{table}[H]
+
+    \centering
+    \begin{tabular} { |p{34mm}|p{96mm}| }
+        \hline
+        \rust{small_branch} & Sets the branching factor used by \rrbtree{} to 4. \\ \hline
+        \rust{arc} & Selecting the thread-safe version of the \rc{} pointer. \\ \hline
+        \rust{rayon_iter} & if specified together with the \rust{arc} flag, provides the parallel iterator implementation for Rayon. \\ \hline
+        \rust{serde_serializer} & \pvecrs{} provides the JSON\footnote{TODO} serializer if specified. \\ \hline
+    \end{tabular}
+
+    \label{tab:feature-flags}
+    \caption{Feature flags for the library configuration.}
+\end{table}
+
+By default, the branching factor used by the tree-based vector types is equal to 32. If \rust{small_branch} flag is specified, the branching factor will be 4. This flag is useful for integration testing to reveal issues with the re-balancing algorithm earlier as the tree ends-up being significantly taller compared to using the branching factor of 32.
+
+To compile persistent vectors for use in multi-threaded environment Rust requires to implement \rust{Send} and \rust{Sync} traits. When compiled with the \rust{arc} feature flag, those traits will be automatically implemented for all vector types enabling multi-threaded use cases.
+
+To access the \rayon{}'s parallel iterator implementations, the library user has to use both the \rust{arc} and \rust{rayon_iter} feature flags when including the library.
+
+\subsection{The library APIs}
+The \pvecrs{} project is the Rust library crate that offers several persistent vector implementations listed in Table \ref{tab:vec-implementations}.
+
+\begin{table}[!htbp]
+
+    \centering
+    \begin{tabular} { |p{18mm}|p{112mm}| }
+        \hline
+        \rbvec{} & A persistent vector based on the balanced \rrbtree{}. \\ \hline
+        \rrbvec{} & The \rrbtree{}-based persistent vector implementation with efficient concatenation and splitting. Its underlying \rrbtree{} instance remains balanced unless concatenated or splitted, after which it becomes relaxed. \\ \hline
+        \pvec{} & A vector that starts as the standard and switches to \rrbvec{} when cloned. \\ \hline
+    \end{tabular}
+
+    \label{tab:vec-implementations}
+    \caption{Vector implementations provided by \pvecrs{}}
+\end{table}
+
+\rbvec{} and \rrbvec{} are based on \rrbtree{}. Both types offer effectively constant \rust{push}, \rust{pop}, \rust{get}, and \rust{get_mut} operations, with the difference that \rrbvec{} offers efficient \rust{append} and \rust{split_off}. \pvec{}, on the other hand, inherits performance properties of the underlying representation that is either \stdvec{} or \rrbvec{}.
+
+All vectors provide methods with identical method signatures with the difference in how much each operation costs, and how they are implemented. Table \ref{tab:vector-apis} lists available functions and their cost.
+
+\begin{table}[!ht]
+
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \begin{tabular} { p{98mm} p{8mm} p{8mm} p{8mm} }
+
+        \textbf{A vector function} & \rotatebox{64}{\stdvec{}} & \rotatebox{64}{\rbvec{}} & \rotatebox{64}{\rrbvec{}} \\ \hline
+
+        \rust{fn push(&mut self, e: T)} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Appends an element to the back of a collection & & & \\ \hdashline
+
+        \rust{fn pop(&mut self) -> Option<T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Returns the last removed value or \rust{None} if vector is empty. & & & \\ \hdashline
+
+        \rust{fn get(&self, i: usize) -> Option<&T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Returns a reference to an element. & & & \\ \hdashline
+
+        \rust{fn get_mut(&mut self, i: usize) -> Option<&mut T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Returns a mutable reference to an element. & & & \\ \hdashline
+
+        \rust{fn append(&mut self, v: &mut Vec<T>)} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Moves all values of \rust{v} into \rust{self}, leaving other empty. & & & \\ \hdashline
+
+        \rust{fn len(&self) -> usize} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Returns the number of elements in the vector. & & & \\ \hdashline
+
+        \rust{fn is_empty(&self) -> bool} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Returns \rust{true} if the vector contains no elements. & & & \\ \hdashline
+
+        \rust{fn split_off(&mut self, at: usize) -> Vec<T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Splits the collection into two at the given index. & & & \\ \hdashline
+
+        \rust{fn into_iter(self) -> Iterator} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Creates an iterator from \rust{self}. & & & \\ \hdashline
+
+        \rust{fn into_par_iter(self) -> IntoParallelIterator} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        Converts \rust{self} into a parallel iterator. Note, it requires the \rust{arc} and \rust{rayon_iter} feature flags. & & & \\ \hline
+    \end{tabular}
+
+    \label{tab:vector-apis}
+    \caption{A table of methods supported by persistent vectors}
+\end{table}
+
+\subsubsection*{Iterators}
+Iterators\footnote{\url{https://doc.rust-lang.org/std/iter/trait.Iterator.html}} are a powerful alternative to \emph{for} loops that offer a variety of operators for processing collection elements.
+
+The foundation of iterators for \pvecrs{} vectors is the \rrbtree{} iterator implementation that presents a tree as a collection of leaf nodes. Instead of reading individual values using the radix search, the tree iterator returns the entire leaf node. Vector iterators cache the node and read values from it until it is exhausted, after which they request the next node from the tree iterator, minimizing the number of the tree-traversals and improving performance. This optimization can be thought of as the generalization of the tail optimization described in Section \ref{sec:tail-optimization}.
+
+\subsubsection*{Parallel iterators}
+Parallel iterators process collection elements on multiple threads. The parallel iterator implementation for \pvecrs{} is based on the data parallelism framework \rayon{}, and can be enabled using the \rust{arc} and \rust{rayon_iter} feature flags. Compared to sequential iterators, the parallel ones do not guarantee the deterministic order of processing values.
+
+% \subsection{Visualization}
+% * The web-vis crate and serde-serializer flag.
+% * Wasmpack for compiling Rust to WebAssembly.
+% * Using JS + D3 to visualize the implementation.
 
 \section{Memory layout}
 To define the persistent vector in Rust, we first need to understand how different parts of the data structure can be represented in the computer memory, and which Rust constructs are the most suitable for this purpose.

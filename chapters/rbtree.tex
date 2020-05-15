@@ -381,6 +381,7 @@ Since the \rbtree{} is a complete\footnote{A complete n-ary tree is an n-ary tre
 A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is demoted by replacing it with the first child node, which becomes the new root.
 
 \section{Tail optimization for persistent vector}
+\label{sec:tail-optimization}
 
 In practice, changes are often applied to the end or \emph{tail} of the data structure. Stack is specifically optimized for such use cases, by offering the constant performance for the push and pop operations. Even though \rbtree\ has similar performance characteristics, its push and pop implementations include pesky constant factors in the form of \emph{radix search} and \emph{path copying} algorithms.
 
