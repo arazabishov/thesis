@@ -1,7 +1,3 @@
-\todo{Use the "thread safety" phrease consistently in the document}
-\todo{Reference the software project: c-rrb}
-\todo{Introduce what is crate / cargo in the Rust introduction}
-
 \chapter{Persistent vectors in Rust}
 \label{chapter:persistent-vectors-in-rust}
 The purpose of this chapter is bifold: to present the \pvecrs{} project and to discuss its unique design traits in the context of Rust. First, we will take a look at the project structure, the types offered by the library, and how it can be configured.
@@ -11,7 +7,7 @@ Then, we will take a look at the design and optimizations of the persistent vect
 \begin{itemize}
     \item First, we will take a look at the memory layout of \rrbtree{} and how it supports the implementation of cloning and path copying.
     \item Then, transience and dynamic representation optimizations will be introduced in the context of Rust's ownership and borrowing rules.
-    \item At last, we will talk about thread safety and the requirements for sharing objects between threads.
+    \item At last, we will talk about thread-safety and the requirements for sharing objects between threads.
 \end{itemize}
 
 \section{Presentation of the project}
@@ -103,7 +99,7 @@ The \pvecrs{} project can be configured using the feature flags described in Tab
         \rust{small_branch} & Sets the branching factor used by \rrbtree{} to 4. \\ \hline
         \rust{arc} & Selecting the thread-safe version of the \rc{} pointer. \\ \hline
         \rust{rayon_iter} & if specified together with the \rust{arc} flag, provides the parallel iterator implementation for Rayon. \\ \hline
-        \rust{serde_serializer} & \pvecrs{} provides the JSON\footnote{TODO} serializer if specified. \\ \hline
+        \rust{serde_serializer} & \pvecrs{} provides the JSON\footnote{JSON or JavaScript Object Notation is an open standard file and data interchange format.} serializer if specified. \\ \hline
     \end{tabular}
 
     \label{tab:feature-flags}
@@ -213,19 +209,12 @@ In a nutshell, a reference counting pointer allows shared ownership of the objec
 \subsubsection*{Copy-on-write semantics}
 Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced during runtime rather than compile-time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other references do not exist.
 
-The \mintinline{rust}{Rc::make_mut} method allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are no other pointers to the value, then \mintinline{rust}{Rc::make_mut} immediately returns a mutable reference. Otherwise, it clones the inner value to a new allocation to ensure unique ownership and then returns a reference to it. This mechanism will be referred to as conditional \emph{copy-on-write} behavior.\todo{citation for copy-on-write semantics}
+The \mintinline{rust}{Rc::make_mut} method allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are no other pointers to the value, then \mintinline{rust}{Rc::make_mut} immediately returns a mutable reference. Otherwise, it clones the inner value to a new allocation to ensure unique ownership and then returns a reference to it. This mechanism will be referred to as conditional \emph{copy-on-write} behavior.
 
 \subsubsection*{Path copying}
-\todo{NTH: a diagram demonstrating semantics of rc}
-
 When updating the tree, the path leading from the root node to the affected leaf is copied to preserve the original tree from changes. The copy-on-write semantics of \rc{} is the foundation for the path copying algorithm implementation in \rrbtree{}.
 
 Rust permits updating objects only through mutable references. To update a value in the tree, one has to acquire a mutable reference to each node that forms a path to the value. Since nodes are decorated with \rc{} pointer, a safe way to acquire a mutable reference is by calling the \mintinline{rust}{Rc::make_mut} method. If the tree has been cloned prior to the update, this call will copy each node while descending from the root to the leaf node, effectively performing \emph{path copying}.
-
-\subsubsection*{Thread safety}
-% The standard library also offers an \emph{Arc<T>} type, which is very similar to Rc<T> with the difference that it uses atomic operations to synchronize accesses to its reference counts. This can make Arc<T> a little more expensive during run time, but it enables threads to share a value safely.
-
-% As a persistent vector is intended to be a part of a library, Arc would be a better choice as it creates a foundation for the data structure to be used in the multithreaded environment.
 
 \subsection{Structures, enumerations and cache locality}
 With the knowledge of how \rc{} helps to manage the memory and its semantics we can move on to the definition of the \rrbtree{} node using the following Rust constructs:
@@ -236,7 +225,7 @@ With the knowledge of how \rc{} helps to manage the memory and its semantics we 
 
 Conceptually, the \rrbtree{} consists of three node types: a balanced branch, a relaxed branch and a leaf. Depending on the tree level, branching nodes reference either other branching nodes or leaves. Thus, the node definition has to be generic over the child node type.
 
-Rust forbids inheritance in structs. It does, however, provide alternative ways of defining data types that are conceptually related: enumerations and \emph{trait objects}\footnote{todo}.
+Rust forbids inheritance in structs. It does, however, provide alternative ways of defining data types that are conceptually related: enumerations and \emph{trait objects}\footnote{\url{https://doc.rust-lang.org/book/ch17-02-trait-objects.html}}.
 
 Trait objects are objects that share common behavior by implementing the same interface. The main advantage of trait objects is their extensibility. Enums, on the other hand, cannot be extended with more variants outside of their declaration. Since the tree node is an implementation detail of a persistent vector and is not expected to be extended, enums were favored over trait objects.
 
@@ -246,19 +235,24 @@ Each enum variant can have a different set of fields. Hence, the enum size is ca
 
 By using structs and enums in combination with \rc{}, we can finally bring everything together to define the \rrbtree{} node. The figure \ref{fig:rrbtree-node} presents the structure as it is in the library.
 
-\begin{figure}[!htbp]
-    \centering
+\begin{listing}[!ht]
 
-    \begin{minted}{rust}
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
         #[cfg(feature = "arc")]
         type SharedPtr<T> = Arc<T>;
 
         #[cfg(not(feature = "arc"))]
         type SharedPtr<T> = Rc<T>;
-
-        // ^ SharedPtr<T> is a type alias that is assigned
-        // either Arc<T> or Rc<T> depending on the
-        // thread-safety requirements and configuration.
+        // ^ SharedPtr<T> is a type alias that is assigned either Arc<T> or
+        // Rc<T> depending on the thread-safety requirements and configuration.
 
         enum Node<T> {
             RelaxedBranch(SharedPtr<RelaxedBranch<T>>),
@@ -285,13 +279,13 @@ By using structs and enums in combination with \rc{}, we can finally bring every
 
     \caption{Definition of the \rrbtree{} node.}
     \label{fig:rrbtree-node}
-\end{figure}
+\end{listing}
 
 Each node type has received its own struct definition. An eagle eyed reader will notice that the \type{Node} enum in figure \ref{fig:rrbtree-node} could have been declared in a more concise way by having the node fields defined directly within the variant. Even though it seems to be a more intuitive approach, it comes at a hidden cost.
 
 \paragraph{The enum size and the cache locality}
 
-\begin{figure}[H]
+\begin{figure}[!ht]
     \centering
     \begin{tikzpicture}[
         font=\ttfamily,
@@ -362,7 +356,7 @@ The size of the \rc{} pointer is independent of the type it encapsulates. Hence,
 
 This, in turn, means that the \mintinline{rust}{Node} enum variants will be equally sized, taking as little space as possible. When compiling the library for a machine with the 64-bit CPU architecture, the enum size is 16 bytes, where 8 bytes are reserved for the enum tag, and 8 bytes for the reference-counted pointer.
 
-\begin{figure}[!htbp]
+\begin{figure}[!ht]
     \centering
     \begin{tikzpicture}[
         font=\ttfamily,
@@ -444,55 +438,84 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
 The figure \ref{fig:memory-layout-of-rrbtree-node} is the visualization of how the enum and struct definitions of \rrbtree{} node are arranged in memory.
 
 \section{Pay only for the features you use}
-
-% todo: take text from another chapter: conclusion, for example?
+The \pvecrs{} project draws inspiration from one of the Rust key design traits --- zero-cost abstractions. In this chapter, we will look at how \pvec{} follows that design principle by offering optimizations such as transience and dynamic representation, without sacrificing Rust's safety guarantees.
 
 \subsection{Transience as the language feature}
-Popular persistent data structure libraries, such s immutable-js, or collections in the standard library of Clojure, often provide an interface that is radically different from the interface of the ephemeral data structures. For example:
+Popular persistent data structure libraries, such s \emph{immutable-js}\footnote{\url{https://immutable-js.github.io/immutable-js/}}, or collections in the standard library of \emph{Scala}\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, often provide an interface that is radically different from the interface of the ephemeral data structures.
 
-\begin{figure}[!htbp]
+As demonstrated in Listing \ref{lst:conventional-interface}, instead of updating the vector in-place, the operation returns a new instance that contains the change. When a collection is set up like that, the library can guarantee that the original vector will stay unmodified, eliminating the whole class of bugs such as race conditions.
+
+This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. The solution to this problem was first introduced in the \emph{Clojure} programming language in the shape of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies \todo{ref to background}.
+
+Rust's compiler, however, eliminates race conditions by forbidding simultaneous mutation of value by enforcing ownership and borrowing rules. The ownership rule essentially means that an object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Further than that, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
+
+This leads us to a question if the traditional persistent collection interface is needed in Rust. The short answer is no because compiler guards developers from common mistakes. Nicholas Matsakis, the lead engineer behind the Rust's compiler, has discussed this question in his blog\footnote{\url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}.
+
+\subsubsection*{Unique access as transience}
+Unique access as a term stems from the fact that in Rust, a mutable reference to an object must be \emph{unique}. By leveraging this guarantee, persistent vectors in Rust can have a conventional mutable interface without sacrificing safety.
+
+\begin{listing}[!ht]
 
     \centering
-    \begin{minted}{rust}
-        let mut pvec_1 = PersistentVec::new();
-        let pvec_2 = vec_1.push(42);
-        //  ^ a vector instance containing 42
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
+        fn main() {
+            let vec_1 = immutable_api(42);
 
-        let mut vec_1 = Vec::new();
-        vec_1.push(42);
+            let vec_2 = mutable_api(42);
+            let mut cloned_vec_2 = vec_2.clone();
+            // ^ increments the reference count, but no copying yet
+
+            cloned_vec_2.push(34);
+            // ^ an attempt to update the tree with rc > 1
+            // triggers the path copying algorithm
+        }
+
+        fn immutable_api(size: usize) -> PersistentVec<usize> {
+            let mut vec = PersistentVec::new();
+            for i in 0..size {
+                vec = vec.push(i); // <- creates a new instance on every push
+            }
+            vec
+        }
+
+        fn mutable_api(size: usize) -> PersistentVec<usize> {
+            let mut vec = PersistentVec::new();
+            for i in 0..size {
+                vec.push(i); // <- new instances are not created
+            }
+            vec
+        }
     \end{minted}
 
-    \caption{A common interface of a persistent vector.}
-    \label{fig:common-interface}
-\end{figure}
+    \caption{The persistent and conventional interfaces of vectors}
+    \label{lst:conventional-interface}
+\end{listing}
 
-As demonstrated, instead of updating the vector in place the operation returns a new instance that contains the change. When collection is setup like that, the library can guarantee that original vector will stay unmodified, eliminating a whole class of bugs such as race conditions.
+As demonstrated in \rust{mutable_api} in Listing \ref{lst:conventional-interface}, the conventional interface allows to update the vector in-place without creating copies.
 
-% * This design has its own flaws, such as performance hits due to the redundant copies created when constructing a vector
-% * The idea of transience was born in Clojure's programming language /ref{thesis}
-% * Instead of throwing out unused copies, don't create them in the first place
-% * Treating a persistent data structure as if it was mutable under safe conditions
+This is possible because of the conditional \emph{copy-on-write} semantics of \rc{} pointers that are used at the core of \rrbtree{}. If the reference count is at most one, \rust{Rc::make_mut} will not copy the underlying value but rather update it in-place.
 
-Rust's compiler, however, eliminates this class of bugs by forbidding simultaneous mutation of a value by enforcing ownership and borrowing rules. The ownership rule essentially means that object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Further than that, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
+When cloned on line 5, the reference count of the root node of the underlying \rrbtree{} is incremented by one. The path copying algorithm is executed only when trying to mutate the cloned instance on line 8, leaving the original \rust{vec_2} unmodified.
 
-This leads us to a question if the traditional persistent collection interface is needed in Rust. The short answer is no, because compiler guards developers from common mistakes. Nicholas Matsakis, the lead engineer behind the Rust's compiler, has discussed this question in his blog\footnote{\url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}.
+Path copying that is delayed to the first update means that the clone operation is effectively free in cases when a vector is cloned and shared for read-only purposes.
 
-% * Okay, Rust's compiler can defend us from those bugs, what's next?
-% * So we know that too many copies is bad for performance
-% * Instead of having a persistent interface, we can have a standard one, that behaves as if data structure was mutable.
-% * This way we will avoid generating copies when not necessary and Rust's compiler will make sure that it is safe
+\paragraph{Transience in Clojure is different}
+Transience in Clojure\footnote{\url{https://clojure.org/reference/transients}} is not identical to unique access based optimization in Rust, and these are the main differences:
 
-% * How is this related to transience? Is this transience? How transience is different?
-% * Okay, it is not, how would you call it then? Unique access optimization, because it relies on unique, mutable references for updates
-% * Provide an example of how it looks like, and what are the cost of operations
-
-% \todo{statically choosing representations: compiler flags + type aliases}
-% \todo{encourages experimentation with different vector types and their performance}
-% \todo{a feature that you don't need to pay for are efficient append / split operations}
+\begin{itemize}
+    \item In Clojure, transient vectors are confined to the thread they are created on. Therefore, they cannot be modified on another thread. Persistent vectors in Rust can be safely moved between threads as long as the ownership and borrowing rules are followed.
+    \item Calling any methods on a transient vector after it transitions back to persistent is prohibited and will cause an exception in Clojure. In Rust, there are no special restrictions imposed on vectors.
+    \item In order to initialize a transient collection in Clojure, one has to use special syntax such as the \mintinline{clojure}{transient} function, or \mintinline{clojure}{persistent!} to convert a transient instance back to persistent.
+\end{itemize}
 
 \subsection{Dynamic representation}
-\todo{how do vectors change their representation when concatenated or splitted}
-
 A unique property of \pvec{} is that it features an interface identical to the standard vector, contrary to the conventional persistent interface that is significantly different.
 
 If two vector types have identical interfaces, in theory, they can be used interchangeably without any additional changes made to the program. Hence, it becomes possible to dynamically choose a vector type depending on the context and performance requirements.
@@ -507,10 +530,17 @@ To take the best of both worlds, a vector can start as the standard vector and w
 \subsubsection*{Switching the representation}
 Essentially, a persistent vector type -- \pvec{}, can be backed by two different vector types at runtime. It starts as \stdvec{}, and then switches to the \rrbvec{} on the first clone. The process of switching from one vector type to another is called \emph{spilling}, as it maps a contiguous chunk of memory into smaller pieces that are used as leaf nodes to build \rrbvec{}.
 
-\begin{figure}[!htbp]
+\begin{listing}[H]
 
     \centering
-    \begin{minted}{rust}
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
         struct PVec<T>(Representation<T>);
 
         enum Representation<T> {
@@ -519,13 +549,19 @@ Essentially, a persistent vector type -- \pvec{}, can be backed by two different
         }
     \end{minted}
 
-    \caption{Memory layout of \pvec{}.}
-    \label{fig:pvec-memory-representation}
-\end{figure}
+    \caption{Memory layout of \pvec{}}
+    \label{lst:pvec-memory-representation}
+\end{listing}
 
 \pvec{} has two representations: \type{Flat} that is using \stdvec{}, and \type{Tree} that is backed by \rrbvec{}. The initial capacity of both representations is equal to the branching factor of 32 by default.
 
-\begin{figure}[!htbp]
+Spilling happens by converting the flat vector into an iterator of sub-arrays that are 32 elements wide and pushing them directly onto \rrbtree{} as leaf nodes. If the last chunk is smaller than 32, then it will be used as the tail for the new \rrbvec{}. See figure \ref{fig:switching-representations} that visualizes the transition.
+
+One could have considered splitting up the original vector into chunks and reusing them instead of copying. Unfortunately, heap allocators do not have a mechanism for safely splitting an existing allocation into smaller ones. The Rust's allocator interface\footnote{\url{https://doc.rust-lang.org/std/alloc/struct.System.html}} reflects this limitation by exposing functions that allow allocating and freeing memory but no subdivision of existing allocations.
+
+Additionally, the cost of spilling needs to be paid only once, and will be amortized by \bigo{1} consequent clones.
+
+\begin{figure}[!ht]
 
     \centering
     \begin{tikzpicture} [
@@ -572,13 +608,3 @@ Essentially, a persistent vector type -- \pvec{}, can be backed by two different
     \caption{Visualization of how the vector representation is switched.}
     \label{fig:switching-representations}
 \end{figure}
-
-Spilling happens by converting the flat vector into an iterator of sub-arrays that are 32 elements wide and pushing them directly onto \rrbtree{} as leaf nodes. If the last chunk is smaller than 32, then it will be used as the tail for the new \rrbvec{}. See figure \ref{fig:switching-representations} that visualizes the transition.
-
-One could have considered splitting up the original vector into chunks and reusing them instead of copying. Unfortunately, heap allocators do not have a mechanism for safely splitting an existing allocation into smaller ones. The Rust's allocator interface\footnote{\url{https://doc.rust-lang.org/std/alloc/struct.System.html}} reflects this limitation by exposing functions that allow allocating and freeing memory but no subdivision of existing allocations.
-
-Additionally, the cost of spilling needs to be paid only once, and will be amortized by \bigo{1} consequent clones.
-
-% TODO: Spatial locality, and its subclass sequential locality. Both terms can be used to frame the argument around performance of RrbVec iterators. You **have** to make this point in the discussion chapter on this.
-% TODO: a modification of the display and focus optimization was used to improve performance of \rrbvec{}'s iterator:
-% The \rrbtree{} iterator does not implement display optimization as described in \ref{todo}. It does, however, consume the tree by chunks. Avoiding the tree traversal on every request to return the next element offsets its cost, and results in overall amortized(effectively?)-constant runtime.
