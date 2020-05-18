@@ -1,15 +1,27 @@
 \chapter{Relaxed Radix Balanced Tree}
 
+% A couple of words here on what is RRB-Tree, what it offers, and how is it different compared to RB-Tree.
+%  * A confluent persistent data structure.
+%  * Relaxation as a way to achieve efficient concatenation and splitting.
+
+% Then, say what this chapter is about:
+%  * Which constraints are relaxed and which constraints are enforced:
+%   * The relaxed child count and completeness of nodes
+%   * How does RRB-Tree guarantee that height won't exceed certain limits
+%  * The concatenation and splitting algorithms.
+%  * Changing the following algorithms to accommodate relaxed constraints:
+%   * Radix search
+%   * Push and pop
+
 \section{Relaxed Radix Search}
 
-When \rbtree\ is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size tables}. Each entry of the size table is the accumulated count of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}. 
+When \rbtree\ is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size tables}. Each entry of the size table is the accumulated count of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}.
 
-\todo{Update RrbTree-Find-Index to use binary search}
-\begin{listing}[ht!]        
+\begin{listing}[ht!]
     \caption{Pseudocode for the relaxed radix search implementation}
-    \label{lst:rrb-tree-relaxed-radix-search}        
+    \label{lst:rrb-tree-relaxed-radix-search}
 
-    \begin{algorithmic}        
+    \begin{algorithmic}
         \Function{RrbTree-Find-Index}{sizes, idx}
             \State candidate \la 0
 
@@ -25,7 +37,7 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
         \Function{RrbTree-Relaxed-Radix-Search}{root, key}
             \State node \la\ root
             \State idx \la\ key
-            
+
             \For{level \la\ root\ts{height} - 1, 1}
                 \If{node\ts{sizes} = \nil{}}
                     \State index \la\ (key $\ggg$ (level * x)) \& mask
@@ -37,8 +49,8 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
 
                     \If{index != 0}
                         \State idx \la\ idx - sizes[index - 1]
-                    \EndIf                    
-                \EndIf            
+                    \EndIf
+                \EndIf
             \EndFor
 
             \State index \la\ idx \& mask
@@ -47,30 +59,31 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
     \end{algorithmic}
 \end{listing}
 
-\section{Update}
-\todo{RRB-Tree, Update}
-
 \section{Concatenation}
 
 \todo{Make sure that nodes are cloned where necessary}
-\begin{listing}[ht!]        
+\begin{listing}[ht!]
     \caption{Pseudocode for concatenation implementation}
-    \label{lst:rrb-tree-concat}        
+    \label{lst:rrb-tree-concat}
 
-    \begin{algorithmic}       
+    \begin{algorithmic}
         \Procedure{Node-Check-Subtree}{root, subtree}
             \If{subtree\ts{len} = \m{}}
                 \State root[root\ts{len}] \la\ subtree
-                \State root\ts{len}++                
+                \State root\ts{len}++
             \EndIf
         \EndProcedure
+
+    \end{algorithmic}
+
+    \begin{algorithmic}
 
         \Function{Node-Rebalance}{left, middle, right}
             \State height \la\ Max(left\ts{height}, middle\ts{height}, right\ts{height})
             \State merged \la\ left + middle + right
-            
-            \State newRoot \la\ Create-Node(height)            
-            \State newSubtree \la\ Create-Node(height)            
+
+            \State newRoot \la\ Create-Node(height)
+            \State newSubtree \la\ Create-Node(height)
             \State newNode \la\ Create-Node(height)
 
             \For{node \In\ merged}
@@ -79,7 +92,7 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
                     \State newSubtree[newSubtree\ts[len]] \la\ node
                     \State newSubtree\ts{len}++
                 \Else
-                    \For{childNode \In\ node} 
+                    \For{childNode \In\ node}
                         \If{newNode\ts{len} = \m{}}
                             \State Node-Check-Subtree(newRoot, newSubtree)
                             \State newSubtree[newSubtree\ts[len]] \la\ newNode
@@ -104,12 +117,17 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
             \State \Return newRoot
         \EndFunction
 
+    \end{algorithmic}
+
+    \begin{algorithmic}
+
+
         \Function{Node-Concat}{leftNode, rightNode}
             \If{leftNode\ts{height} > rightNode\ts{height}}
-                \State mergedNode \la\ Node-Concat(leftNode\ts{last}, rightNode)                
+                \State mergedNode \la\ Node-Concat(leftNode\ts{last}, rightNode)
                 \State \Return Node-Rebalance(leftNode\ts{init}, mergedNode, \nil{})
             \ElsIf{leftNode\ts{height} < rightNode\ts{height}}
-                \State mergedNode \la\ Node-Concat(leftNode, rightNode\ts{first})                
+                \State mergedNode \la\ Node-Concat(leftNode, rightNode\ts{first})
                 \State \Return Node-Rebalance(\nil{}, mergedNode, rightNode\ts{tail})
             \Else
                 \State mergedNode \la\ \nil{}
@@ -130,9 +148,11 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
             \State \Return \nil{}
         \EndFunction
 
-        \State
+    \end{algorithmic}
 
-        \Function{RrbTree-Concat}{thisRoot, thatRoot}            
+    \begin{algorithmic}
+
+        \Function{RrbTree-Concat}{thisRoot, thatRoot}
             \State newRoot \la\ Node-Concat(thisRoot, thatRoot)
             \State newRoot\ts{height} \la\ Max(thisRoot\ts{height}, thatRoot\ts{height})
             \State newRoot\ts{len} \la newRoot\ts{len} + thatRoot\ts{len}
@@ -141,10 +161,83 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
                 \State newRoot \la\ newRoot[0]
             \Else
                 \State newRoot\ts{height}++
-            \EndIf        
+            \EndIf
 
             \State \Return \nil{}
         \EndFunction
 
     \end{algorithmic}
+\end{listing}
+
+
+\begin{listing}[ht!]
+
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
+
+    fn merge(&mut self, mut that: Node<T>,
+        self_shift: Shift, that_shift: Shift) -> Node<T> {
+        if self_shift > that_shift {
+            let (left, init) = self.as_branch().split_last_must();
+            let center = left.merge(that, self_shift.dec(), that_shift);
+            Node::rebalance(init, center, None, self_shift)
+        } else if self_shift < that_shift {
+            let (right, tail) = that.as_branch().split_first_mut();
+            let center = self.merge(right, self_shift, that_shift.dec());
+            Node::rebalance(None, center, tail, that_shift)
+        } else {
+            let (left, init) = self.as_branch().split_last_must();
+            let (right, tail) = that.as_branch().split_first_mut();
+            let mut center = if self_shift.is_level_with_leaves() {
+                SharedPtr::make_mut(left.as_mut_leaf())
+                    .merge(right.into_leaf())
+            } else {
+                left.merge(right, self_shift.dec(), that_shift.dec())
+            };
+            Node::rebalance(init, center, tail, self_shift)
+        }
+    }
+
+    \end{minted}
+
+    \caption{Concatenation algorithm}
+    \label{lst:rrb-tree-concat}
+\end{listing}
+
+\begin{listing}[ht!]
+    \caption{Pseudocode for concatenation implementation}
+    \label{lst:rrb-tree-concat}
+
+    \begin{algorithmic}[1]
+        \Function{concat}{leftNode, rightNode}
+            \If{leftNode\ts{height} > rightNode\ts{height}}
+                \State mergedNode \la\ concat(leftNode\ts{last}, rightNode)
+                \State \Return rebalance(leftNode\ts{init}, mergedNode, \nil{})
+            \ElsIf{leftNode\ts{height} < rightNode\ts{height}}
+                \State mergedNode \la\ concat(leftNode, rightNode\ts{first})
+                \State \Return \Call{rebalance}{\nil{}, mergedNode, rightNode\ts{tail}}
+            \Else
+                \State mergedNode \la\ \nil{}
+
+                \If{leftNode\ts{height} = 0}
+                    \State mergedNode \la\ concat(leftNode, rightNode)
+                \Else
+                    \If{leftNode\ts{height} = 1}
+                        \State mergedNode \la\ concat(leftNode\ts{last}, rightNode\ts{first})
+                    \Else
+                        \State mergedNode \la\ concat(leftNode\ts{last}, rightNode\ts{first})
+                    \EndIf
+                \EndIf
+
+                \State \Return rebalance(leftNode\ts{init}, mergedNode, rightNode\ts{tail})
+            \EndIf
+        \EndFunction
+    \end{algorithmic}
+
 \end{listing}
