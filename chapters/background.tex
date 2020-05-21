@@ -4,8 +4,9 @@
 %     * Alternative name for core is discrete
 
 % TODO: define what is transience: https://clojure.org/reference/transients
+\chapter{Background}
 
-\chapter{Radix Balanced Tree}
+\section{Radix balanced tree}
 \label{chapter:radix-balanced-tree}
 
 Radix Balanced Tree or \rbtree, is a tree data structure with a fixed number of children per node, which allows access to values using integer keys. It was first introduced by Rich Hickey as a basis for a persistent vector implementation in Clojure's standard library \cite{the-clojure-programming-language}.
@@ -16,7 +17,7 @@ In comparison, Clojure's vector implementation is delivering \emph{practically} 
 
 This chapter introduces the inner workings of \rbtree{} and covers algorithms used in the core operations. For a more formal description of the persistent vector, refer to \cite{improving-performance-through-transience}.
 
-\section{Memory layout}
+\subsection{Memory layout}
 \label{sec:rb-tree-memory-layout}
 
 \rbtree{} consists of nodes which contain references to other subtrees or to values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of subtrees and values in the node is configurable and will be denoted as \m, also known as \emph{branching factor}.
@@ -33,7 +34,7 @@ If \m{} is 32 and the number of elements will never be larger than the maximum i
 
 References to values are stored at the leaf nodes of the tree. If the number of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes.
 
-\section{Radix search}
+\subsection{Radix search}
 \label{sec:rb-tree-radix-search}
 
 Before trying to understand how operations such as push, pop, and update work, let's take a look at how to access values in \rbtree{}. The lookup mechanism is called \emph{radix search}, a fundamental algorithm which forms the basis for other operations.
@@ -46,7 +47,7 @@ Another tree-like data structure known as trie, is interesting because its nodes
 
 The lookup procedure for tries involves breaking down the search key into multiple subkeys, which are used to pick corresponding sub-tries. For example, the key "car" will be broken down into several smaller keys such as "c", "a", "r". If there is a value present at the last node of the path, it is returned. Otherwise, an empty value or error is returned.
 
-\subsection*{Bit partitioning}
+\subsubsection*{Bit partitioning}
 Radix search accepts a key of integer type as an argument. It can be viewed as a composite key, where each subkey is represented by a sequence of bits. The idea is to divide the key into blocks of bits, where each block forms an index specific to the tree node. The count of bits in each of those chunks can be derived from the branching factor and will be named as \emph{bits per level}.
 
 The \emph{bits per level} or \x{} is the count of bits used to address \m{} nodes in the binary numeral system:
@@ -58,7 +59,7 @@ The \emph{bits per level} or \x{} is the count of bits used to address \m{} node
 
 For example, with \m{} equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m{} into \Cref{eq:bits-per-level}, we will get the same value.
 
-\subsection*{Extracting subkeys}
+\subsubsection*{Extracting subkeys}
 
 Now when the size of the subkey is known, the next step is to identify its location. The count of subkeys within the search key depends on \h. Each new level in \rbtree{} will use \x{} additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 subkeys taking up 6 bits of space in total.
 
@@ -219,12 +220,12 @@ The search process starts by initializing the node and level variables to root a
     \end{algorithmic}
 \end{listing}
 
-\section{Update}
+\subsection{Update}
 A function for replacing values in \rbtree{} is called \emph{update}. Emphemeral update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable.
 
 Version is something that differentiates one instance of the \rbtree{} from another. Instead of using explicit versioning such as assigning unique identifiers to instances of \rbtree{}, we will rely on a memory address as a unique identifier.
 
-\subsection*{Path copying}
+\subsubsection*{Path copying}
 Radix search is used to find the value corresponding to the given key. In order to ensure that the original version of \rbtree\ stays unmodified, each node on the way down from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated.
 
 In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m{}. Then, the \m{} sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root.
@@ -258,7 +259,7 @@ For large branching factors \m\ such as 32, the performance becomes \bigo{1} in 
 
 From the implementation standpoint, the main difference between update and radix search is that every visited node must be copied, including root. The return value is the root node for the new version of the tree.
 
-\section{Push}
+\subsection{Push}
 The push operation is used to add new elements to the \rbtree{}. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree.
 
 A key for the new element is equal to the count of elements in \rbtree{}, also known as the \emph{size} of the tree. For example, if the size is 9, the key for the new value will also be 9. The size will be incremented after the operation is executed.
@@ -332,8 +333,7 @@ The Root overflow can be solved by adding a new level to the tree. This is done 
     \end{algorithmic}
 \end{listing}
 
-\section{Pop}
-
+\subsection{Pop}
 Pop is used to remove items from the \rbtree. Together with push, it conforms to the LIFO\footnote{Last In First Out} principle which is typical for the stack abstract data type. It accepts root as input and returns both a popped value and a new version of a structure.
 
 Pop is responsible for reducing capacity of the \rbtree{}, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm.
@@ -380,14 +380,14 @@ Since the \rbtree{} is a complete\footnote{A complete n-ary tree is an n-ary tre
 
 A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is demoted by replacing it with the first child node, which becomes the new root.
 
-\section{Tail optimization for persistent vector}
+\subsection{Tail optimization for persistent vector}
 \label{sec:tail-optimization}
 
 In practice, changes are often applied to the end or \emph{tail} of the data structure. Stack is specifically optimized for such use cases, by offering the constant performance for the push and pop operations. Even though \rbtree\ has similar performance characteristics, its push and pop implementations include pesky constant factors in the form of \emph{radix search} and \emph{path copying} algorithms.
 
 The \emph{tail} optimization is intended to offset this cost by reducing the count of the \rbtree\ accesses. Instead of adding or removing elements one by one, changes are batched in the array of size \m. This array could be thought of as a leaf node, which will be attached to the tree only when it is full.
 
-\subsection*{Optimizing the push operation}
+\subsubsection*{Optimizing the push operation}
 As shown in \Cref{lst:pvec-push}, the value is set into a cloned tail at the position tail\ts{size}. Since \rbtree\ is a complete tree, the rightmost leaf node is the only node which can be empty or semi-full. As the tail is the rightmost leaf node, its size is as an index for the new value.
 
 If after update the tail is full, it will be pushed into a tree and replaced with an empty tail.
@@ -413,8 +413,7 @@ If after update the tail is full, it will be pushed into a tree and replaced wit
     \end{algorithmic}
 \end{listing}
 
-\subsection*{Optimizing the pop operation}
-
+\subsubsection*{Optimizing the pop operation}
 Since the tail might contain elements, pop has to remove them first before touching the \rbtree. If the tail is empty, it will be replaced with the rightmost leaf of \rbtree. See \Cref{lst:pvec-pop} for more details.
 
 \begin{listing}[ht!]
@@ -441,7 +440,7 @@ Since the tail might contain elements, pop has to remove them first before touch
     \end{algorithmic}
 \end{listing}
 
-\subsection*{Adapting the update and radix search operations}
+\subsubsection*{Adapting the update and radix search operations}
 Changes for both update and radix search are very similar, with the difference that update has to ensure that the original version of vector stays unmodified.
 
 The radix search implementation has to take into account that some of the values can be in the tail. A value is located within the tree if the key is less than the tree size. In this case the search process is delegated to \rbtree. Otherwise, the index for value in the tail is calculated by subtracting the tree size from the key.
@@ -486,3 +485,428 @@ The radix search implementation has to take into account that some of the values
         \EndFunction
     \end{algorithmic}
 \end{listing}
+
+\section{Relaxed radix balanced tree}
+Relaxed radix balanced tree or \treerrb{}, extends \treerb{} to support concatenation and splitting in \bigo{log(n)} rather than linear time without compromising the performance of other operations.
+
+An invariant that \treerb{} maintains is that all nodes except the right-most ones have to be full. This enables a simple radix search implementation, but on the other hand, makes efficient sub-linear concatenation impossible.
+
+The \treerrb{} relaxes this constraint by allowing nodes to be partially full, and introduces a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
+
+In this section, we will take a look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search.
+
+% A couple of words here on what is RRB-Tree, what it offers, and how is it different compared to RB-Tree.
+%  * A confluent persistent data structure.
+%  * Relaxation as a way to achieve efficient concatenation and splitting.
+
+% Then, say what this chapter is about:
+%  * Which constraints are relaxed and which constraints are enforced:
+%   * The relaxed child count and completeness of nodes
+%   * How does RRB-Tree guarantee that height won't exceed certain limits
+%  * The concatenation and splitting algorithms.
+%  * Changing the following algorithms to accommodate relaxed constraints:
+%   * Radix search
+
+\subsection{Memory layout}
+With relaxed \treerrb{} constraints there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at corresponding index. % TODO
+
+\subsection{Relaxed radix search}
+When \rbtree{} is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size} tables. Each entry of the size table is an accumulated number of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}.
+
+\begin{listing}[!ht]
+
+    \begin{algorithmic}[1]
+        \Function{FindIndex}{sizes, idx}
+            \State candidate \la 0
+
+            \If{candidate < \m\ - 1 \And\ sizes[candidate] <= idx}
+                \State candidate++
+            \EndIf
+
+            \State \Return candidate
+        \EndFunction
+
+        \State
+
+        \Function{RelaxedRadixSearch}{root, key}
+            \State node \la\ root
+            \State idx \la\ key
+
+            \For{level \la\ root\ts{height} - 1, 1}
+                \If{node\ts{sizes}=\nil{}}
+                    \State index \la\ (key $\ggg$ (level * x)) \& mask
+                    \State node \la\ node[index]
+                \Else
+                    \State sizes \la\ node\ts{sizes}
+                    \State index \la\ \Call{FindIndex}{sizes, idx}
+                    \State node \la\ node[index]
+
+                    \If{index != 0}
+                        \State idx \la\ idx - sizes[index - 1]
+                    \EndIf
+                \EndIf
+            \EndFor
+
+            \State index \la\ idx \& mask
+            \State \Return {node[index]}
+        \EndFunction
+    \end{algorithmic}
+
+    \caption{Pseudocode of relaxed radix search}
+    \label{lst:rrb-tree-relaxed-radix-search}
+\end{listing}
+
+\subsection{Concatenation}
+The concatenation algorithm used in this project is from \cite{rrb-vector-practical-general-purpose-im-sequence}, which produces a slightly more balanced tree than initially proposed by \cite{efficient-immutable-vectors}. It achieves it by allowing the relaxed tree nodes to have \m{} children instead of $\m{} - 1$.
+
+The algorithm consists of two stages: descending the tree, and then, merging and rebalancing nodes. The time complexity of the presented concatenation algorithm is \bigo{m^2 \cdot{} log_m(n)}.
+
+The recursive function in Listing \ref{lst:rrb-tree-concatenation} descends the tree by selecting the rightmost node of the left tree and the leftmost node of the right tree. If one of the trees is taller than the other, the function descends into a taller tree only until nodes of both trees are at the same level.
+
+When the bottom level with leaf nodes is reached, the function stops descending and starts merging and rebalancing nodes to ensure the \bigo{log_m(n)} bound on the tree height.
+
+\begin{listing}[!ht]
+    \begin{algorithmic}[1]
+        \Function{Concat}{leftNode, rightNode}
+            \If{leftNode\ts{height} > rightNode\ts{height}}
+                \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode}
+                \State \Return \Call{Rebalance}{leftNode\ts{init}, mergedNode, \nil{}}
+            \ElsIf{leftNode\ts{height} < rightNode\ts{height}}
+                \State mergedNode \la\ \Call{Concat}{leftNode, rightNode\ts{first}}
+                \State \Return \Call{Rebalance}{\nil{}, mergedNode, rightNode\ts{tail}}
+            \Else
+                \State mergedNode \la\ \nil{}
+
+                \If{leftNode\ts{height}=0}
+                    \State mergedNode \la\ \Call{Concat}{leftNode, rightNode}
+                \Else
+                    \If{leftNode\ts{height}=1}
+                        \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode\ts{first}}
+                    \Else
+                        \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode\ts{first}}
+                    \EndIf
+                \EndIf
+
+                \State \Return \Call{Rebalance}{leftNode\ts{init}, mergedNode, rightNode\ts{tail}}
+            \EndIf
+        \EndFunction
+    \end{algorithmic}
+
+    \caption{Concatenation algorithm of \treerrb{}}
+    \label{lst:rrb-tree-concatenation}
+\end{listing}
+
+The \textproc{Rebalance} function accepts three lists of nodes as arguments. The \texttt{left} and \texttt{right} lists constitute all nodes of both trees at the given level except two: the rightmost node of the left tree and the leftmost node of the right tree. Those two nodes are already rebalanced and passed as the \texttt{middle} argument. Three lists are concatenated together into a single \texttt{merged} list.
+
+The goal of rebalancing is to arrange the children of \texttt{merged} nodes in such a way that all nodes except the rightmost branch are filled with values. When the \textproc{Rebalance} function completes re-arranging nodes, it returns a new branch containing rebalanced nodes. Pseudocode for rebalancing can be found in Appendix \ref{lst:rrb-tree-rebalance}.
+
+The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-level-0}-\ref{fig:rrb-tree-rebalance}. Note, presented figures exclude parts of trees that are not important for conveying the idea to preserve space.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colorleft] (left-1-1) at (current page.north west) { & & & \\ };
+
+        \matrix[node, fill=colorleft] (left-2-4) [below right=8mm and 1mm of left-1-1.south] { & & \\ };
+        \node (left-2-3) [left=2mm of left-2-4.west] { \ldots };
+        \node (left-2-2) [left=2mm of left-2-3.west] { \ldots };
+        \node (left-2-1) [left=2mm of left-2-2.west] { \ldots };
+
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-1.south) to (left-2-1.north);
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-2.south) to (left-2-2.north);
+        \draw[edge-dashed, out=225, in=75] (left-1-1-1-3.south) to (left-2-3.north);
+        \draw[edge, out=315, in=90] (left-1-1-1-4.south) to (left-2-4.north);
+
+        \matrix[node, fill=colorleft] (left-3-2) [below left=8mm and 1mm of left-2-4.south] { e & f & g & h \\ };
+        \matrix[node, fill=colorleft] (left-3-3) [below right=8mm and 1mm of left-2-4.south] { i & j \\ };
+        \matrix[node, fill=colorleft] (left-3-1) [left=2mm of left-3-2.west] { a & b & c & d \\ };
+
+        \draw[edge, out=225, in=45] (left-2-4-1-1.south) to (left-3-1.north);
+        \draw[edge, out=225, in=45] (left-2-4-1-2.south) to (left-3-2.north);
+        \draw[edge, out=315, in=90] (left-2-4-1-3.south) to (left-3-3.north);
+
+        \matrix[node, fill=colorright] (right-1-1) [right=56mm of left-1-1.east] { & \\ };
+        \matrix[node, fill=colorright] (right-2-1) [below left=8mm and 1mm of right-1-1.south] { & & & \\ };
+        \node (right-2-2) [right=2mm of right-2-1.east] { \ldots };
+
+        \draw[edge, out=225, in=90] (right-1-1-1-1.south) to (right-2-1.north);
+        \draw[edge-dashed, out=315, in=90] (right-1-1-1-2.south) to (right-2-2.north);
+
+        \matrix[node, fill=colorright] (right-3-2) [below left=8mm and 1mm of right-2-1.south] { o & p & q & r \\ };
+        \matrix[node, fill=colorright] (right-3-3) [below right=8mm and 1mm of right-2-1.south] { s & t & u & v \\ };
+        \matrix[node, fill=colorright] (right-3-1) [left=2mm of right-3-2.west] { k & l & m & n \\ };
+        \matrix[node, fill=colorright] (right-3-4) [right=2mm of right-3-3.east] { w & x & y & z \\ };
+
+        \draw[edge, out=225, in=45] (right-2-1-1-1.south) to (right-3-1.north);
+        \draw[edge, out=225, in=45] (right-2-1-1-2.south) to (right-3-2.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-3.south) to (right-3-3.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-4.south) to (right-3-4.north);
+
+        \node[draw, dashed, inner sep=1mm, fit=(left-3-3) (left-3-3) (right-3-1) (left-3-3)] {};
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm at level 0}
+    \label{fig:rrb-tree-rebalance-level-0}
+\end{figure}
+
+Concatenation starts at the bottom of the tree by merging the leaf nodes. The result is a new rebalanced branch with leaves that will be used when rebalancing nodes at level 1.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+    \colorlet{colormerged}{orange!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colorleft] (left-1-1) at (current page.north west) { & & & \\ };
+
+        \matrix[node, fill=colorleft] (left-2-4) [below right=8mm and 1mm of left-1-1.south] { & \\ };
+        \node (left-2-3) [left=2mm of left-2-4.west] { \ldots };
+        \node (left-2-2) [left=2mm of left-2-3.west] { \ldots };
+        \node (left-2-1) [left=2mm of left-2-2.west] { \ldots };
+
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-1.south) to (left-2-1.north);
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-2.south) to (left-2-2.north);
+        \draw[edge-dashed, out=225, in=75] (left-1-1-1-3.south) to (left-2-3.north);
+        \draw[edge, out=315, in=90] (left-1-1-1-4.south) to (left-2-4.north);
+
+        \matrix[node, fill=colorleft] (left-3-2) [below right=8mm and 1mm of left-2-4.south] { e & f & g & h \\ };
+        \matrix[node, fill=colorleft] (left-3-1) [left=2mm of left-3-2.west] { a & b & c & d \\ };
+
+        \draw[edge, out=225, in=45] (left-2-4-1-1.south) to (left-3-1.north);
+        \draw[edge, out=315, in=90] (left-2-4-1-2.south) to (left-3-2.north);
+
+        \matrix[node, fill=colormerged] (merged-1-1) [right=32mm of left-2-4.east] { & \\ };
+        \matrix[node, fill=colormerged] (merged-2-1) [below left=8mm and 1mm of merged-1-1.south] { i & j & k & l \\ };
+        \matrix[node, fill=colormerged] (merged-2-2) [below right=8mm and 1mm of merged-1-1.south] { m & n \\ };
+
+        \draw[edge, out=225, in=90] (merged-1-1-1-1.south) to (merged-2-1.north);
+        \draw[edge, out=315, in=90] (merged-1-1-1-2.south) to (merged-2-2.north);
+
+        \matrix[node, fill=colorright] (right-1-1) [right=72mm of left-1-1.east] { & \\ };
+        \matrix[node, fill=colorright] (right-2-1) [below left=8mm and 1mm of right-1-1.south] { & & \\ };
+        \node (right-2-2) [right=2mm of right-2-1.east] { \ldots };
+
+        \draw[edge, out=225, in=90] (right-1-1-1-1.south) to (right-2-1.north);
+        \draw[edge-dashed, out=315, in=90] (right-1-1-1-2.south) to (right-2-2.north);
+
+        \matrix[node, fill=colorright] (right-3-1) [below left=8mm and 1mm of right-2-1.south] { o & p & q & r \\ };
+        \matrix[node, fill=colorright] (right-3-2) [right=2mm of right-3-1.east] { s & t & u & v \\ };
+        \matrix[node, fill=colorright] (right-3-3) [right=2mm of right-3-2.east] { w & x & y & z \\ };
+
+        \draw[edge, out=225, in=45] (right-2-1-1-1.south) to (right-3-1.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-2.south) to (right-3-2.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-3.south) to (right-3-3.north);
+
+        \node[draw, dashed, inner sep=1mm, fit=(merged-1-1) (merged-1-1) (left-2-4) (right-2-1)] {};
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm at level 1}
+    \label{fig:rrb-tree-rebalance-level-1}
+\end{figure}
+
+Rebalancing at level 1 involves the left and right branches together with the newly created branch from the previous step. The algorithm avoids processing nodes where rebalancing is not beneficial. For example, in Figure \ref{fig:rrb-tree-rebalance-level-2} where the \emph{full} nodes from the left-hand side tree are re-used without rebalancing them.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+    \colorlet{colormerged}{orange!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colorleft] (left-1-1) at (current page.north west) { & & \\ };
+
+        \node (left-2-3) [left=2mm of left-2-4.west] { \ldots };
+        \node (left-2-2) [left=2mm of left-2-3.west] { \ldots };
+        \node (left-2-1) [left=2mm of left-2-2.west] { \ldots };
+
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-1.south) to (left-2-1.north);
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-2.south) to (left-2-2.north);
+        \draw[edge-dashed, out=225, in=75] (left-1-1-1-3.south) to (left-2-3.north);
+
+        \matrix[node, fill=colormerged] (merged-1-1) [right=38mm of left-1-1.east] { & \\ };
+        \matrix[node] (merged-2-1) [below left=8mm and 22mm of merged-1-1.south] { & & & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-2-1-1-1), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-2), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-3), fill=colormerged, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-4), fill=colormerged, inner sep=0pt] {};
+        }
+
+        \matrix[node, fill=colormerged] (merged-2-2) [below right=8mm and 22mm of merged-1-1.south] { & & \\ };
+
+        \matrix[node, fill=colorleft] (merged-3-2) [below left=8mm and 1mm of merged-2-1.south] { e & f & g & h \\ };
+        \matrix[node, fill=colormerged] (merged-3-3) [below right=8mm and 1mm of merged-2-1.south] { i & j & k & l \\ };
+        \matrix[node, fill=colorleft] (merged-3-1) [left=2mm of merged-3-2.west] { a & b & c & d \\ };
+        \matrix[node, fill=colormerged] (merged-3-4) [right=2mm of merged-3-3.east] { m & n & o & p \\ };
+
+        \draw[edge, out=225, in=45] (merged-2-1-1-1.south) to (merged-3-1.north);
+        \draw[edge, out=225, in=45] (merged-2-1-1-2.south) to (merged-3-2.north);
+        \draw[edge, out=315, in=135] (merged-2-1-1-3.south) to (merged-3-3.north);
+        \draw[edge, out=315, in=135] (merged-2-1-1-4.south) to (merged-3-4.north);
+
+        \matrix[node, fill=colormerged] (merged-3-6) [below right=8mm and 1mm of merged-2-2.south] { u & v & w & x \\ };
+        \matrix[node, fill=colormerged] (merged-3-7) [right=2mm of merged-3-6.east] { y & z \\ };
+        \matrix[node, fill=colormerged] (merged-3-5) [left=2mm of merged-3-6.west] { q & r & s & t \\ };
+
+        \draw[edge, out=225, in=90] (merged-1-1-1-1.south) to (merged-2-1.north);
+        \draw[edge, out=315, in=90] (merged-1-1-1-2.south) to (merged-2-2.north);
+
+        \draw[edge, out=225, in=45] (merged-2-2-1-1.south) to (merged-3-5.north);
+        \draw[edge, out=315, in=135] (merged-2-2-1-2.south) to (merged-3-6.north);
+        \draw[edge, out=315, in=135] (merged-2-2-1-3.south) to (merged-3-7.north);
+
+        \matrix[node, fill=colorright] (right-1-1) [right=38mm of merged-1-1.east] { \\ };
+        \node (right-2-2) [below right=8mm and 1mm of right-1-1.south] { \ldots };
+
+        \draw[edge-dashed, out=315, in=90] (right-1-1-1-1.south) to (right-2-2.north);
+
+        \node[draw, dashed, inner sep=1mm, fit=(merged-1-1) (merged-1-1) (left-1-1) (right-1-1)] {};
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm at level 2}
+    \label{fig:rrb-tree-rebalance-level-2}
+\end{figure}
+
+Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-level nodes of the left and right trees, producing a new root. If the root contains only a single child, its child will be promoted to be the root to avoid unnecessary overhead.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+    \colorlet{colormerged}{orange!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colormerged] (root) at (current page.north) { & \\ };
+
+        \matrix[node] (merged-1-1) [below left=8mm and 8mm of root.south] { & & & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-1-1-1-1), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-1-1-1-2), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-1-1-1-3), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-1-1-1-4), fill=colormerged, inner sep=0pt] {};
+        }
+
+        \matrix[node] (merged-1-2) [below right=8mm and 8mm of root.south] { & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-1-2-1-1), fill=colormerged, inner sep=0pt] {};
+            \node[fit=(merged-1-2-1-2), fill=colorright, inner sep=0pt] {};
+        }
+
+        \draw[edge, out=270, in=75] (root-1-1.south) to (merged-1-1.north);
+        \draw[edge, out=270, in=115] (root-1-2.south) to (merged-1-2.north);
+
+        \matrix[node] (merged-2-1) [below left=8mm and 1mm of merged-1-1.south] { & & & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-2-1-1-1), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-2), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-3), fill=colormerged, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-4), fill=colormerged, inner sep=0pt] {};
+        }
+
+        \matrix[node, fill=colormerged] (merged-2-2) [below=8mm of merged-1-2.south] { & & \\ };
+
+        \node (merged-left-3) [left=2mm of merged-2-1.west] { \ldots };
+        \node (merged-left-2) [left=2mm of merged-left-3.west] { \ldots };
+        \node (merged-left-1) [left=2mm of merged-left-2.west] { \ldots };
+
+        \draw[edge-dashed, out=205, in=75] (merged-1-1-1-1.south) to (merged-left-1.north);
+        \draw[edge-dashed, out=205, in=55] (merged-1-1-1-2.south) to (merged-left-2.north);
+        \draw[edge-dashed, out=205, in=45] (merged-1-1-1-3.south) to (merged-left-3.north);
+
+        \node (merged-right-1) [right=2mm of merged-2-2.east] { \ldots };
+        \draw[edge-dashed, out=315, in=105] (merged-1-2-1-2.south) to (merged-right-1.north);
+
+        \matrix[node, fill=colorleft] (merged-3-2) [below left=8mm and 10mm of merged-2-1.south] { e & f & g & h \\ };
+        \matrix[node, fill=colormerged] (merged-3-3) [below=8mm of merged-2-1.south] { i & j & k & l \\ };
+        \matrix[node, fill=colorleft] (merged-3-1) [left=2mm of merged-3-2.west] { a & b & c & d \\ };
+        \matrix[node, fill=colormerged] (merged-3-4) [right=2mm of merged-3-3.east] { m & n & o & p \\ };
+
+        \draw[edge, out=205, in=45] (merged-2-1-1-1.south) to (merged-3-1.north);
+        \draw[edge, out=205, in=45] (merged-2-1-1-2.south) to (merged-3-2.north);
+        \draw[edge, out=270, in=90] (merged-2-1-1-3.south) to (merged-3-3.north);
+        \draw[edge, out=270, in=90] (merged-2-1-1-4.south) to (merged-3-4.north);
+
+        \matrix[node, fill=colormerged] (merged-3-5) [below=8mm of merged-2-2.south] { q & r & s & t \\ };
+        \matrix[node, fill=colormerged] (merged-3-6) [right=2mm of merged-3-5.east] { u & v & w & x \\ };
+        \matrix[node, fill=colormerged] (merged-3-7) [right=2mm of merged-3-6.east] { y & z \\ };
+
+        \draw[edge, out=225, in=90] (merged-1-1-1-4.south) to (merged-2-1.north);
+        \draw[edge, out=315, in=90] (merged-1-2-1-1.south) to (merged-2-2.north);
+
+        \draw[edge, out=270, in=90] (merged-2-2-1-1.south) to (merged-3-5.north);
+        \draw[edge, out=270, in=135] (merged-2-2-1-2.south) to (merged-3-6.north);
+        \draw[edge, out=315, in=135] (merged-2-2-1-3.south) to (merged-3-7.north);
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm: the rebalanced tree}
+    \label{fig:rrb-tree-rebalance}
+\end{figure}
+
+The formal description and analysis of concatenation algorithm and its implementation is thoroughly presented in \cite{improving-performance-through-transience}.
+
+\section{Transience}
+% TODO
