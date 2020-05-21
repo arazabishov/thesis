@@ -1,4 +1,12 @@
-\chapter{Relaxed Radix Balanced Tree}
+\chapter{Relaxed radix balanced tree}
+
+Relaxed radix balanced tree or \treerrb{}, extends \treerb{} to support concatenation and splitting in \bigo{log(n)} rather than linear time without compromising the performance of other operations.
+
+An invariant that \treerb{} maintains is that all nodes except the right-most ones have to be full. This enables a simple radix search implementation, but on the other hand, makes efficient sub-linear concatenation impossible.
+
+The \treerrb{} relaxes this constraint by allowing nodes to be partially full, and introduces a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
+
+In this section, we will take a look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search.
 
 % A couple of words here on what is RRB-Tree, what it offers, and how is it different compared to RB-Tree.
 %  * A confluent persistent data structure.
@@ -11,18 +19,17 @@
 %  * The concatenation and splitting algorithms.
 %  * Changing the following algorithms to accommodate relaxed constraints:
 %   * Radix search
-%   * Push and pop
 
-\section{Relaxed Radix Search}
+\section{Memory layout}
+
+\section{Relaxed radix search}
 
 When \rbtree{} is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size tables}. Each entry of the size table is the accumulated count of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}.
 
 \begin{listing}[!ht]
-    \caption{Pseudocode for the relaxed radix search implementation}
-    \label{lst:rrb-tree-relaxed-radix-search}
 
-    \begin{algorithmic}
-        \Function{RrbTree-Find-Index}{sizes, idx}
+    \begin{algorithmic}[1]
+        \Function{FindIndex}{sizes, idx}
             \State candidate \la 0
 
             \If{candidate < \m\ - 1 \And\ sizes[candidate] <= idx}
@@ -34,7 +41,7 @@ When \rbtree{} is relaxed, it is no longer possible to compute indices from a se
 
         \State
 
-        \Function{RrbTree-Relaxed-Radix-Search}{root, key}
+        \Function{RelaxedRadixSearch}{root, key}
             \State node \la\ root
             \State idx \la\ key
 
@@ -44,7 +51,7 @@ When \rbtree{} is relaxed, it is no longer possible to compute indices from a se
                     \State node \la\ node[index]
                 \Else
                     \State sizes \la\ node\ts{sizes}
-                    \State index \la\ RrbTree-Find-Index(sizes, idx)
+                    \State index \la\ \Call{FindIndex}{sizes, idx}
                     \State node \la\ node[index]
 
                     \If{index != 0}
@@ -57,6 +64,9 @@ When \rbtree{} is relaxed, it is no longer possible to compute indices from a se
             \State \Return {node[index]}
         \EndFunction
     \end{algorithmic}
+
+    \caption{Pseudocode of relaxed radix search}
+    \label{lst:rrb-tree-relaxed-radix-search}
 \end{listing}
 
 \section{Concatenation}
@@ -409,4 +419,4 @@ Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-lev
     \label{fig:rrb-tree-rebalance}
 \end{figure}
 
-The formal description and analysis of concatenation algorithm and its implementation is thoroughly presented in \cite{rrb-vector-practical-general-purpose-im-sequence}.
+The formal description and analysis of concatenation algorithm and its implementation is thoroughly presented in \cite{improving-performance-through-transience}.
