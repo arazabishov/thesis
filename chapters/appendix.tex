@@ -1,0 +1,59 @@
+\appendix
+
+\chapter{\treerrb{} algorithms}
+
+\section{Rebalancing algorithm}
+\begin{listing}[!ht]
+
+    \begin{algorithmic}[1]
+        \Function{Rebalance}{left, middle, right}
+            \State height \la\ \Call{Max}{left\ts{height},middle\ts{height},right\ts{height}}
+            \State root, subtree, node \la\ \Call{CreateNode}{height}
+
+            \For{mergedNode \In\ left + middle + right}
+                \If{node\ts{len} = 0 \And\ mergedNode\ts{len} == \m{}}
+                    \State \Call{CheckSubtree}{root, subtree}
+                    \State subtree[subtree\ts{len}] \la\ mergedNode
+                    \State subtree\ts{len}++
+                \Else
+                    \For{childNode \In\ mergedNode}
+                        \If{node\ts{len} = \m{}}
+                            \State \Call{CheckSubtree}{root, subtree}
+                            \State subtree[subtree\ts{len}] \la\ node
+                            \State subtree\ts{len}++
+                        \EndIf
+
+                        \State node[node\ts{len}] \la\ childNode
+                        \State node\ts{len}++
+                    \EndFor
+                \EndIf
+            \EndFor
+
+            \State \Call{CheckSubtree}{root, subtree}
+
+            \If{node\ts{len} != 0}
+                \State subtree[subtree\ts{len}] \la\ node
+                \State subtree\ts{len}++
+            \EndIf
+
+            \If{subtree\ts{len} != 0}
+                \State root[root\ts{len}] \la\ subtree
+                \State root\ts{len}++
+            \EndIf
+
+            \State \Return root
+        \EndFunction
+
+        \State
+
+        \Procedure{CheckSubtree}{root, subtree}
+            \If{subtree\ts{len} = \m{}}
+                \State root[root\ts{len}] \la\ subtree
+                \State root\ts{len}++
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+
+    \caption{Rebalancing algorithm for \treerrb{}}
+    \label{lst:rrb-tree-rebalance}
+\end{listing}

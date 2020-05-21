@@ -15,9 +15,9 @@
 
 \section{Relaxed Radix Search}
 
-When \rbtree\ is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size tables}. Each entry of the size table is the accumulated count of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}.
+When \rbtree{} is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size tables}. Each entry of the size table is the accumulated count of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}.
 
-\begin{listing}[ht!]
+\begin{listing}[!ht]
     \caption{Pseudocode for the relaxed radix search implementation}
     \label{lst:rrb-tree-relaxed-radix-search}
 
@@ -39,7 +39,7 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
             \State idx \la\ key
 
             \For{level \la\ root\ts{height} - 1, 1}
-                \If{node\ts{sizes} = \nil{}}
+                \If{node\ts{sizes}=\nil{}}
                     \State index \la\ (key $\ggg$ (level * x)) \& mask
                     \State node \la\ node[index]
                 \Else
@@ -60,184 +60,353 @@ When \rbtree\ is relaxed, it is no longer possible to compute indices from a sea
 \end{listing}
 
 \section{Concatenation}
+The concatenation algorithm used in this project is from \cite{rrb-vector-practical-general-purpose-im-sequence}, which produces a slightly more balanced tree than initially proposed by \cite{efficient-immutable-vectors}. It achieves it by allowing the relaxed tree nodes to have \m{} children instead of $\m{} - 1$.
 
-\todo{Make sure that nodes are cloned where necessary}
-\begin{listing}[ht!]
-    \caption{Pseudocode for concatenation implementation}
-    \label{lst:rrb-tree-concat}
+The algorithm consists of two stages: descending the tree, and then, merging and rebalancing nodes. The time complexity of the presented concatenation algorithm is \bigo{m^2 \cdot{} log_m(n)}.
 
-    \begin{algorithmic}
-        \Procedure{Node-Check-Subtree}{root, subtree}
-            \If{subtree\ts{len} = \m{}}
-                \State root[root\ts{len}] \la\ subtree
-                \State root\ts{len}++
-            \EndIf
-        \EndProcedure
+The recursive function in Listing \ref{lst:rrb-tree-concatenation} descends the tree by selecting the rightmost node of the left tree and the leftmost node of the right tree. If one of the trees is taller than the other, the function descends into a taller tree only until nodes of both trees are at the same level.
 
-    \end{algorithmic}
+When the bottom level with leaf nodes is reached, the function stops descending and starts merging and rebalancing nodes to ensure the \bigo{log_m(n)} bound on the tree height.
 
-    \begin{algorithmic}
-
-        \Function{Node-Rebalance}{left, middle, right}
-            \State height \la\ Max(left\ts{height}, middle\ts{height}, right\ts{height})
-            \State merged \la\ left + middle + right
-
-            \State newRoot \la\ Create-Node(height)
-            \State newSubtree \la\ Create-Node(height)
-            \State newNode \la\ Create-Node(height)
-
-            \For{node \In\ merged}
-                \If{newNode\ts{len} = 0 \And\ node\ts{len} == \m{}}
-                    \State Node-Check-Subtree(newRoot, newSubtree)
-                    \State newSubtree[newSubtree\ts[len]] \la\ node
-                    \State newSubtree\ts{len}++
-                \Else
-                    \For{childNode \In\ node}
-                        \If{newNode\ts{len} = \m{}}
-                            \State Node-Check-Subtree(newRoot, newSubtree)
-                            \State newSubtree[newSubtree\ts[len]] \la\ newNode
-                            \State newSubtree\ts{len}++
-                        \EndIf
-                    \EndFor
-                \EndIf
-            \EndFor
-
-            \State Node-Check-Subtree(newRoot, newSubtree)
-
-            \If{newNode\ts{len} != 0}
-                \State newSubtree[newSubtree\ts[len]] \la\ newNode
-                \State newSubtree\ts{len}++
-            \EndIf
-
-            \If{newSubtree\ts{len} != 0}
-                \State newRoot[newRoot\ts[len]] \la\ newSubtree
-                \State newRoot\ts{len}++
-            \EndIf
-
-            \State \Return newRoot
-        \EndFunction
-
-    \end{algorithmic}
-
-    \begin{algorithmic}
-
-
-        \Function{Node-Concat}{leftNode, rightNode}
-            \If{leftNode\ts{height} > rightNode\ts{height}}
-                \State mergedNode \la\ Node-Concat(leftNode\ts{last}, rightNode)
-                \State \Return Node-Rebalance(leftNode\ts{init}, mergedNode, \nil{})
-            \ElsIf{leftNode\ts{height} < rightNode\ts{height}}
-                \State mergedNode \la\ Node-Concat(leftNode, rightNode\ts{first})
-                \State \Return Node-Rebalance(\nil{}, mergedNode, rightNode\ts{tail})
-            \Else
-                \State mergedNode \la\ \nil{}
-
-                \If{leftNode\ts{height} = 0}
-                    \State mergedNode \la\ Leaf-Node-Concat(leftNode, rightNode)
-                \Else
-                    \If{leftNode\ts{height} = 1}
-                        \State mergedNode \la\ Leaf-Node-Concat(leftNode\ts{last}, rightNode\ts{first})
-                    \Else
-                        \State mergedNode \la\ Node-Concat(leftNode\ts{last}, rightNode\ts{first})
-                    \EndIf
-                \EndIf
-
-                \State \Return Node-Rebalance(leftNode\ts{init}, mergedNode, rightNode\ts{tail})
-            \EndIf
-
-            \State \Return \nil{}
-        \EndFunction
-
-    \end{algorithmic}
-
-    \begin{algorithmic}
-
-        \Function{RrbTree-Concat}{thisRoot, thatRoot}
-            \State newRoot \la\ Node-Concat(thisRoot, thatRoot)
-            \State newRoot\ts{height} \la\ Max(thisRoot\ts{height}, thatRoot\ts{height})
-            \State newRoot\ts{len} \la newRoot\ts{len} + thatRoot\ts{len}
-
-            \If{newRoot\ts{len} = 1}
-                \State newRoot \la\ newRoot[0]
-            \Else
-                \State newRoot\ts{height}++
-            \EndIf
-
-            \State \Return \nil{}
-        \EndFunction
-
-    \end{algorithmic}
-\end{listing}
-
-
-\begin{listing}[ht!]
-
-    \begin{minted}[
-        fontsize=\small,
-        stripnl=false,
-        framesep=4mm,
-        frame=lines,
-        autogobble,
-        linenos
-    ]{rust}
-
-    fn merge(&mut self, mut that: Node<T>,
-        self_shift: Shift, that_shift: Shift) -> Node<T> {
-        if self_shift > that_shift {
-            let (left, init) = self.as_branch().split_last_must();
-            let center = left.merge(that, self_shift.dec(), that_shift);
-            Node::rebalance(init, center, None, self_shift)
-        } else if self_shift < that_shift {
-            let (right, tail) = that.as_branch().split_first_mut();
-            let center = self.merge(right, self_shift, that_shift.dec());
-            Node::rebalance(None, center, tail, that_shift)
-        } else {
-            let (left, init) = self.as_branch().split_last_must();
-            let (right, tail) = that.as_branch().split_first_mut();
-            let mut center = if self_shift.is_level_with_leaves() {
-                SharedPtr::make_mut(left.as_mut_leaf())
-                    .merge(right.into_leaf())
-            } else {
-                left.merge(right, self_shift.dec(), that_shift.dec())
-            };
-            Node::rebalance(init, center, tail, self_shift)
-        }
-    }
-
-    \end{minted}
-
-    \caption{Concatenation algorithm}
-    \label{lst:rrb-tree-concat}
-\end{listing}
-
-\begin{listing}[ht!]
-    \caption{Pseudocode for concatenation implementation}
-    \label{lst:rrb-tree-concat}
-
+\begin{listing}[!ht]
     \begin{algorithmic}[1]
-        \Function{concat}{leftNode, rightNode}
+        \Function{Concat}{leftNode, rightNode}
             \If{leftNode\ts{height} > rightNode\ts{height}}
-                \State mergedNode \la\ concat(leftNode\ts{last}, rightNode)
-                \State \Return rebalance(leftNode\ts{init}, mergedNode, \nil{})
+                \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode}
+                \State \Return \Call{Rebalance}{leftNode\ts{init}, mergedNode, \nil{}}
             \ElsIf{leftNode\ts{height} < rightNode\ts{height}}
-                \State mergedNode \la\ concat(leftNode, rightNode\ts{first})
-                \State \Return \Call{rebalance}{\nil{}, mergedNode, rightNode\ts{tail}}
+                \State mergedNode \la\ \Call{Concat}{leftNode, rightNode\ts{first}}
+                \State \Return \Call{Rebalance}{\nil{}, mergedNode, rightNode\ts{tail}}
             \Else
                 \State mergedNode \la\ \nil{}
 
-                \If{leftNode\ts{height} = 0}
-                    \State mergedNode \la\ concat(leftNode, rightNode)
+                \If{leftNode\ts{height}=0}
+                    \State mergedNode \la\ \Call{Concat}{leftNode, rightNode}
                 \Else
-                    \If{leftNode\ts{height} = 1}
-                        \State mergedNode \la\ concat(leftNode\ts{last}, rightNode\ts{first})
+                    \If{leftNode\ts{height}=1}
+                        \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode\ts{first}}
                     \Else
-                        \State mergedNode \la\ concat(leftNode\ts{last}, rightNode\ts{first})
+                        \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode\ts{first}}
                     \EndIf
                 \EndIf
 
-                \State \Return rebalance(leftNode\ts{init}, mergedNode, rightNode\ts{tail})
+                \State \Return \Call{Rebalance}{leftNode\ts{init}, mergedNode, rightNode\ts{tail}}
             \EndIf
         \EndFunction
     \end{algorithmic}
 
+    \caption{Concatenation algorithm of \treerrb{}}
+    \label{lst:rrb-tree-concatenation}
 \end{listing}
+
+The \textproc{Rebalance} function accepts three lists of nodes as arguments. The \texttt{left} and \texttt{right} lists constitute all nodes of both trees at the given level except two: the rightmost node of the left tree and the leftmost node of the right tree. Those two nodes are already rebalanced and passed as the \texttt{middle} argument. Three lists are concatenated together into a single \texttt{merged} list.
+
+The goal of rebalancing is to arrange the children of \texttt{merged} nodes in such a way that all nodes except the rightmost branch are filled with values. When the \textproc{Rebalance} function completes re-arranging nodes, it returns a new branch containing rebalanced nodes. Pseudocode for rebalancing can be found in Appendix \ref{lst:rrb-tree-rebalance}.
+
+The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-level-0}-\ref{fig:rrb-tree-rebalance}. Note, presented figures exclude parts of trees that are not important for conveying the idea to preserve space.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colorleft] (left-1-1) at (current page.north west) { & & & \\ };
+
+        \matrix[node, fill=colorleft] (left-2-4) [below right=8mm and 1mm of left-1-1.south] { & & \\ };
+        \node (left-2-3) [left=2mm of left-2-4.west] { \ldots };
+        \node (left-2-2) [left=2mm of left-2-3.west] { \ldots };
+        \node (left-2-1) [left=2mm of left-2-2.west] { \ldots };
+
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-1.south) to (left-2-1.north);
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-2.south) to (left-2-2.north);
+        \draw[edge-dashed, out=225, in=75] (left-1-1-1-3.south) to (left-2-3.north);
+        \draw[edge, out=315, in=90] (left-1-1-1-4.south) to (left-2-4.north);
+
+        \matrix[node, fill=colorleft] (left-3-2) [below left=8mm and 1mm of left-2-4.south] { e & f & g & h \\ };
+        \matrix[node, fill=colorleft] (left-3-3) [below right=8mm and 1mm of left-2-4.south] { i & j \\ };
+        \matrix[node, fill=colorleft] (left-3-1) [left=2mm of left-3-2.west] { a & b & c & d \\ };
+
+        \draw[edge, out=225, in=45] (left-2-4-1-1.south) to (left-3-1.north);
+        \draw[edge, out=225, in=45] (left-2-4-1-2.south) to (left-3-2.north);
+        \draw[edge, out=315, in=90] (left-2-4-1-3.south) to (left-3-3.north);
+
+        \matrix[node, fill=colorright] (right-1-1) [right=56mm of left-1-1.east] { & \\ };
+        \matrix[node, fill=colorright] (right-2-1) [below left=8mm and 1mm of right-1-1.south] { & & & \\ };
+        \node (right-2-2) [right=2mm of right-2-1.east] { \ldots };
+
+        \draw[edge, out=225, in=90] (right-1-1-1-1.south) to (right-2-1.north);
+        \draw[edge-dashed, out=315, in=90] (right-1-1-1-2.south) to (right-2-2.north);
+
+        \matrix[node, fill=colorright] (right-3-2) [below left=8mm and 1mm of right-2-1.south] { o & p & q & r \\ };
+        \matrix[node, fill=colorright] (right-3-3) [below right=8mm and 1mm of right-2-1.south] { s & t & u & v \\ };
+        \matrix[node, fill=colorright] (right-3-1) [left=2mm of right-3-2.west] { k & l & m & n \\ };
+        \matrix[node, fill=colorright] (right-3-4) [right=2mm of right-3-3.east] { w & x & y & z \\ };
+
+        \draw[edge, out=225, in=45] (right-2-1-1-1.south) to (right-3-1.north);
+        \draw[edge, out=225, in=45] (right-2-1-1-2.south) to (right-3-2.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-3.south) to (right-3-3.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-4.south) to (right-3-4.north);
+
+        \node[draw, dashed, inner sep=1mm, fit=(left-3-3) (left-3-3) (right-3-1) (left-3-3)] {};
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm at level 0}
+    \label{fig:rrb-tree-rebalance-level-0}
+\end{figure}
+
+Concatenation starts at the bottom of the tree by merging the leaf nodes. The result is a new rebalanced branch with leaves that will be used when rebalancing nodes at level 1.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+    \colorlet{colormerged}{orange!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colorleft] (left-1-1) at (current page.north west) { & & & \\ };
+
+        \matrix[node, fill=colorleft] (left-2-4) [below right=8mm and 1mm of left-1-1.south] { & \\ };
+        \node (left-2-3) [left=2mm of left-2-4.west] { \ldots };
+        \node (left-2-2) [left=2mm of left-2-3.west] { \ldots };
+        \node (left-2-1) [left=2mm of left-2-2.west] { \ldots };
+
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-1.south) to (left-2-1.north);
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-2.south) to (left-2-2.north);
+        \draw[edge-dashed, out=225, in=75] (left-1-1-1-3.south) to (left-2-3.north);
+        \draw[edge, out=315, in=90] (left-1-1-1-4.south) to (left-2-4.north);
+
+        \matrix[node, fill=colorleft] (left-3-2) [below right=8mm and 1mm of left-2-4.south] { e & f & g & h \\ };
+        \matrix[node, fill=colorleft] (left-3-1) [left=2mm of left-3-2.west] { a & b & c & d \\ };
+
+        \draw[edge, out=225, in=45] (left-2-4-1-1.south) to (left-3-1.north);
+        \draw[edge, out=315, in=90] (left-2-4-1-2.south) to (left-3-2.north);
+
+        \matrix[node, fill=colormerged] (merged-1-1) [right=32mm of left-2-4.east] { & \\ };
+        \matrix[node, fill=colormerged] (merged-2-1) [below left=8mm and 1mm of merged-1-1.south] { i & j & k & l \\ };
+        \matrix[node, fill=colormerged] (merged-2-2) [below right=8mm and 1mm of merged-1-1.south] { m & n \\ };
+
+        \draw[edge, out=225, in=90] (merged-1-1-1-1.south) to (merged-2-1.north);
+        \draw[edge, out=315, in=90] (merged-1-1-1-2.south) to (merged-2-2.north);
+
+        \matrix[node, fill=colorright] (right-1-1) [right=72mm of left-1-1.east] { & \\ };
+        \matrix[node, fill=colorright] (right-2-1) [below left=8mm and 1mm of right-1-1.south] { & & \\ };
+        \node (right-2-2) [right=2mm of right-2-1.east] { \ldots };
+
+        \draw[edge, out=225, in=90] (right-1-1-1-1.south) to (right-2-1.north);
+        \draw[edge-dashed, out=315, in=90] (right-1-1-1-2.south) to (right-2-2.north);
+
+        \matrix[node, fill=colorright] (right-3-1) [below left=8mm and 1mm of right-2-1.south] { o & p & q & r \\ };
+        \matrix[node, fill=colorright] (right-3-2) [right=2mm of right-3-1.east] { s & t & u & v \\ };
+        \matrix[node, fill=colorright] (right-3-3) [right=2mm of right-3-2.east] { w & x & y & z \\ };
+
+        \draw[edge, out=225, in=45] (right-2-1-1-1.south) to (right-3-1.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-2.south) to (right-3-2.north);
+        \draw[edge, out=315, in=135] (right-2-1-1-3.south) to (right-3-3.north);
+
+        \node[draw, dashed, inner sep=1mm, fit=(merged-1-1) (merged-1-1) (left-2-4) (right-2-1)] {};
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm at level 1}
+    \label{fig:rrb-tree-rebalance-level-1}
+\end{figure}
+
+Rebalancing at level 1 involves the left and right branches together with the newly created branch from the previous step. The algorithm avoids processing nodes where rebalancing is not beneficial. For example, in Figure \ref{fig:rrb-tree-rebalance-level-2} where the \emph{full} nodes from the left-hand side tree are re-used without rebalancing them.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+    \colorlet{colormerged}{orange!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colorleft] (left-1-1) at (current page.north west) { & & \\ };
+
+        \node (left-2-3) [left=2mm of left-2-4.west] { \ldots };
+        \node (left-2-2) [left=2mm of left-2-3.west] { \ldots };
+        \node (left-2-1) [left=2mm of left-2-2.west] { \ldots };
+
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-1.south) to (left-2-1.north);
+        \draw[edge-dashed, out=225, in=45] (left-1-1-1-2.south) to (left-2-2.north);
+        \draw[edge-dashed, out=225, in=75] (left-1-1-1-3.south) to (left-2-3.north);
+
+        \matrix[node, fill=colormerged] (merged-1-1) [right=38mm of left-1-1.east] { & \\ };
+        \matrix[node] (merged-2-1) [below left=8mm and 22mm of merged-1-1.south] { & & & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-2-1-1-1), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-2), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-3), fill=colormerged, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-4), fill=colormerged, inner sep=0pt] {};
+        }
+
+        \matrix[node, fill=colormerged] (merged-2-2) [below right=8mm and 22mm of merged-1-1.south] { & & \\ };
+
+        \matrix[node, fill=colorleft] (merged-3-2) [below left=8mm and 1mm of merged-2-1.south] { e & f & g & h \\ };
+        \matrix[node, fill=colormerged] (merged-3-3) [below right=8mm and 1mm of merged-2-1.south] { i & j & k & l \\ };
+        \matrix[node, fill=colorleft] (merged-3-1) [left=2mm of merged-3-2.west] { a & b & c & d \\ };
+        \matrix[node, fill=colormerged] (merged-3-4) [right=2mm of merged-3-3.east] { m & n & o & p \\ };
+
+        \draw[edge, out=225, in=45] (merged-2-1-1-1.south) to (merged-3-1.north);
+        \draw[edge, out=225, in=45] (merged-2-1-1-2.south) to (merged-3-2.north);
+        \draw[edge, out=315, in=135] (merged-2-1-1-3.south) to (merged-3-3.north);
+        \draw[edge, out=315, in=135] (merged-2-1-1-4.south) to (merged-3-4.north);
+
+        \matrix[node, fill=colormerged] (merged-3-6) [below right=8mm and 1mm of merged-2-2.south] { u & v & w & x \\ };
+        \matrix[node, fill=colormerged] (merged-3-7) [right=2mm of merged-3-6.east] { y & z \\ };
+        \matrix[node, fill=colormerged] (merged-3-5) [left=2mm of merged-3-6.west] { q & r & s & t \\ };
+
+        \draw[edge, out=225, in=90] (merged-1-1-1-1.south) to (merged-2-1.north);
+        \draw[edge, out=315, in=90] (merged-1-1-1-2.south) to (merged-2-2.north);
+
+        \draw[edge, out=225, in=45] (merged-2-2-1-1.south) to (merged-3-5.north);
+        \draw[edge, out=315, in=135] (merged-2-2-1-2.south) to (merged-3-6.north);
+        \draw[edge, out=315, in=135] (merged-2-2-1-3.south) to (merged-3-7.north);
+
+        \matrix[node, fill=colorright] (right-1-1) [right=38mm of merged-1-1.east] { \\ };
+        \node (right-2-2) [below right=8mm and 1mm of right-1-1.south] { \ldots };
+
+        \draw[edge-dashed, out=315, in=90] (right-1-1-1-1.south) to (right-2-2.north);
+
+        \node[draw, dashed, inner sep=1mm, fit=(merged-1-1) (merged-1-1) (left-1-1) (right-1-1)] {};
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm at level 2}
+    \label{fig:rrb-tree-rebalance-level-2}
+\end{figure}
+
+Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-level nodes of the left and right trees, producing a new root. If the root contains only a single child, its child will be promoted to be the root to avoid unnecessary overhead.
+
+\begin{figure}[H]
+    \colorlet{colorleft}{red!30}
+    \colorlet{colorright}{yellow!30}
+    \colorlet{colormerged}{orange!30}
+
+    \centering
+    \footnotesize
+    \begin{tikzpicture} [
+        node/.style={
+            matrix of nodes,
+            nodes={draw,minimum width=4mm,minimum height=5mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text depth=.25ex,
+            text width=1.5ex,
+            text centered,
+            nodes in empty cells
+        },
+        edge/.style={->, shorten >= 4pt},
+        edge-dashed/.style={dashed, ->, shorten >= 4pt},
+    ]
+        \matrix[node, fill=colormerged] (root) at (current page.north) { & \\ };
+
+        \matrix[node] (merged-1-1) [below left=8mm and 8mm of root.south] { & & & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-1-1-1-1), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-1-1-1-2), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-1-1-1-3), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-1-1-1-4), fill=colormerged, inner sep=0pt] {};
+        }
+
+        \matrix[node] (merged-1-2) [below right=8mm and 8mm of root.south] { & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-1-2-1-1), fill=colormerged, inner sep=0pt] {};
+            \node[fit=(merged-1-2-1-2), fill=colorright, inner sep=0pt] {};
+        }
+
+        \draw[edge, out=270, in=75] (root-1-1.south) to (merged-1-1.north);
+        \draw[edge, out=270, in=115] (root-1-2.south) to (merged-1-2.north);
+
+        \matrix[node] (merged-2-1) [below left=8mm and 1mm of merged-1-1.south] { & & & \\ };
+        \scoped[on background layer] {
+            \node[fit=(merged-2-1-1-1), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-2), fill=colorleft, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-3), fill=colormerged, inner sep=0pt] {};
+            \node[fit=(merged-2-1-1-4), fill=colormerged, inner sep=0pt] {};
+        }
+
+        \matrix[node, fill=colormerged] (merged-2-2) [below=8mm of merged-1-2.south] { & & \\ };
+
+        \node (merged-left-3) [left=2mm of merged-2-1.west] { \ldots };
+        \node (merged-left-2) [left=2mm of merged-left-3.west] { \ldots };
+        \node (merged-left-1) [left=2mm of merged-left-2.west] { \ldots };
+
+        \draw[edge-dashed, out=205, in=75] (merged-1-1-1-1.south) to (merged-left-1.north);
+        \draw[edge-dashed, out=205, in=55] (merged-1-1-1-2.south) to (merged-left-2.north);
+        \draw[edge-dashed, out=205, in=45] (merged-1-1-1-3.south) to (merged-left-3.north);
+
+        \node (merged-right-1) [right=2mm of merged-2-2.east] { \ldots };
+        \draw[edge-dashed, out=315, in=105] (merged-1-2-1-2.south) to (merged-right-1.north);
+
+        \matrix[node, fill=colorleft] (merged-3-2) [below left=8mm and 10mm of merged-2-1.south] { e & f & g & h \\ };
+        \matrix[node, fill=colormerged] (merged-3-3) [below=8mm of merged-2-1.south] { i & j & k & l \\ };
+        \matrix[node, fill=colorleft] (merged-3-1) [left=2mm of merged-3-2.west] { a & b & c & d \\ };
+        \matrix[node, fill=colormerged] (merged-3-4) [right=2mm of merged-3-3.east] { m & n & o & p \\ };
+
+        \draw[edge, out=205, in=45] (merged-2-1-1-1.south) to (merged-3-1.north);
+        \draw[edge, out=205, in=45] (merged-2-1-1-2.south) to (merged-3-2.north);
+        \draw[edge, out=270, in=90] (merged-2-1-1-3.south) to (merged-3-3.north);
+        \draw[edge, out=270, in=90] (merged-2-1-1-4.south) to (merged-3-4.north);
+
+        \matrix[node, fill=colormerged] (merged-3-5) [below=8mm of merged-2-2.south] { q & r & s & t \\ };
+        \matrix[node, fill=colormerged] (merged-3-6) [right=2mm of merged-3-5.east] { u & v & w & x \\ };
+        \matrix[node, fill=colormerged] (merged-3-7) [right=2mm of merged-3-6.east] { y & z \\ };
+
+        \draw[edge, out=225, in=90] (merged-1-1-1-4.south) to (merged-2-1.north);
+        \draw[edge, out=315, in=90] (merged-1-2-1-1.south) to (merged-2-2.north);
+
+        \draw[edge, out=270, in=90] (merged-2-2-1-1.south) to (merged-3-5.north);
+        \draw[edge, out=270, in=135] (merged-2-2-1-2.south) to (merged-3-6.north);
+        \draw[edge, out=315, in=135] (merged-2-2-1-3.south) to (merged-3-7.north);
+    \end{tikzpicture}
+
+    \caption{Illustration of rebalancing algorithm: the rebalanced tree}
+    \label{fig:rrb-tree-rebalance}
+\end{figure}
+
+The formal description and analysis of concatenation algorithm and its implementation is thoroughly presented in \cite{rrb-vector-practical-general-purpose-im-sequence}.
