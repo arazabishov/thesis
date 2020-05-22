@@ -9,30 +9,19 @@
 \section{Radix balanced tree}
 \label{chapter:radix-balanced-tree}
 
-Radix Balanced Tree or \rbtree, is a tree data structure with a fixed number of children per node, which allows access to values using integer keys. It was first introduced by Rich Hickey as a basis for a persistent vector implementation in Clojure's standard library \cite{the-clojure-programming-language}.
+Radix balanced tree or \treerb{} is an \m{}-ary tree that uses integers as keys to find values. The data structure was pioneered by Rich Hickey as the foundation for the persistent vector implementation in Clojure \cite{the-clojure-programming-language}.
 
-Most persistent data structures are tailored to specific use cases, with some operations being faster than others. For example, a persistent linked list can prepend elements and read the head in \bigo{1} time. However, random access is proportional to \bigo{n}, which is unacceptable in practical scenarios.
+\treerb{} consists of nodes which reference other subtrees or values. We will be referring to the former and latter types of nodes as \emph{branches} and \emph{leaves} correspondingly. The number of subtrees and values in the node is configurable and will be defined as \m{} or the \emph{branching factor}. The branching factor can be any number that is a power of 2, allowing an efficient radix search implementation.
 
-In comparison, Clojure's vector implementation is delivering \emph{practically} \bigo{1} time on fundamental operations such as access, update, push, and pop, rivaling ephemeral vector in performance.
+The higher the value of \m{} is, the wider and shallower the tree will be. From now on the height of a tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
 
-This chapter introduces the inner workings of \rbtree{} and covers algorithms used in the core operations. For a more formal description of the persistent vector, refer to \cite{improving-performance-through-transience}.
-
-\subsection{Memory layout}
-\label{sec:rb-tree-memory-layout}
-
-\rbtree{} consists of nodes which contain references to other subtrees or to values. We will be calling the former type of node as \emph{branch} node, while the latter one as \emph{leaf}. The number of subtrees and values in the node is configurable and will be denoted as \m, also known as \emph{branching factor}.
-
-When \m\ is set to a large value\footnote{A branching factor can be any power of 2}, the tree becomes wide and shallow. In practice, the branching factor is set to 32 to achieve \emph{practically} \bigo{1} performance across different operations.
-
-From now on the height of a tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
-
-\begin{equation}
-    h_{max} = log_m(n).
+\begin{equation} \label{eq:h-max}
+    h_{max} = log_m(n)
 \end{equation}
 
-If \m{} is 32 and the number of elements will never be larger than the maximum index representable with 32 bit signed integers, the maximum height of the tree will not exceed 7 levels.
+When \m{} is a large value, for example, 32, the tree becomes shallow, and the complexity of accessing values by traversing the tree from the root to a leaf becomes \emph{effectively} constant. For example, if the maximum value of 32 bit signed integer is substituted for $n$ in \Cref{eq:h-max} then $h_{max}$ will never exceed 7 levels. Thus, due to its strong performance guarantees, \treerb{} serves as a solid foundation for a general-purpose persistent vector implementation.
 
-References to values are stored at the leaf nodes of the tree. If the number of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes.
+In the following sections, we will take a look at \treerb{} algorithms used to implement vector operations\footnote{For a formal definition of \treerb{}, refer to \cite{improving-performance-through-transience}}.
 
 \subsection{Radix search}
 \label{sec:rb-tree-radix-search}
@@ -60,7 +49,6 @@ The \emph{bits per level} or \x{} is the count of bits used to address \m{} node
 For example, with \m{} equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m{} into \Cref{eq:bits-per-level}, we will get the same value.
 
 \subsubsection*{Extracting subkeys}
-
 Now when the size of the subkey is known, the next step is to identify its location. The count of subkeys within the search key depends on \h. Each new level in \rbtree{} will use \x{} additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 subkeys taking up 6 bits of space in total.
 
 Subkeys are arranged in the order from the most to the least significant bits, where the most significant block of bits is a key used to access child node of the root. Each following key is used to find a child node on the corresponding tree level.
@@ -226,11 +214,16 @@ A function for replacing values in \rbtree{} is called \emph{update}. Emphemeral
 Version is something that differentiates one instance of the \rbtree{} from another. Instead of using explicit versioning such as assigning unique identifiers to instances of \rbtree{}, we will rely on a memory address as a unique identifier.
 
 \subsubsection*{Path copying}
+% PATH COPYING AND COPY-ON-WRITE behavior
+
+% Logically each node is a copy-on-write array that contains subtrees or elements.
+% To minimize copying while retaining full persistence, we perform path copying: We copy all nodes on the path down to the value we’re about to update or insert and replace the value with the new one when we’re at the bottom.
+
 Radix search is used to find the value corresponding to the given key. In order to ensure that the original version of \rbtree\ stays unmodified, each node on the way down from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated.
 
 In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m{}. Then, the \m{} sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root.
 
-To summarize, the update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{sec:rb-tree-memory-layout}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m * log_m(n)}} complexity of the update operation.
+To summarize, the update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{eq:h-max}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m * log_m(n)}} complexity of the update operation.
 
 For large branching factors \m\ such as 32, the performance becomes \bigo{1} in practice. For example, if the tree is completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7.
 
@@ -259,7 +252,12 @@ For large branching factors \m\ such as 32, the performance becomes \bigo{1} in 
 
 From the implementation standpoint, the main difference between update and radix search is that every visited node must be copied, including root. The return value is the root node for the new version of the tree.
 
+
 \subsection{Push}
+% This are not references, but values themselves
+References to values are stored at the leaf nodes of the tree. If the number of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes.
+
+
 The push operation is used to add new elements to the \rbtree{}. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree.
 
 A key for the new element is equal to the count of elements in \rbtree{}, also known as the \emph{size} of the tree. For example, if the size is 9, the key for the new value will also be 9. The size will be incremented after the operation is executed.
@@ -487,14 +485,6 @@ The radix search implementation has to take into account that some of the values
 \end{listing}
 
 \section{Relaxed radix balanced tree}
-Relaxed radix balanced tree or \treerrb{}, extends \treerb{} to support concatenation and splitting in \bigo{log(n)} rather than linear time without compromising the performance of other operations.
-
-An invariant that \treerb{} maintains is that all nodes except the right-most ones have to be full. This enables a simple radix search implementation, but on the other hand, makes efficient sub-linear concatenation impossible.
-
-The \treerrb{} relaxes this constraint by allowing nodes to be partially full, and introduces a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
-
-In this section, we will take a look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search.
-
 % A couple of words here on what is RRB-Tree, what it offers, and how is it different compared to RB-Tree.
 %  * A confluent persistent data structure.
 %  * Relaxation as a way to achieve efficient concatenation and splitting.
@@ -507,11 +497,23 @@ In this section, we will take a look at how \treerrb{} works, specifically the c
 %  * Changing the following algorithms to accommodate relaxed constraints:
 %   * Radix search
 
+Relaxed radix balanced tree or \treerrb{}, extends \treerb{} to support concatenation and splitting in \bigo{log(n)} rather than linear time without compromising the performance of other operations.
+
+An invariant that \treerb{} maintains is that all nodes except the right-most ones have to be full. This enables a simple radix search implementation, but on the other hand, makes efficient sub-linear concatenation impossible.
+
+The \treerrb{} relaxes this constraint by allowing nodes to be partially full, and introduces a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
+
+In this section, we will take a look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search.
+
 \subsection{Memory layout}
-With relaxed \treerrb{} constraints there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at corresponding index. % TODO
+With relaxed \treerrb{} constraints, there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at the corresponding index. The sizes table values are re-calculated when the subtree is modified, for example, when concatenating or pushing new values.
 
 \subsection{Relaxed radix search}
-When \rbtree{} is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size} tables. Each entry of the size table is an accumulated number of values in the corresponding subtree. A node contains a value if a table entry is bigger than the search key corresponding to it. When a balanced node is encountered, the search process falls back to the original radix search algorithm \Cref{sec:rb-tree-radix-search}.
+When \treerb{} is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size} tables. Each entry of the size table is an accumulated number of values in the corresponding subtree.
+
+When the radix search encounters a relaxed node, it compares the entire search key against entries in the size table. A subtree contains the desired value if the corresponding size table entry is bigger than or equal to the search key. Before descending into a subtree and repeating the search step, the search key is subtracted the size of the subtree.
+
+When a balanced node is encountered, the search process falls back to the balanced version of the radix search algorithm \Cref{sec:rb-tree-radix-search}.
 
 \begin{listing}[!ht]
 
