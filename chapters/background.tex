@@ -15,7 +15,8 @@ Radix balanced tree or \treerb{} is an \m{}-ary tree that uses integers as keys 
 
 The higher the value of \m{} is, the wider and shallower the tree will be. From now on the height of a tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
 
-\begin{equation} \label{eq:h-max}
+\begin{equation}
+    \label{eq:h-max}
     h_{max} = log_m(n)
 \end{equation}
 
@@ -26,52 +27,40 @@ In the following sections, we will take a look at \treerb{} algorithms used to i
 \subsection{Radix search}
 \label{sec:rb-tree-radix-search}
 
-Before trying to understand how operations such as push, pop, and update work, let's take a look at how to access values in \rbtree{}. The lookup mechanism is called \emph{radix search}, a fundamental algorithm which forms the basis for other operations.
-
-Conceptually, the idea behind the search in an ordered tree-like structure boils down to picking correct nodes based on the given key. If there is a value corresponding to the key, we stop searching and return the value. Otherwise, an empty value or error is returned.
-
-The lookup mechanism depends on organization of nodes in the tree. Let's consider an example where each node has at most two children, called \emph{binary tree}. A binary tree where every node fits a specific ordering property\footnote{For every node $n$, all left descendents must be less than or equal than $n$, and all right descendents must be strictly bigger than $n$.} is called \emph{binary search tree}. While searching, the key at each node is compared to the search key. All that is important is whether the key in the node is less than, equal to, or greater than the search key. The search is continued until an exact match or reaching a leaf node.
-
-Another tree-like data structure known as trie, is interesting because its nodes do not store complete keys. Instead, each node stores only part of it. Since tries are often used for the prefix search of words, their nodes store characters. Each path down the tree may represent a word. A node in a trie could have anywhere from 0 through the size of the alphabet children. For example, the english alphabet has 26 letters, meaning that each node might have up to 26 children.
-
-The lookup procedure for tries involves breaking down the search key into multiple subkeys, which are used to pick corresponding sub-tries. For example, the key "car" will be broken down into several smaller keys such as "c", "a", "r". If there is a value present at the last node of the path, it is returned. Otherwise, an empty value or error is returned.
+An algorithm that is used to lookup values in \treerb{} is called \emph{radix search}. It serves as foundation for other operations that involve the tree traversal, such as push, pop, and update.
 
 \subsubsection*{Bit partitioning}
-Radix search accepts a key of integer type as an argument. It can be viewed as a composite key, where each subkey is represented by a sequence of bits. The idea is to divide the key into blocks of bits, where each block forms an index specific to the tree node. The count of bits in each of those chunks can be derived from the branching factor and will be named as \emph{bits per level}.
+Radix search accepts a key of the integer type as an argument. It can be thought of as a composite key, where each subkey is a sequence of bits. Conceptually, the idea is to divide the key into bit blocks, where each block is an index specific to the tree level.
 
-The \emph{bits per level} or \x{} is the count of bits used to address \m{} nodes in the binary numeral system:
+As demonstrated in \Cref{eq:bits-per-level}, the bit block size can be calculated from the branching factor. It will be referred to as \x{} or \emph{bits per level}.
 
 \begin{equation}
     \label{eq:bits-per-level}
-    x = log_2(m).
+    x = log_2(m)
 \end{equation}
 
-For example, with \m{} equal to 16, the maximum index value is 15. 15 converted to the binary form is $1111_2$, which evidently requires 4 bits of space. If we substitute \m{} into \Cref{eq:bits-per-level}, we will get the same value.
+For example, when the branching factor \m{} is 16 \x{} is 4, meaning that the subkey size is equal to 4 bits.
 
 \subsubsection*{Extracting subkeys}
-Now when the size of the subkey is known, the next step is to identify its location. The count of subkeys within the search key depends on \h. Each new level in \rbtree{} will use \x{} additional bits of space. For instance, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 subkeys taking up 6 bits of space in total.
+The number of subkeys within the search key depends on the number of tree levels or \h{}. For example, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 subkeys taking up 6 bits of space in total.
 
-Subkeys are arranged in the order from the most to the least significant bits, where the most significant block of bits is a key used to access child node of the root. Each following key is used to find a child node on the corresponding tree level.
+Subkeys are arranged in the order from the most to the least significant bits, where the most significant block of bits is a key used to access the child node of the root. Each following key is used to find a child node on the corresponding tree level.
 
-Knowing the depth at which a node is located and the count of bits per level, the value of the key can be calculated using bitwise operations such as logical shift and masking. Let's take a look at a mechanism used to extract the correct subkey.
-
-In the following example there is a byte which represents a key equal to 54. Let's assume that it belongs to the tree where \m{} is 4, \x{} is 2 and \h\ is 3.
+Let us consider an example of processing a key that addresses a value in the tree of $h = 3$, $m = 4$ and $x = 2$.
 
 \begin{equation}
     54_{10} = 00110110_2
 \end{equation}
 
-Since there are three levels, we have only three subkeys: $11_2$, $01_2$ and $10_2$. Let's say that we are interested in extracting subkey for the child node on the second level or $01_2$.
+Since the tree height is three, we have three corresponding subkeys: $11_2$, $01_2$, and $10_2$. Let us assume that we are interested in extracting the subkey for the child node on the second level--$01_2$.
 
-First, let's get rid of the bits following the subkey of our interest. Logical right shift operation\footnote{A logical right shift is a bitwise operation that shifts all the bits of its first operand to the right by number of bits specified in the second operand.} denoted as $\ggg$, will push specified count of 0s into key $k$, where $l$ is the \emph{level} at which current node is located:
+The first step is to get rid of the bits following the subkey of our interest. Logical right shift operation\footnote{A logical right shift is a bitwise operation that shifts all the bits of its first operand to the right by number of bits specified in the second operand.} denoted as $\ggg$, will push specified count of 0s into key $k$, where $l$ is the \emph{level} at which current node is located:
 
 \begin{equation}
-    k \ggg ((l - 1) * x).
+    k \ggg ((l - 1) \cdot x).
 \end{equation}
 
-The key $k$ will be shifted by 2 bits, because the node from the example is located at $l = 2$ in the tree of $x = 2$. The result of operation is $00001101_2$. As the result, the "tail" of the key is truncated.
-
-The next step is to get rid of bits preceding the subkey by masking them to 0. An operator used for this is known as bitwise "and" and it will be applied to the result of shifting operation.
+Since the node from the example is located at $l = 2$ in the tree of $x = 2$, the key $k$ is shifted by 2 bits. The result of the operation is $00001101_2$. As a result, the "tail" of the key is truncated. The next step is to remove bits preceding the subkey by masking them to 0 using the bitwise "and" operator.
 
 A bitwise "and" takes two equal-length binary representations and executes the "and" operation for each pair of the corresponding bits. If both bits in the compared position are 1, the bit in the resulting binary representation is 1; otherwise, the result is 0. Here is an example, where the first and the second operands are the key and mask respectively:
 
@@ -79,9 +68,9 @@ A bitwise "and" takes two equal-length binary representations and executes the "
     00001101 \ \& \ 00000011 = 00000001.
 \end{equation}
 
-Only the last two bits of the mask are set to 1, which means that all bits of the key except last two will be masked to 0. The result of the "and"-ing operation will be the value of the subkey.
+Only the last two bits of the mask are set to 1, meaning that all bits of the key except the last two will be masked to 0. The result of the "and"-ing operation will be the value of the subkey.
 
-A mask must be of the same type as a key and can be calculated from the branching factor \m:
+A mask must be of the same type as a key and can be calculated from the branching factor \m{}:
 
 \begin{equation}
     \mathit{mask} = m - 1.
@@ -89,48 +78,53 @@ A mask must be of the same type as a key and can be calculated from the branchin
 
 If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000011\ts{2}.
 
-\begin{figure}
-    \caption{Visualization of the radix search algorithm.}
-    \label{fig:rb-tree-example-1}
+\begin{figure}[!ht]
+    \colorlet{color-path}{blue!30}
+    \colorlet{color-node}{blue!10}
 
-    % TODO: font=\ttfamily
     \centering
+    \footnotesize
     \begin{tikzpicture} [
-        node/.style = {
+        node/.style={
             matrix of nodes,
-            nodes = { draw, minimum width = 6mm, minimum height = 8mm, anchor = center},
-            font = \small,
+            nodes={draw,minimum width=5mm,minimum height=6mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
             nodes in empty cells
         },
-        value/.style = {
+        value/.style={
             matrix of nodes,
-            nodes = { draw = none, minimum width = 4mm, minimum height = 4mm, anchor = center, rotate = 90 },
-            font = \small,
+            nodes={draw=none,minimum width=5mm,minimum height=6mm,anchor=center},
+            inner sep=0pt,
+            font=\ttfamily,
+            text height=1.5ex,
+            text width=2.25ex,
+            text centered,
             nodes in empty cells
         },
-        edge/.style = { ->, shorten >= 4pt }
+        edge/.style={->, shorten >= 4pt},
     ]
-        \node[] (index) at (current page.north west) { $104_{10}$ = $01 10 10 00_{2}$ };
+        \node[] (index) at (current page.north) { $104_{10}$ = $01 10 10 00_{2}$ };
 
-        \matrix[node] (node-1-1) [below right = 8mm and 1cm of index] { 00 & 01 & 10 & 11 \\ };
+        \matrix[node] (node-1-1) [below right=8mm and 1cm of index] { 00 & 01 & 10 & 11 \\ };
 
         \scoped[on background layer] {
-            \node[fit=(node-1-1-1-1), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-1-1-1-2), fill=color-path, inner sep = 0pt]   {};
-            \node[fit=(node-1-1-1-3), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-1-1-1-4), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-1-1-1-1), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-1-1-1-2), fill=color-path, inner sep=0pt] {};
+            \node[fit=(node-1-1-1-3), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-1-1-1-4), fill=color-node, inner sep=0pt] {};
         }
 
-        \matrix[node, inner sep = 0pt] (node-2-2) [below left = 8mm and 1mm of node-1-1.south] { 00 & 01 & 10 & 11 \\ };
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-2-3) [below right = 8mm and 1mm of node-1-1.south] { & & & \\ };
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-2-1) [left = 2mm of node-2-2.west] { & & & \\ };
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-2-4) [right = 2mm of node-2-3.east] { & & & \\ };
+        \matrix[node, inner sep=0pt] (node-2-2) [below left=8mm and 1mm of node-1-1.south] { 00 & 01 & 10 & 11 \\ };
+        \matrix[node, fill=color-node] (node-2-3) [below right=8mm and 1mm of node-1-1.south] { & & & \\ };
+        \matrix[node, fill=color-node] (node-2-1) [left=2mm of node-2-2.west] { & & & \\ };
+        \matrix[node, fill=color-node] (node-2-4) [right=2mm of node-2-3.east] { & & & \\ };
 
         \scoped[on background layer] {
-            \node[fit=(node-2-2-1-1), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-2-2-1-2), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-2-2-1-3), fill=color-path, inner sep = 0pt]   {};
-            \node[fit=(node-2-2-1-4), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-2-2-1-1), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-2-2-1-2), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-2-2-1-3), fill=color-path, inner sep=0pt] {};
+            \node[fit=(node-2-2-1-4), fill=color-node, inner sep=0pt] {};
         }
 
         \draw[edge, out=225, in=45] (node-1-1-1-1.south) to (node-2-1.north);
@@ -138,16 +132,16 @@ If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000
         \draw[edge, out=315, in=135] (node-1-1-1-3.south) to (node-2-3.north);
         \draw[edge, out=315, in=135] (node-1-1-1-4.south) to (node-2-4.north);
 
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-3-2) [below left = 8mm and 1mm of node-2-2.south] { & & & \\ };
-        \matrix[node, inner sep = 0pt] (node-3-3) [below right = 8mm and 1mm of node-2-2.south] { 00 & 01 & 10 & 11 \\ };
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-3-1) [left = 2mm of node-3-2.west] { & & & \\ };
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-3-4) [right = 2mm of node-3-3.east] { & & & \\ };
+        \matrix[node, fill=color-node] (node-3-2) [below left=8mm and 1mm of node-2-2.south] { & & & \\ };
+        \matrix[node, inner sep=0pt] (node-3-3) [below right=8mm and 1mm of node-2-2.south] { 00 & 01 & 10 & 11 \\ };
+        \matrix[node, fill=color-node] (node-3-1) [left=2mm of node-3-2.west] { & & & \\ };
+        \matrix[node, fill=color-node] (node-3-4) [right=2mm of node-3-3.east] { & & & \\ };
 
         \scoped[on background layer] {
-            \node[fit=(node-3-3-1-1), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-3-3-1-2), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-3-3-1-3), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-3-3-1-4), fill=color-path, inner sep = 0pt]   {};
+            \node[fit=(node-3-3-1-1), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-3-3-1-2), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-3-3-1-3), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-3-3-1-4), fill=color-path, inner sep=0pt] {};
         }
 
         \draw[edge, out=225, in=45] (node-2-2-1-1.south) to (node-3-1.north);
@@ -155,16 +149,16 @@ If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000
         \draw[edge, out=315, in=135] (node-2-2-1-3.south) to (node-3-3.north);
         \draw[edge, out=315, in=135] (node-2-2-1-4.south) to (node-3-4.north);
 
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-4-2) [below left = 8mm and 1mm of node-3-3.south] { & & & \\ };
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-4-3) [below right = 8mm and 1mm of node-3-3.south] { & & & \\ };
-        \matrix[node, fill = color-node, inner sep = 0pt] (node-4-1) [left = 2mm of node-4-2.west] { & & & \\ };
-        \matrix[node, inner sep = 0pt] (node-4-4) [right = 2mm of node-4-3.east] { 00 & 01 & 10 & 11 \\ };
+        \matrix[node, fill=color-node] (node-4-2) [below left=8mm and 1mm of node-3-3.south] { & & & \\ };
+        \matrix[node, fill=color-node] (node-4-3) [below right=8mm and 1mm of node-3-3.south] { & & & \\ };
+        \matrix[node, fill=color-node] (node-4-1) [left=2mm of node-4-2.west] { & & & \\ };
+        \matrix[node, inner sep=0pt] (node-4-4) [right=2mm of node-4-3.east] { 00 & 01 & 10 & 11 \\ };
 
         \scoped[on background layer] {
-            \node[fit=(node-4-4-1-1), fill=color-path, inner sep = 0pt]   {};
-            \node[fit=(node-4-4-1-2), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-4-4-1-3), fill=color-node, inner sep = 0pt]   {};
-            \node[fit=(node-4-4-1-4), fill=color-node, inner sep = 0pt]   {};
+            \node[fit=(node-4-4-1-1), fill=color-path, inner sep=0pt] {};
+            \node[fit=(node-4-4-1-2), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-4-4-1-3), fill=color-node, inner sep=0pt] {};
+            \node[fit=(node-4-4-1-4), fill=color-node, inner sep=0pt] {};
         }
 
         \draw[edge, out=225, in=45] (node-3-3-1-1.south) to (node-4-1.north);
@@ -172,33 +166,32 @@ If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000
         \draw[edge, out=315, in=135] (node-3-3-1-3.south) to (node-4-3.north);
         \draw[edge, out=315, in=135] (node-3-3-1-4.south) to (node-4-4.north);
 
-        \matrix[value] (node-5-1) [below = 0mm of node-4-1.south] { 139 & 140 & 141 & 142 \\ };
-        \matrix[value] (node-5-2) [below = 0mm of node-4-2.south] { 143 & 144 & 145 & 146 \\ };
-        \matrix[value] (node-5-3) [below = 0mm of node-4-3.south] { 147 & 148 & 149 & 150 \\ };
-        \matrix[value] (node-5-4) [below = 0mm of node-4-4.south] { 151 & 152 & 153 & 154 \\ };
+        \matrix[value] (node-5-1) [below = 0mm of node-4-1.south] { a & b & c & d \\ };
+        \matrix[value] (node-5-2) [below = 0mm of node-4-2.south] { e & f & g & h \\ };
+        \matrix[value] (node-5-3) [below = 0mm of node-4-3.south] { i & j & k & l \\ };
+        \matrix[value] (node-5-4) [below = 0mm of node-4-4.south] { m & n & o & p \\ };
     \end{tikzpicture}
+
+    \caption{Visualization of the radix search algorithm.}
+    \label{fig:rb-tree-example-1}
 \end{figure}
 
-Let's put everything together and review the radix search step by step based on the concrete example. In \Cref{fig:rb-tree-example-1}, we can see a part of the \rbtree{} which represents elements of persistent vector in the range [92, 107].
+\Cref{fig:rb-tree-example-1} is an illustration of how radix search works. There is only a fraction of the tree visualized in the example rendering values in the [92, 107] index range.
 
-The branching factor of the tree is equal to 4, which means that 2 bits will be used for the subkey representation. The mask is equal to 3 or 00000011 in the binary representation.
+The branching factor of the tree is 4, resulting in the subkey size of 2 bits. The mask is equal to 3 or 00000011 in binary representation. For simplicity, the index type is selected to be \emph{unsigned byte} with a maximum capacity of 256.
 
-The index is of the \emph{unsigned byte} type, which has a capacity\footnote{The capacity of any integer type can be calculated by taking the base of the binary system to the power of bits available for its representation. For unsigned byte, it will be $2^8 = 256$.} of 256. In practice, the index type is usually a 32 or a 64 bit integer, which has significantly bigger capacity.
+The tree height in \Cref{fig:rb-tree-example-1} is 4. The goal is to lookup the value at the index 104, which is equal to 01101000\ts{2}. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm.
 
-The height of the tree in \Cref{fig:rb-tree-example-1} is 4. The goal is to lookup the contents of an element corresponding to the key 104, which is equal to 01101000\ts{2}. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm implementation.
-
-The search process starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the for loop, function returns the value from the leaf node.
+The search starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the loop, the function returns the value from the leaf node.
 
 \begin{listing}[ht!]
-    \caption{Pseudocode for RB-Tree's radix search implementation.}
-    \label{lst:rb-tree-radix-search}
 
-    \begin{algorithmic}
-        \Function{RbTree-Radix-Search}{root, key}
+    \begin{algorithmic}[1]
+        \Function{RadixSearch}{root, key}
             \State node \la\ root
 
             \For{level \la\ root\ts{height} - 1, 1}
-                \State index \la\ (key $\ggg$ (level * x)) \& mask
+                \State index \la\ (key $\ggg$ (level $\cdot$ x)) \& mask
                 \State node \la\ node[index]
             \EndFor
 
@@ -206,39 +199,30 @@ The search process starts by initializing the node and level variables to root a
             \State \Return {node[index]}
         \EndFunction
     \end{algorithmic}
+
+    \caption{Radix search algorithm}
+    \label{lst:rb-tree-radix-search}
 \end{listing}
 
 \subsection{Update}
-A function for replacing values in \rbtree{} is called \emph{update}. Emphemeral update is \emph{destructive}, meaning that the original \emph{version} of the data structure will be no longer available after the operation is executed. For \emph{persistent data structures}, update results in the new \emph{version} including the updated value without the original becoming unavailable.
-
-Version is something that differentiates one instance of the \rbtree{} from another. Instead of using explicit versioning such as assigning unique identifiers to instances of \rbtree{}, we will rely on a memory address as a unique identifier.
+The persistent \emph{update} operation returns a new tree version that includes an updated value, instead of mutating the original instance in-place as with \emph{ephemeral} data structures.
 
 \subsubsection*{Path copying}
-% PATH COPYING AND COPY-ON-WRITE behavior
+When updating a \treerb{}, the radix search algorithm is used to build a path to the value. In order to avoid mutating the original tree instance, each node on the path is copied. This process is called as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes that are not a part of the path are reused.
 
-% Logically each node is a copy-on-write array that contains subtrees or elements.
-% To minimize copying while retaining full persistence, we perform path copying: We copy all nodes on the path down to the value we’re about to update or insert and replace the value with the new one when we’re at the bottom.
+The update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{eq:h-max}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m \cdot log_m(n)}} complexity of the update operation.
 
-Radix search is used to find the value corresponding to the given key. In order to ensure that the original version of \rbtree\ stays unmodified, each node on the way down from the root to the value will be copied. This process is also know as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes which are not a part of the path are reused, instead of being recreated.
-
-In order to get a sense of how well path copying performs, let’s review the whole process in reverse. The leaf node update creates a copy of underlying array of size \m{}. Then, the \m{} sized parent branch node is copied as well, where the fresh copy of the leaf is used instead of the original. The other children of the parent are reused. The same process applies to the grand parent and so on all the way up to the root.
-
-To summarize, the update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{eq:h-max}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m * log_m(n)}} complexity of the update operation.
-
-For large branching factors \m\ such as 32, the performance becomes \bigo{1} in practice. For example, if the tree is completely full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7.
+For large branching factors \m{} such as 32, the performance becomes effectively \bigo{1}. For example, if the tree is full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7.
 
 \begin{listing}[ht!]
-    \caption{Pseudocode for RB-Tree's update implementation.}
-    \label{lst:rb-tree-update}
-
-    \begin{algorithmic}
-        \Function{RbTree-Update}{root, key, value}
-            \State newRoot \la\ clone(root)
+    \begin{algorithmic}[1]
+        \Function{Update}{root, key, value}
+            \State newRoot \la\ \Call{Clone}{root}
             \State node \la\ newRoot
 
             \For{level \la\ root\ts{h} - 1, 1}
-                \State index \la\ (key $\ggg$ (level * x)) \& mask
-                \State newChildNode \la\ Clone(node[index])
+                \State index \la\ (key $\ggg$ (level $\cdot$ x)) \& mask
+                \State newChildNode \la\ \Call{Clone}{node[index]}
                 \State node[index] \la\ newChildNode
                 \State node \la\ newChildNode
             \EndFor
@@ -248,74 +232,57 @@ For large branching factors \m\ such as 32, the performance becomes \bigo{1} in 
             \State \Return newRoot
         \EndFunction
     \end{algorithmic}
+
+    \caption{Path copying algorithm for RB-Tree}
+    \label{lst:rb-tree-update}
 \end{listing}
 
-From the implementation standpoint, the main difference between update and radix search is that every visited node must be copied, including root. The return value is the root node for the new version of the tree.
-
+From the implementation perspective, the difference between update and radix search is that every visited node, including root, must be copied. The return value is the root node for the new version of the tree.
 
 \subsection{Push}
-% This are not references, but values themselves
-References to values are stored at the leaf nodes of the tree. If the number of values stored in the structure is less than branching factor, then the root node itself will be a leaf. Otherwise, capacity of the tree is increased by adding intermediate branch nodes.
+The push operation is used to add new values to the end of \treerb{}. It employs \emph{path copying} to preserve the original tree without changes. It accepts the root node and new value as arguments and returns a new version of the tree.
 
+The \treerb{} size is used as the search key. For example, if the tree size is 9, a key for the new value will be 9. The size is incremented after the operation completes.
 
-The push operation is used to add new elements to the \rbtree{}. It employs the \emph{path copying} mechanism to minimize the cost and maximize performance of the operation. It accepts a root node and a new value as arguments, and returns a new version of the tree.
+Since the push operation adds new values, it has to manage the tree capacity. Generally, there are two cases that require special handling:
 
-A key for the new element is equal to the count of elements in \rbtree{}, also known as the \emph{size} of the tree. For example, if the size is 9, the key for the new value will also be 9. The size will be incremented after the operation is executed.
+\begin{itemize}
+    \item The case when a path to a leaf node includes branches that are not created yet. The solution is to generate missing nodes while descending the tree.
+    \item The \emph{root overflow} or when the tree size exceeds its \emph{capacity}\footnote{Capacity is the maximum number of elements a tree can accommodate.}. It can be solved by adding a new level to the tree by creating a new root node and setting the old one as the first child of the new root.
+\end{itemize}
 
-The main difference between the update and the push operation is that the latter one has to take care of allocating more space for new elements. If the rightmost leaf node has available slots, then behavior of push is very similar to update. Otherwise, there are two additional scenarios in which either the rightmost leaf is completely full or there is no more space left in the root node.
-
-The solution for the first case comes from radix search. Given a unique key, radix search calculates a path that never leads to a full leaf node. What might happen is that a path will include nodes which are not created yet. This can be solved by generating them on demand.
-
-The second case, also known as \emph{root overflow}, occurs when the \emph{size} of the tree exceeds its \emph{capacity}. Capacity is the maximum number of elements a tree can accommodate, which can be calculated based on the height \h{} and the branching factor \m{} of \rbtree{}:
-
-\begin{equation}
-	c = m^h.
-\end{equation}
-
-The implementation of this calculation is based on the left bit shift operation, described in \Cref{lst:rb-tree-capacity}.
-
-The Root overflow can be solved by adding a new level to the tree. This is done by creating a new root node and setting the old root as the first child of the new root. The rest is handled by generating new nodes in the path to the new value. For more details, see \Cref{lst:rb-tree-push}.
+\Cref{lst:rb-tree-push} demonstrates how the tree capacity is calculated and managed.
 
 \begin{listing}[ht!]
-    \caption{Pseudocode for RB-Tree's capacity implementation.}
-    \label{lst:rb-tree-capacity}
-
-    \begin{algorithmic}
-        \Function{RbTree-Capacity}{height}
-		\State \Return m $\ll$ ((height - 1) * x)
+    \begin{algorithmic}[1]
+        \Function{Capacity}{height}
+		    \State \Return m $\ll$ ((height - 1) $\cdot$ x)
         \EndFunction
-    \end{algorithmic}
-\end{listing}
 
-\begin{listing}[ht!]
-    \caption{Pseudocode for RB-Tree's push implementation}
-    \label{lst:rb-tree-push}
-
-    \begin{algorithmic}
-        \Function{Rb-Tree-Push}{root, value}
+        \Function{Push}{root, value}
             \State newRoot \la\ \nil{}
 
-            \If{RbTree-Capacity(root\ts{height}) <= root\ts{size}}
-                \State newRoot \la\ Create-Node()
-                \State newRoot[0] \la\ Clone(root)
+            \If{\Call{Capacity}{root\ts{height}} <= root\ts{size}}
+                \State newRoot \la\ \Call{CreateNode}{}
+                \State newRoot[0] \la\ \Call{Clone}{root}
                 \State newRoot\ts{height} \la\ root\ts{height} + 1
             \Else
-                \State newRoot \la\ Clone(root)
+                \State newRoot \la\ \Call{Clone}{root}
             \EndIf
 
             \State node \la\ newRoot
             \State key \la\ newRoot\ts{size}
 
             \For{level \la\ newRoot\ts{height} - 1, 1}
-                \State index \la\ (key $\ggg$ (level * x)) \& mask
+                \State index \la\ (key $\ggg$ (level $\cdot$ x)) \& mask
 
                 \State childNode \la\ node[index]
                 \State newChildNode \la\ \nil{}
 
                 \If{childNode = \nil{}}
-                    \State newChildNode \la\ Create-Node()
+                    \State newChildNode \la\ \Call{CreateNode}{}
                 \Else
-                    \State newChildNode \la\ Clone(childNode)
+                    \State newChildNode \la\ \Call{Clone}{childNode}
                 \EndIf
 
                 \State node[index] \la\ newChildNode
@@ -329,20 +296,21 @@ The Root overflow can be solved by adding a new level to the tree. This is done 
             \State \Return newRoot
         \EndFunction
     \end{algorithmic}
+
+    \caption{Pseudocode for the RB-Tree's push operation}
+    \label{lst:rb-tree-push}
 \end{listing}
 
 \subsection{Pop}
-Pop is used to remove items from the \rbtree. Together with push, it conforms to the LIFO\footnote{Last In First Out} principle which is typical for the stack abstract data type. It accepts root as input and returns both a popped value and a new version of a structure.
+The purpose of pop is to remove values from the end of \treerb{}. It accepts root as input and returns both a removed value and a new version of a structure.
 
-Pop is responsible for reducing capacity of the \rbtree{}, including removal of branch and leaf nodes when they become empty. As with other operations, modifications are kept to the minimum by taking advantage of path copying algorithm.
+Pop is responsible for reducing the capacity of \treerb{} when needed, including the removal of empty branches and leaves. Similar to update and push operations, it relies on the path copying algorithm to avoid modifying the existing version of the tree.
 
 \begin{listing}[ht!]
-    \caption{Pseudocode for RB-Tree's pop implementation}
-    \label{lst:rb-tree-pop}
 
-    \begin{algorithmic}
-        \Function{RbTree-Pop-Node}{node, key}
-            \State newNode \la\ Clone(node)
+    \begin{algorithmic}[1]
+        \Function{PopNode}{node, key}
+            \State newNode \la\ \Call{Clone}{node}
             \State value \la\ \nil{}
 
             \If{node\ts{height} = 0}
@@ -350,8 +318,8 @@ Pop is responsible for reducing capacity of the \rbtree{}, including removal of 
                 \State value \la\ newNode[index]
                 \State newNode[index] \la\ \nil{}
             \Else
-                \State index \la\ (key $\ggg$ (newNode\ts{height} * x)) \& mask
-                \State value, childNode \la\ RbTree-Pop-Node(newNode[index], key)
+                \State index \la\ (key $\ggg$ (newNode\ts{height} $\cdot$ x)) \& mask
+                \State value, childNode \la\ \Call{PopNode}{newNode[index], key}
                 \State newNode[index] \la\ childNode
             \EndIf
 
@@ -361,9 +329,11 @@ Pop is responsible for reducing capacity of the \rbtree{}, including removal of 
                 \State \Return value, newNode
             \EndIf
         \EndFunction
+
         \State
+
         \Function{Pop}{root}
-            \State value, newRoot \la\ RbTree-Pop-Node(root, root\ts{size} - 1)
+            \State value, newRoot \la\ \Call{PopNode}{root, root\ts{size} - 1}
 
             \If{newRoot[1] = \nil{})}
                 \State newRoot \la\ newRoot[0]
@@ -372,117 +342,14 @@ Pop is responsible for reducing capacity of the \rbtree{}, including removal of 
             \State \Return value, newRoot
         \EndFunction
     \end{algorithmic}
+
+    \caption{Pseudocode for the RB-Tree's pop operation}
+    \label{lst:rb-tree-pop}
 \end{listing}
 
-Since the \rbtree{} is a complete\footnote{A complete n-ary tree is an n-ary tree which is maximally space efficient. It must be completely filled on every level except for the last level. However, if the last level is not complete, then all nodes of the tree must be "as far left as possible".} tree, all entries to the right of \nil{} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, checking if the first entry is \nil{} is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \nil{} reference in the parent node.
+Since \treerb{} is a complete\footnote{A complete \m{}-ary tree is an \m{}-ary tree, which is maximally space-efficient. It must be filled on every level except for the last level. However, if the last level is not complete, all nodes of the tree must be "as far left as possible".} tree, all entries to the right of \nil{} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, checking if the first entry is \nil{} is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \nil{} reference in the parent node.
 
-A root is considered to be redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is demoted by replacing it with the first child node, which becomes the new root.
-
-\subsection{Tail optimization for persistent vector}
-\label{sec:tail-optimization}
-
-In practice, changes are often applied to the end or \emph{tail} of the data structure. Stack is specifically optimized for such use cases, by offering the constant performance for the push and pop operations. Even though \rbtree\ has similar performance characteristics, its push and pop implementations include pesky constant factors in the form of \emph{radix search} and \emph{path copying} algorithms.
-
-The \emph{tail} optimization is intended to offset this cost by reducing the count of the \rbtree\ accesses. Instead of adding or removing elements one by one, changes are batched in the array of size \m. This array could be thought of as a leaf node, which will be attached to the tree only when it is full.
-
-\subsubsection*{Optimizing the push operation}
-As shown in \Cref{lst:pvec-push}, the value is set into a cloned tail at the position tail\ts{size}. Since \rbtree\ is a complete tree, the rightmost leaf node is the only node which can be empty or semi-full. As the tail is the rightmost leaf node, its size is as an index for the new value.
-
-If after update the tail is full, it will be pushed into a tree and replaced with an empty tail.
-
-\begin{listing}[ht!]
-    \caption{Tail optimization for persistent vector’s push implementation.}
-    \label{lst:pvec-push}
-
-    \begin{algorithmic}
-        \Function{Pvec-Push}{vec, value}
-        \State newTail \la\ Clone(vec\ts{tail})
-        \State newTail[tail\ts{size}] \la\ value
-        \State newTail\ts{size} \la\ tail\ts{size} + 1
-        \State newRoot \la\ vec\ts{root}
-
-        \If{newTail\ts{size} = m}
-            \State newRoot \la\ RbTree-Push(vec\ts{root}, newTail)
-            \State newTail \la\ Create-Node()
-        \EndIf
-
-        \State \Return Create-Vec(newRoot, newTail)
-        \EndFunction
-    \end{algorithmic}
-\end{listing}
-
-\subsubsection*{Optimizing the pop operation}
-Since the tail might contain elements, pop has to remove them first before touching the \rbtree. If the tail is empty, it will be replaced with the rightmost leaf of \rbtree. See \Cref{lst:pvec-pop} for more details.
-
-\begin{listing}[ht!]
-    \caption{Tail optimization for persistent vector’s pop implementation}
-    \label{lst:pvec-pop}
-
-    \begin{algorithmic}
-        \Function{Pvec-Pop}{vec}
-
-        \State newTail \la\ Clone(vec\ts{tail})
-        \State newRoot \la\ \nil{}
-
-        \State value \la\ newTail[newTail\ts{size} - 1]
-        \State newTail\ts{size} \la\ newTail\ts{size} - 1
-
-        \If{newTail\ts{size} = 0}
-            \State newRoot, newTail \la\ RbTree-Pop(vec\ts{root})
-        \Else
-            \State newRoot \la\ vec\ts{root}
-        \EndIf
-
-        \State \Return Create-Vec(newRoot, newTail)
-        \EndFunction
-    \end{algorithmic}
-\end{listing}
-
-\subsubsection*{Adapting the update and radix search operations}
-Changes for both update and radix search are very similar, with the difference that update has to ensure that the original version of vector stays unmodified.
-
-The radix search implementation has to take into account that some of the values can be in the tail. A value is located within the tree if the key is less than the tree size. In this case the search process is delegated to \rbtree. Otherwise, the index for value in the tail is calculated by subtracting the tree size from the key.
-
-\begin{listing}[ht!]
-    \caption{Adapting the update operation to support tail}
-    \label{lst:pvec-update}
-
-    \begin{algorithmic}
-        \Function{Pvec-Update}{vec, key, value}
-
-        \State root \la\ vec\ts{root}
-        \State tail \la\ vec\ts{tail}
-
-        \If{key < root\ts{size}}
-            \State newRoot \la\ RbTree-Update(root, key, value)
-            \State \Return Create-Vec(newRoot, tail)
-        \Else
-            \State newTail \la\ Clone(tail)
-            \State newTail[key - root\ts{size}] \la\ value
-            \State \Return Create-Vec(root, newTail)
-        \EndIf
-        \EndFunction
-    \end{algorithmic}
-\end{listing}
-
-\begin{listing}[ht!]
-    \caption{Adapting the radix search operation to support tail}
-    \label{lst:pvec-radix-search}
-
-    \begin{algorithmic}
-        \Function{Pvec-Radix-Search}{vec, key}
-
-        \State root \la\ vec\ts{root}
-        \State tail \la\ vec\ts{tail}
-
-        \If{key < root\ts{size}}
-            \State \Return RbTree-Radix-Search(root, key)
-        \Else
-            \State \Return tail[key - root\ts{size}]
-        \EndIf
-        \EndFunction
-    \end{algorithmic}
-\end{listing}
+A root is redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is \emph{demoted} by replacing it with the first child node, which becomes the new root.
 
 \section{Relaxed radix balanced tree}
 % A couple of words here on what is RRB-Tree, what it offers, and how is it different compared to RB-Tree.
@@ -505,11 +372,8 @@ The \treerrb{} relaxes this constraint by allowing nodes to be partially full, a
 
 In this section, we will take a look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search.
 
-\subsection{Memory layout}
-With relaxed \treerrb{} constraints, there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at the corresponding index. The sizes table values are re-calculated when the subtree is modified, for example, when concatenating or pushing new values.
-
 \subsection{Relaxed radix search}
-When \treerb{} is relaxed, it is no longer possible to compute indices from a search key without additional metadata in the form of \emph{size} tables. Each entry of the size table is an accumulated number of values in the corresponding subtree.
+With relaxed \treerrb{} constraints, there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at the corresponding index. The sizes table values are re-calculated when the subtree is modified, for example, when concatenating or pushing new values.
 
 When the radix search encounters a relaxed node, it compares the entire search key against entries in the size table. A subtree contains the desired value if the corresponding size table entry is bigger than or equal to the search key. Before descending into a subtree and repeating the search step, the search key is subtracted the size of the subtree.
 
@@ -536,7 +400,7 @@ When a balanced node is encountered, the search process falls back to the balanc
 
             \For{level \la\ root\ts{height} - 1, 1}
                 \If{node\ts{sizes}=\nil{}}
-                    \State index \la\ (key $\ggg$ (level * x)) \& mask
+                    \State index \la\ (key $\ggg$ (level $\cdot$ x)) \& mask
                     \State node \la\ node[index]
                 \Else
                     \State sizes \la\ node\ts{sizes}
@@ -598,9 +462,9 @@ When the bottom level with leaf nodes is reached, the function stops descending 
     \label{lst:rrb-tree-concatenation}
 \end{listing}
 
-The \textproc{Rebalance} function accepts three lists of nodes as arguments. The \texttt{left} and \texttt{right} lists constitute all nodes of both trees at the given level except two: the rightmost node of the left tree and the leftmost node of the right tree. Those two nodes are already rebalanced and passed as the \texttt{middle} argument. Three lists are concatenated together into a single \texttt{merged} list.
+The \textproc{Rebalance} function accepts three lists of nodes as arguments. The left and right lists constitute all nodes of both trees at the given level except two: the rightmost node of the left tree and the leftmost node of the right tree. Those two nodes are already rebalanced and passed as the middle argument. Three lists are concatenated together into a single merged list.
 
-The goal of rebalancing is to arrange the children of \texttt{merged} nodes in such a way that all nodes except the rightmost branch are filled with values. When the \textproc{Rebalance} function completes re-arranging nodes, it returns a new branch containing rebalanced nodes. Pseudocode for rebalancing can be found in Appendix \ref{lst:rrb-tree-rebalance}.
+The goal of rebalancing is to arrange the children of merged nodes in such a way that all nodes except the rightmost branch are filled with values. When the \textproc{Rebalance} function completes re-arranging nodes, it returns a new branch containing rebalanced nodes. Pseudocode for rebalancing can be found in Appendix \ref{lst:rrb-tree-rebalance}.
 
 The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-level-0}-\ref{fig:rrb-tree-rebalance}. Note, presented figures exclude parts of trees that are not important for conveying the idea to preserve space.
 
@@ -617,7 +481,6 @@ The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-le
             inner sep=0pt,
             font=\ttfamily,
             text height=1.5ex,
-            text depth=.25ex,
             text width=1.5ex,
             text centered,
             nodes in empty cells
@@ -685,7 +548,6 @@ Concatenation starts at the bottom of the tree by merging the leaf nodes. The re
             inner sep=0pt,
             font=\ttfamily,
             text height=1.5ex,
-            text depth=.25ex,
             text width=1.5ex,
             text centered,
             nodes in empty cells
@@ -756,7 +618,6 @@ Rebalancing at level 1 involves the left and right branches together with the ne
             inner sep=0pt,
             font=\ttfamily,
             text height=1.5ex,
-            text depth=.25ex,
             text width=1.5ex,
             text centered,
             nodes in empty cells
@@ -834,7 +695,6 @@ Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-lev
             inner sep=0pt,
             font=\ttfamily,
             text height=1.5ex,
-            text depth=.25ex,
             text width=1.5ex,
             text centered,
             nodes in empty cells

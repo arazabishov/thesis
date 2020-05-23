@@ -1,5 +1,7 @@
 \chapter{Introduction}
 
+\todo{Configure minted to not use green color for Vec, Box, etc to make sure that all types look consistent}
+
 Rust is a modern, open-source programming language with a focus on memory safety and performance. Its rich type system not only eliminates several classes of bugs but also makes the language powerful and expressive for building high-level programs such as web servers and command-line interface applications. With direct access to computer memory and hardware, Rust is an excellent language for embedded and low-level programming as well.
 
 However, due to the emphasis on memory safety and rigorous checks enforced by the compiler, it is common to get errors when compiling a Rust program. One of the rules is the forbidden simultaneous sharing and mutation of an object. Often, errors caused by this rule can be avoided by better design, but sometimes, the best resolution is to clone the value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of time and space. Thus, resorting to it as a solution, especially for large-sized collections might be in-efficient.

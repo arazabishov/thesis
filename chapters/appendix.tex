@@ -57,3 +57,110 @@
     \caption{Rebalancing algorithm for \treerrb{}}
     \label{lst:rrb-tree-rebalance}
 \end{listing}
+
+\chapter{Tail optimization for persistent vectors}
+\label{sec:tail-optimization}
+
+In practice, changes are often applied to the end or \emph{tail} of the data structure. The stack is designed for such use cases, by offering the \bigo{1} performance for the push and pop operations. Even though \treerrb{} has similar performance characteristics, its push and pop implementations include pesky constant factors in the form of \emph{radix search} and \emph{path copying} algorithms.
+
+The \emph{tail} optimization is intended to offset this cost by reducing the count of the \treerrb{} accesses. Instead of adding or removing elements one by one, changes are batched in the array of size \m{}. This array could be thought of as a leaf node that will be attached to the tree only when it is full.
+
+\section{Optimizing the push operation}
+As demonstrated in \Cref{lst:tail-push}, the new value is set into a cloned tail at the tail\ts{size} position. Since the tail is the rightmost leaf node, its size can be used as an index for the new value. If the tail is full, it is pushed into the tree and replaced with an empty tail.
+
+\begin{listing}[!ht]
+    \begin{algorithmic}[1]
+        \Function{Push}{vec, value}
+        \State newTail \la\ \Call{Clone}{vec\ts{tail}}
+        \State newTail[tail\ts{size}] \la\ value
+        \State newTail\ts{size} \la\ tail\ts{size} + 1
+        \State newRoot \la\ vec\ts{root}
+
+        \If{newTail\ts{size} = m}
+            \State newRoot \la\ \Call{Push}{vec\ts{root}, newTail}
+            \State newTail \la\ \Call{CreateNode}{}
+        \EndIf
+
+        \State \Return \Call{CreateVec}{newRoot, newTail}
+        \EndFunction
+    \end{algorithmic}
+
+    \caption{Tail optimization for persistent vector's push operation}
+    \label{lst:tail-push}
+\end{listing}
+
+\section{Optimizing the pop operation}
+Since a tail might contain values, pop has to remove them first before modifying the \treerrb{}. If the tail is empty, it will be replaced with the rightmost leaf of \treerrb{}. See \Cref{lst:tail-pop} for detailed steps.
+
+\begin{listing}[!ht]
+
+    \begin{algorithmic}[1]
+        \Function{Pop}{vec}
+
+        \State newTail \la\ \Call{Clone}{vec\ts{tail}}
+        \State newRoot \la\ \nil{}
+
+        \State value \la\ newTail[newTail\ts{size} - 1]
+        \State newTail\ts{size} \la\ newTail\ts{size} - 1
+
+        \If{newTail\ts{size} = 0}
+            \State newRoot, newTail \la\ \Call{Pop}{vec\ts{root}}
+        \Else
+            \State newRoot \la\ vec\ts{root}
+        \EndIf
+
+        \State \Return \Call{CreateVec}{newRoot, newTail}
+        \EndFunction
+    \end{algorithmic}
+
+    \caption{Tail optimization for the persistent vector’s pop operation}
+    \label{lst:tail-pop}
+\end{listing}
+
+\section{Adapting the update and radix search operations}
+Changes for both update and radix search are very similar, with the difference that update has to ensure that the original version of vector stays unmodified.
+
+The radix search implementation has to take into account that some of the values can be in the tail. A value is located within the tree if the key is less than the tree size. In this case, the search process is delegated to \treerrb{}. Otherwise, the index for value in the tail is calculated by subtracting the tree size from the key.
+
+\begin{listing}[!ht]
+
+    \begin{algorithmic}[1]
+        \Function{Update}{vec, key, value}
+
+        \State root \la\ vec\ts{root}
+        \State tail \la\ vec\ts{tail}
+
+        \If{key < root\ts{size}}
+            \State newRoot \la\ \Call{Update}{root, key, value}
+            \State \Return \Call{CreateVec}{newRoot, tail}
+        \Else
+            \State newTail \la\ \Call{Clone}{tail}
+            \State newTail[key - root\ts{size}] \la\ value
+            \State \Return \Call{CreateVec}{root, newTail}
+        \EndIf
+        \EndFunction
+    \end{algorithmic}
+
+    \caption{Adapting the update operation to support tail}
+    \label{lst:tail-update}
+\end{listing}
+
+\begin{listing}[!ht]
+
+    \begin{algorithmic}[1]
+        \Function{RadixSearch}{vec, key}
+
+        \State root \la\ vec\ts{root}
+        \State tail \la\ vec\ts{tail}
+
+        \If{key < root\ts{size}}
+            \State \Return \Call{RrbTreeRadixSearch}{root, key}
+        \Else
+            \State \Return tail[key - root\ts{size}]
+        \EndIf
+        \EndFunction
+    \end{algorithmic}
+
+    \caption{Adapting the radix search operation to support tail}
+    \label{lst:tail-radix-search}
+\end{listing}
