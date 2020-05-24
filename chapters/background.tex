@@ -235,7 +235,7 @@ For large branching factors \m{} such as 32, the performance becomes effectively
         \EndFunction
     \end{algorithmic}
 
-    \caption{Path copying algorithm for RB-Tree}
+    \caption{Path copying algorithm for \treerb{}}
     \label{lst:rb-tree-update}
 \end{listing}
 
@@ -299,7 +299,7 @@ Since the push operation adds new values, it has to manage the tree capacity. Ge
         \EndFunction
     \end{algorithmic}
 
-    \caption{Pseudocode for the RB-Tree's push operation}
+    \caption{Pseudocode for the \treerb{}'s push operation}
     \label{lst:rb-tree-push}
 \end{listing}
 
@@ -345,7 +345,7 @@ Pop is responsible for reducing the capacity of \treerb{} when needed, including
         \EndFunction
     \end{algorithmic}
 
-    \caption{Pseudocode for the RB-Tree's pop operation}
+    \caption{Pseudocode for the \treerb{}'s pop operation}
     \label{lst:rb-tree-pop}
 \end{listing}
 
@@ -354,25 +354,13 @@ Since \treerb{} is a complete\footnote{A complete \m{}-ary tree is an \m{}-ary t
 A root is redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is \emph{demoted} by replacing it with the first child node, which becomes the new root.
 
 \section{Relaxed radix balanced tree}
-% A couple of words here on what is RRB-Tree, what it offers, and how is it different compared to RB-Tree.
-%  * A confluent persistent data structure.
-%  * Relaxation as a way to achieve efficient concatenation and splitting.
-
-% Then, say what this chapter is about:
-%  * Which constraints are relaxed and which constraints are enforced:
-%   * The relaxed child count and completeness of nodes
-%   * How does RRB-Tree guarantee that height won't exceed certain limits
-%  * The concatenation and splitting algorithms.
-%  * Changing the following algorithms to accommodate relaxed constraints:
-%   * Radix search
-
 Relaxed radix balanced tree or \treerrb{}, extends \treerb{} to support concatenation and splitting in \bigo{log(n)} rather than linear time without compromising the performance of other operations.
 
 An invariant that \treerb{} maintains is that all nodes except the right-most ones have to be full. This enables a simple radix search implementation, but on the other hand, makes efficient sub-linear concatenation impossible.
 
 The \treerrb{} relaxes this constraint by allowing nodes to be partially full, and introduces a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
 
-In this section, we will take a look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search.
+In this section, we will look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search. For details of the implementation of other operations, please refer to the project source code\footnote{\url{https://github.com/arazabishov/pvec-rs}} or to \cite{improving-performance-through-transience}.
 
 \subsection{Relaxed radix search}
 With relaxed \treerrb{} constraints, there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at the corresponding index. The sizes table values are re-calculated when the subtree is modified, for example, when concatenating or pushing new values.
@@ -401,7 +389,7 @@ When a balanced node is encountered, the search process falls back to the balanc
             \State idx \la\ key
 
             \For{level \la\ root\ts{height} - 1, 1}
-                \If{node\ts{sizes}=\nil{}}
+                \If{node\ts{sizes} = \nil{}}
                     \State index \la\ (key $\ggg$ (level $\cdot$ x)) \& mask
                     \State node \la\ node[index]
                 \Else
@@ -445,10 +433,10 @@ When the bottom level with leaf nodes is reached, the function stops descending 
             \Else
                 \State mergedNode \la\ \nil{}
 
-                \If{leftNode\ts{height}=0}
+                \If{leftNode\ts{height} = 0}
                     \State mergedNode \la\ \Call{Concat}{leftNode, rightNode}
                 \Else
-                    \If{leftNode\ts{height}=1}
+                    \If{leftNode\ts{height} = 1}
                         \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode\ts{first}}
                     \Else
                         \State mergedNode \la\ \Call{Concat}{leftNode\ts{last}, rightNode\ts{first}}
