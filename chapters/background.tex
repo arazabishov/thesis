@@ -1,10 +1,12 @@
-% TODO: give a definition to core (discrete operations)
-%   This is how you can distinguish core from confluent operations:
-%     * Core operations do not produce relaxed nodes in \rrbtree{} unless the nodes on the path to the leaves are already relaxed
-%     * Alternative name for core is discrete
-
-% TODO: define what is transience: https://clojure.org/reference/transients
 \chapter{Background}
+
+This chapter gives an introduction to the \treerb{} and \treerrb{} data structures that are used as the foundation for persistent vectors:
+
+\begin{itemize}
+    \item First, we will take a look at \emph{radix balanced tree}, its organization, and algorithms such as \emph{radix search} and \emph{path copying} that are used at the core of all vector operations.
+    \item Then, we will proceed to its extension --- \emph{relaxed radix balanced tree} that enables efficient concatenation and splitting.
+    \item Finally, we will get an overview of what is \emph{transience} and how it can be used to improve the performance of persistent data structures.
+\end{itemize}
 
 \section{Radix balanced tree}
 \label{chapter:radix-balanced-tree}
@@ -771,4 +773,4 @@ Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-lev
 The formal description and analysis of concatenation algorithm and its implementation is thoroughly presented in \cite{improving-performance-through-transience}.
 
 \section{Transience}
-% TODO
+% TODO: define what is transience: https://clojure.org/reference/transients
