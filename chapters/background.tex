@@ -360,7 +360,7 @@ An invariant that \treerb{} maintains is that all nodes except the right-most on
 
 The \treerrb{} relaxes this constraint by allowing nodes to be partially full, and introduces a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
 
-In this section, we will look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search. For details of the implementation of other operations, please refer to the project source code\footnote{\url{https://github.com/arazabishov/pvec-rs}} or to \cite{improving-performance-through-transience}.
+In this section, we will look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search. For details of the implementation of the split, relaxed push, and pop operations, please refer to the project source code\footnote{\url{https://github.com/arazabishov/pvec-rs}} or to \cite{improving-performance-through-transience}.
 
 \subsection{Relaxed radix search}
 With relaxed \treerrb{} constraints, there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at the corresponding index. The sizes table values are re-calculated when the subtree is modified, for example, when concatenating or pushing new values.
