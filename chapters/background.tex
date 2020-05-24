@@ -773,4 +773,48 @@ Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-lev
 The formal description and analysis of concatenation algorithm and its implementation is thoroughly presented in \cite{improving-performance-through-transience}.
 
 \section{Transience}
-% TODO: define what is transience: https://clojure.org/reference/transients
+When modified, conventional persistent data structures always return a new version that includes the change. It is a reliable and straightforward way to ensure that existing versions are not changed, a behavior that is essential to robust programs.
+
+However, there are scenarios when persistence is not useful, such as when working with a collection in isolated environment like a pure function. For example, building a new vector using the \emph{push} operation creates a new version on every call, immediately dismissing the previous one.
+
+Even though persistent data structures minimize the cost of creating new versions by \emph{path copying}, memory allocations are still very resource consuming. Thus, \emph{transient} data types were introduced to the Clojure programming language to solve this problem.
+
+\emph{Transience} is an optimization that allows us to update persistent data structures in place without creating new versions in performance-critical code. Once a transient data structure is constructed, it can be converted back to persistent and safely shared.
+
+\begin{listing}[!ht]
+
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{clojure}
+    (defn vecpersistent [n]             ;; uses a persistent vector
+        (loop [i 0 v []]
+            (if (< i n)
+            (recur (inc i) (conj v i))
+            v)))
+
+    (defn vectransient [n]              ;; uses a transient vector
+        (loop [i 0 v (transient [])]
+            (if (< i n)
+            (recur (inc i) (conj! v i))
+            (persistent! v))))
+    \end{minted}
+
+    \caption{An example of working with transient and persistent vectors in Clojure}
+    \label{lst:clojure-vector-example}
+\end{listing}
+
+As demonstrated in \Cref{lst:clojure-vector-example}, working with transient types requires special syntax such as \mintinline{clojure}{transient}, \mintinline{clojure}{conj!}, and \mintinline{clojure}{persistent}\footnote{\url{https://clojure.org/reference/transients}}.
+
+\subsection{Guarantees and limitations}
+Clojure ensures that transients do not violate the guarantees of persistent data structures by enforcing the following rules:
+\begin{itemize}
+    \item A transient vector created from a persistent one does not modify the original version. The cost of creating a transient instance is \bigo{1}, as well as transforming it back to persistent.
+    \item Transients are confined to the thread they are created on, effectively forbidding sharing between threads and eliminating the possibility of race conditions.
+    \item Transients are not allowed to be used after converting them back to persistent to avoid in-directly modifying a persistent version.
+\end{itemize}
