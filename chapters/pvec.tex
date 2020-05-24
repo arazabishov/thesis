@@ -445,7 +445,7 @@ Popular persistent data structure libraries, such s \emph{immutable-js}\footnote
 
 As demonstrated in Listing \ref{lst:conventional-interface}, instead of updating the vector in-place, the operation returns a new instance that contains the change. When a collection is set up like that, the library can guarantee that the original vector will stay unmodified, eliminating the whole class of bugs such as race conditions.
 
-This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. The solution to this problem was first introduced in the \emph{Clojure} programming language in the shape of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies \todo{ref to background}.
+This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. The solution to this problem was first introduced in the \emph{Clojure} programming language in the shape of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies \ref{sec:transience}.
 
 Rust's compiler, however, eliminates race conditions by forbidding simultaneous mutation of value by enforcing ownership and borrowing rules. The ownership rule essentially means that an object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Further than that, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
 
@@ -563,7 +563,7 @@ Additionally, the cost of spilling needs to be paid only once, and will be amort
 
 \begin{figure}[!ht]
     \colorlet{color-node}{blue!10}
-    
+
     \centering
     \begin{tikzpicture} [
         node/.style={
