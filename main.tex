@@ -88,11 +88,12 @@
 ]{hyperref}
 \urlstyle{same}
 \usepackage{cleveref}
+\usepackage{xurl}
 
 \raggedbottom
 
-\newcommand{\dir}[1]{\mintinline{bash}{#1}}
-\newcommand{\rust}[1]{\mintinline{rust}{#1}}
+\newcommand{\dir}[1]{\mintinline[breaklines]{bash}{#1}}
+\newcommand{\rust}[1]{\mintinline[breaklines]{rust}{#1}}
 \newcommand{\type}[1]{\rust{#1}}
 \newcommand{\crate}[1]{\emph{\textbf{#1}}}
 

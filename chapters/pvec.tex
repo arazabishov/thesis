@@ -131,51 +131,56 @@ The \pvecrs{} project is the Rust library crate that offers several persistent v
 
 \rbvec{} and \rrbvec{} are based on \rrbtree{}. Both types offer effectively constant \rust{push}, \rust{pop}, \rust{get}, and \rust{get_mut} operations, with the difference that \rrbvec{} offers efficient \rust{append} and \rust{split_off}. \pvec{}, on the other hand, inherits performance properties of the underlying representation that is either \stdvec{} or \rrbvec{}.
 
-All vectors provide methods with identical method signatures with the difference in how much each operation costs, and how they are implemented. Table \ref{tab:vector-apis} lists available functions and their cost.
+All vectors provide methods with identical method signatures with the difference in how much each operation costs, and how they are implemented. \Cref{tab:vector-apis} lists available functions and their complexity.
 
 \begin{table}[!ht]
+    \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
 
     \centering
-    \small
+    \footnotesize
     \renewcommand{\arraystretch}{1.2}
-    \begin{tabular} { p{98mm} p{8mm} p{8mm} p{8mm} }
+    \begin{tabular} { p{74mm} P{8mm} P{20mm} P{20mm} }
 
-        \textbf{A vector function} & \rotatebox{64}{\stdvec{}} & \rotatebox{64}{\rbvec{}} & \rotatebox{64}{\rrbvec{}} \\ \hline
+        \textbf{A vector function} & \stdvec{} & \rbvec{} & \rrbvec{} \\ \hline
 
-        \rust{fn push(&mut self, e: T)} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn push(&mut self, e: T)} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$log_m(n)$}  & \multirow{2}{*}{$log_m(n)$} \\
         Appends an element to the back of a collection & & & \\ \hdashline
 
-        \rust{fn pop(&mut self) -> Option<T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn pop(&mut self) -> Option<T>} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$m \cdot log_m(n)$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
         Returns the last removed value or \rust{None} if vector is empty. & & & \\ \hdashline
 
-        \rust{fn get(&self, i: usize) -> Option<&T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn get(&self, i: usize) -> Option<&T>} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$log_m(n)$}  & \multirow{2}{*}{$log_m(n)$} \\
         Returns a reference to an element. & & & \\ \hdashline
 
-        \rust{fn get_mut(&mut self, i: usize) -> Option<&mut T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn get_mut(&mut self, i: usize) -> Option<&mut T>} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$m \cdot log_m(n)$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
         Returns a mutable reference to an element. & & & \\ \hdashline
 
-        \rust{fn append(&mut self, v: &mut Vec<T>)} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn append(&mut self, v: &mut Vec<T>)} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$m^2 \cdot log_m(n)$} \\
         Moves all values of \rust{v} into \rust{self}, leaving other empty. & & & \\ \hdashline
 
-        \rust{fn len(&self) -> usize} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
-        Returns the number of elements in the vector. & & & \\ \hdashline
-
-        \rust{fn is_empty(&self) -> bool} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
-        Returns \rust{true} if the vector contains no elements. & & & \\ \hdashline
-
-        \rust{fn split_off(&mut self, at: usize) -> Vec<T>} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn split_off(&mut self, at: usize) -> Vec<T>} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
         Splits the collection into two at the given index. & & & \\ \hdashline
 
-        \rust{fn into_iter(self) -> Iterator} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn len(&self) -> usize} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$C$}  & \multirow{2}{*}{$C$} \\
+        Returns the number of elements in the vector. & & & \\ \hdashline
+
+        \rust{fn is_empty(&self) -> bool} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$C$}  & \multirow{2}{*}{$C$} \\
+        Returns \rust{true} if the vector contains no elements. & & & \\ \hdashline
+
+        \rust{fn into_iter(self) -> Iterator} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$n$} \\
         Creates an iterator from \rust{self}. & & & \\ \hdashline
 
-        \rust{fn into_par_iter(self) -> IntoParallelIterator} & \multirow{2}{*}{\bigo{1}} & \multirow{2}{*}{\bigo{1}}  & \multirow{2}{*}{\bigo{1}} \\
+        \rust{fn into_par_iter(self) -> IntoParallelIterator} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$n$} \\
         Converts \rust{self} into a parallel iterator. Note, it requires the \rust{arc} and \rust{rayon_iter} feature flags. & & & \\ \hline
     \end{tabular}
 
     \label{tab:vector-apis}
     \caption{A table of methods supported by persistent vectors}
 \end{table}
+
+Complexity of operations in \Cref{tab:vector-apis} is expressed using the Big O notation. The \bigo{1} value was substituted by $C$ for brevity.
+
+The characteristics of the \rbvec{} and \rrbvec{} operations are effectively constant given that $m = 32$, and the input size $n$ is bound by the maximum capacity of the 32-bit integer resulting in $log_m(n) < 7$.
 
 \subsubsection*{Iterators}
 Iterators\footnote{\url{https://doc.rust-lang.org/std/iter/trait.Iterator.html}} are a powerful alternative to \emph{for} loops that offer a variety of operators for processing collection elements.

@@ -184,7 +184,7 @@ The branching factor of the tree is 4, resulting in the subkey size of 2 bits. T
 
 The tree height in \Cref{fig:rb-tree-example-1} is 4. The goal is to lookup the value at the index 104, which is equal to 01101000\ts{2}. \Cref{lst:rb-tree-radix-search} outlines the radix search algorithm.
 
-The search starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the loop, the function returns the value from the leaf node.
+The search starts by initializing the node and level variables to root and $height - 1$ correspondingly. The for loop runs until the leaf node level is reached, where each step towards it involves selecting a child node by using bit shifting and masking. After exiting the loop, the function returns the value from the leaf node. The runtime complexity of radix search is \bigo{log_m(n)}.
 
 \begin{listing}[ht!]
 
@@ -253,6 +253,8 @@ Since the push operation adds new values, it has to manage the tree capacity. Ge
     \item The \emph{root overflow} or when the tree size exceeds its \emph{capacity}\footnote{Capacity is the maximum number of elements a tree can accommodate.}. It can be solved by adding a new level to the tree by creating a new root node and setting the old one as the first child of the new root.
 \end{itemize}
 
+The complexity of the operation is \bigo{m \cdot log_m(n)} as it traverses and creates new nodes from the root to a leaf.
+
 \Cref{lst:rb-tree-push} demonstrates how the tree capacity is calculated and managed.
 
 \begin{listing}[ht!]
@@ -261,6 +263,8 @@ Since the push operation adds new values, it has to manage the tree capacity. Ge
 		    \State \Return m $\ll$ ((height - 1) $\cdot$ x)
         \EndFunction
 
+        \State
+        
         \Function{Push}{root, value}
             \State newRoot \la\ \nil{}
 
@@ -353,6 +357,8 @@ Since \treerb{} is a complete\footnote{A complete \m{}-ary tree is an \m{}-ary t
 
 A root is redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is \emph{demoted} by replacing it with the first child node, which becomes the new root.
 
+The pop operation involves tree traversal, and it is creating \m{} new nodes. Hence, its complexity is \bigo{m \cdot log_m(n)}.
+
 \section{Relaxed radix balanced tree}
 Relaxed radix balanced tree or \treerrb{}, extends \treerb{} to support concatenation and splitting in \bigo{log(n)} rather than linear time without compromising the performance of other operations.
 
@@ -367,7 +373,9 @@ With relaxed \treerrb{} constraints, there is no reliable way to calculate the s
 
 When the radix search encounters a relaxed node, it compares the entire search key against entries in the size table. A subtree contains the desired value if the corresponding size table entry is bigger than or equal to the search key. Before descending into a subtree and repeating the search step, the search key is subtracted the size of the subtree.
 
-When a balanced node is encountered, the search process falls back to the balanced version of the radix search algorithm \Cref{sec:rb-tree-radix-search}.
+When a balanced node is encountered, the search process falls back to the balanced version of the radix search algorithm \Cref{sec:rb-tree-radix-search}. 
+
+Since the tree traversal involves scanning an \m{} long \emph{sizes} array for every node from the root to a leaf, the complexity of relaxed radix search is \bigo{m \cdot log_m(n)}. In theory, the \textproc{FindIndex} function in \Cref{lst:rrb-tree-relaxed-radix-search} can be replaced with binary search resulting in slightly better \bigo{log_2(m) \cdot log_m(n)} performance. However, it is nearly impossible to measure the difference for such small sized arrays, as linear scan can be as fast if not faster due to its simplicity and CPU cache locality\footnote{\url{https://dirtyhandscoding.wordpress.com/2017/08/25/performance-comparison-linear-search-vs-binary-search/}}.
 
 \begin{listing}[!ht]
 
