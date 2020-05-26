@@ -129,9 +129,7 @@ The \pvecrs{} project is the Rust library crate that offers several persistent v
     \caption{Vector implementations provided by \pvecrs{}}
 \end{table}
 
-\rbvec{} and \rrbvec{} are based on \rrbtree{}. Both types offer effectively constant \rust{push}, \rust{pop}, \rust{get}, and \rust{get_mut} operations, with the difference that \rrbvec{} offers efficient \rust{append} and \rust{split_off}. \pvec{}, on the other hand, inherits performance properties of the underlying representation that is either \stdvec{} or \rrbvec{}.
-
-All vectors provide methods with identical method signatures with the difference in how much each operation costs, and how they are implemented. \Cref{tab:vector-apis} lists available functions and their complexity.
+\rbvec{} and \rrbvec{} are based on \rrbtree{}. Both types implement the \emph{tail}\footnote{See \Cref{sec:tail-optimization} for details on the \emph{tail} optimization.} optimization and offer effectively constant \rust{push}, \rust{pop}, \rust{get}, and \rust{get_mut} operations, with the difference that \rrbvec{} offers efficient \rust{append} and \rust{split_off}. \pvec{}, on the other hand, inherits performance properties of the underlying representation that is either \stdvec{} or \rrbvec{}.
 
 \begin{table}[!ht]
     \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
@@ -178,9 +176,14 @@ All vectors provide methods with identical method signatures with the difference
     \caption{A table of methods supported by persistent vectors}
 \end{table}
 
+All vectors provide methods with identical method signatures with the difference in how much each operation costs, and how they are implemented. \Cref{tab:vector-apis} lists available functions and their complexity.
+
 Complexity of operations in \Cref{tab:vector-apis} is expressed using the Big O notation. The \bigo{1} value was substituted by $C$ for brevity.
 
 The characteristics of the \rbvec{} and \rrbvec{} operations are effectively constant given that $m = 32$, and the input size $n$ is bound by the maximum capacity of the 32-bit integer resulting in $log_m(n) < 7$.
+
+\paragraph{Core and bulk operations}
+Operations that interact with a single value, such as push, pop, and get, will be referred to as \emph{\textbf{core}} operations. Operations that work with multiple values will be referred to as \emph{\textbf{bulk}} operations, such as append, split, and iterators.
 
 \subsubsection*{Iterators}
 Iterators\footnote{\url{https://doc.rust-lang.org/std/iter/trait.Iterator.html}} are a powerful alternative to \emph{for} loops that offer a variety of operators for processing collection elements.
