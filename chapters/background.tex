@@ -34,14 +34,12 @@ An algorithm that is used to lookup values in \treerb{} is called \emph{radix se
 \subsubsection*{Bit partitioning}
 Radix search accepts a key of the integer type as an argument. It can be thought of as a composite key, where each subkey is a sequence of bits. Conceptually, the idea is to divide the key into bit blocks, where each block is an index specific to the tree level.
 
-As demonstrated in \Cref{eq:bits-per-level}, the bit block size can be calculated from the branching factor. It will be referred to as \x{} or \emph{bits per level}.
+As demonstrated in \Cref{eq:bits-per-level}, the bit block size can be calculated from the branching factor. It will be referred to as \x{} or \emph{bits per level}. When the branching factor \m{} is 16 \x{} is 4, meaning that the subkey size is equal to 4 bits.
 
 \begin{equation}
     \label{eq:bits-per-level}
     x = log_2(m)
 \end{equation}
-
-For example, when the branching factor \m{} is 16 \x{} is 4, meaning that the subkey size is equal to 4 bits.
 
 \subsubsection*{Extracting subkeys}
 The number of subkeys within the search key depends on the number of tree levels or \h{}. For example, a search key addressing an element of the tree of ${h = 3}$ and ${x = 2}$ will consist of 3 subkeys taking up 6 bits of space in total.
@@ -264,7 +262,7 @@ The complexity of the operation is \bigo{m \cdot log_m(n)} as it traverses and c
         \EndFunction
 
         \State
-        
+
         \Function{Push}{root, value}
             \State newRoot \la\ \nil{}
 
@@ -375,7 +373,7 @@ With relaxed \treerrb{} constraints, there is no reliable way to calculate the s
 
 When the radix search encounters a relaxed node, it compares the entire search key against entries in the size table. A subtree contains the desired value if the corresponding size table entry is bigger than or equal to the search key. Before descending into a subtree and repeating the search step, the search key is subtracted the size of the subtree.
 
-When a balanced node is encountered, the search process falls back to the balanced version of the radix search algorithm \Cref{sec:rb-tree-radix-search}. 
+When a balanced node is encountered, the search process falls back to the balanced version of the radix search algorithm \Cref{sec:rb-tree-radix-search}.
 
 Since the tree traversal involves scanning an \m{} long \emph{sizes} array for every node from the root to a leaf, the complexity of relaxed radix search is \bigo{m \cdot log_m(n)}. In theory, the \textproc{FindIndex} function in \Cref{lst:rrb-tree-relaxed-radix-search} can be replaced with binary search resulting in slightly better \bigo{log_2(m) \cdot log_m(n)} performance. However, it is nearly impossible to measure the difference for such small sized arrays, as linear scan can be as fast if not faster due to its simplicity and CPU cache locality\footnote{\url{https://dirtyhandscoding.wordpress.com/2017/08/25/performance-comparison-linear-search-vs-binary-search/}}.
 
