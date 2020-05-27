@@ -1,7 +1,4 @@
-% TODO: you should be using terms flat and tree representation (to match with the documentation)
-% TODO: figure out how to make all tables consistently wide across the thesis: 130mm
 % TODO: consistent references (the format of author names, years, pages, etc)
-% TODO: make sure that pre-face is padded correctly for printing
 
 \documentclass[12pt,a4paper,english,twoside,openright]{report}
 \usepackage{parskip}
@@ -78,7 +75,7 @@
 \setlength\bibitemsep{\baselineskip}
 
 \usepackage[
-  pdftitle={An RRB-Tree based vector for Rust},
+  pdftitle={An RRB-tree based vector for Rust},
   pdfauthor={Araz Abishov},
   citecolor=linkblue,
   urlcolor=linkblue,
@@ -106,15 +103,15 @@
 \newcommand{\rpds}{\crate{rpds}}
 \newcommand{\rayon}{\crate{rayon}}
 
-% Used to refer to the RRB-Tree type
+% Used to refer to the RRB-tree type
 % provided by pvec-rs.
 \newcommand{\rrbtree}{\type{RrbTree}}
 
-% This macro is used to refer to the RRB-Tree
+% This macro is used to refer to the RRB-tree
 % as a concept, rather than a concrete type
 % provided by pvec-rs.
-\newcommand{\treerrb}{RRB-Tree}
-\newcommand{\treerb}{RB-Tree}
+\newcommand{\treerrb}{RRB-tree}
+\newcommand{\treerb}{RB-tree}
 
 \newcommand{\refcell}{\type{RefCell}}
 \newcommand{\boxptr}{\type{Box}}
@@ -159,14 +156,6 @@
 \tableofcontents{}
 
 \cleardoublepage
-\pdfbookmark[1]{List of Listings}{bm-listings}
-\listoflistings
-
-\cleardoublepage
-\pdfbookmark[1]{List of Figures}{bm-figures}
-\listoffigures
-
-\cleardoublepage
 \include{chapters/abstract}
 
 \cleardoublepage
@@ -185,6 +174,18 @@
 \include{chapters/benchmarks}
 \include{chapters/conclusion}
 \include{chapters/appendix}
+
+\cleardoublepage
+\pdfbookmark[1]{List of Listings}{bm-listings}
+\listoflistings
+
+\cleardoublepage
+\pdfbookmark[1]{List of Figures}{bm-figures}
+\listoffigures
+
+\cleardoublepage
+\pdfbookmark[1]{List of Tables}{bm-tables}
+\listoftables
 
 \listoftodos
 

@@ -1,3 +1,5 @@
+% TODO: you should be using terms flat and tree representation (to match with the documentation)
+
 \chapter{Methodology}
 \label{chapter:methodology}
 
@@ -28,7 +30,7 @@ To understand how effective proposed optimizations are, we need to evaluate vari
     \end{tabular}
 
     \label{tab:vec-implementations}
-    \caption{A table of vector implementations.}
+    \caption{A table of vector implementations}
 \end{table}
 
 \footnotetext{Both \imrsvec{} and \pvec{} use \rrbtree{} at its core. It has been developed independently in parallel to \pvec{} at the time of writing this paper: \url{https://crates.io/crates/im}.}
@@ -143,7 +145,7 @@ Rayon is a data parallelism library for Rust that helps to turn sequential code 
             .for_each(|x| println!("{}", x));
     \end{minted}
 
-    \caption{Example of using sequential and parallel iterators.}
+    \caption{An example of using sequential and parallel iterators}
     \label{fig:par-iter-example}
 \end{figure}
 
@@ -192,7 +194,7 @@ Another requirement for parallel iterators is that the type of values it works w
         \draw ([xshift=1mm]array-1-12.east)--++(0:3mm) node[right]{ Vector };
     \end{tikzpicture}
 
-    \caption{Visualization of work splitting in Rayon.}
+    \caption{Visualization of work splitting in Rayon}
     \label{fig:rayon-work-splitting}
 \end{figure}
 
@@ -214,7 +216,7 @@ Next, Rayon decides whether it is beneficial to parallelize the work by evaluati
         );
     \end{minted}
 
-    \caption{An example of using Rayon's join.}
+    \caption{An example of using Rayon's join}
     \label{fig:rayon-join}
 \end{figure}
 
@@ -274,7 +276,7 @@ All benchmarks were executed on a computer with an octa-core processor with hype
     \end{tabular}
 
     \label{tab:exec-environment}
-    \caption{Hardware and software specification used for benchmarking.}
+    \caption{Hardware and software specification used for benchmarking}
 \end{table}
 
 \subsection{Running benchmarks}
@@ -292,7 +294,7 @@ Benchmarks can be compiled and executed using Rust's package manager named \emph
         cargo bench --features=arc
     \end{minted}
 
-    \caption{Running sequential benchmarks.}
+    \caption{Executing sequential benchmarks}
     \label{fig:sequential-benches}
 \end{figure}
 
@@ -304,7 +306,7 @@ To execute parallel benchmarks, the user needs to pass both the \arc{} and \emph
         cargo bench --features=arc,rayon_iter
     \end{minted}
 
-    \caption{Running parallel benchmarks.}
+    \caption{Executing parallel benchmarks}
     \label{fig:parallel-benches}
 \end{figure}
 
@@ -329,7 +331,7 @@ Memory benchmarks produce consistent and reproducible results. Hence it is enoug
         sh benches.sh
     \end{minted}
 
-    \caption{Running memory benchmarks.}
+    \caption{Executing memory benchmarks}
     \label{fig:memory-benches}
 \end{figure}
 

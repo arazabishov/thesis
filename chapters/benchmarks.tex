@@ -32,7 +32,7 @@ The following operations were evaluated for vector implementations in \ref{tab:v
     \end{tabular}
 
     \label{tab:vec-core-operations}
-    \caption{A table of core operations.}
+    \caption{A table of core operations}
 \end{table}
 
 \paragraph{Benchmark structure}
@@ -138,7 +138,7 @@ Iterators consume the tree-based vectors by chunks, rather than by individual va
     \end{tikzpicture}
     \end{adjustbox}
 
-    \caption{Benchmark results of index sequentially and iterator.}
+    \caption{Benchmarking results of index sequentially and iterator}
     \label{fig:index-sequentially}
 \end{figure}
 
@@ -220,7 +220,7 @@ In this benchmark, values will be read at random positions. Thus, it is quite li
         \end{loglogaxis}
     \end{tikzpicture}
 
-    \caption{Benchmarking results of indexing randomly.}
+    \caption{Benchmarking results of indexing randomly}
     \label{fig:index-randomly}
 \end{figure}
 
@@ -342,7 +342,7 @@ The test function iterates over vector at indices in the \range{[0, N)} range, a
     \end{tikzpicture}
     \end{adjustbox}
 
-    \caption{Benchmarking results of updating values sequentially.}
+    \caption{Benchmarking results of updating values sequentially}
     \label{fig:update-sequentially}
 \end{figure}
 
@@ -438,7 +438,7 @@ The test function contains a loop, which is executed \n{} times. In the loop bod
     \end{tikzpicture}
     \end{adjustbox}
 
-    \caption{Benchmarking results of updating values randomly.}
+    \caption{Benchmarking results of updating values randomly}
     \label{fig:update-randomly}
 \end{figure}
 
@@ -533,7 +533,7 @@ As vector is built from scratch in this benchmark, there is no need for a setup 
     \end{tikzpicture}
     \end{adjustbox}
 
-    \caption{Benchmarking results of push.}
+    \caption{Benchmarking results of push}
     \label{fig:push}
 \end{figure}
 
@@ -642,7 +642,7 @@ The setup routine generates a vector of the fixed size of \n{} and passes it to 
     \end{tikzpicture}
     \end{adjustbox}
 
-    \caption{Benchmarking results of adding values to an existing vector.}
+    \caption{Benchmarking results of adding values to an existing vector}
     \label{fig:push-existing}
 \end{figure}
 
@@ -739,7 +739,7 @@ Lowering the height of \rrbtree{} involves the tree capacity calculation using s
     \end{tikzpicture}
     \end{adjustbox}
 
-    \caption{Benchmarking results of popping values.}
+    \caption{Benchmarking results of popping values}
     \label{fig:pop}
 \end{figure}
 
@@ -809,7 +809,7 @@ The benchmark function iterates over generated vectors and appends them into a v
         \end{loglogaxis}
     \end{tikzpicture}
 
-    \caption{Benchmarking results of appending vectors.}
+    \caption{Benchmarking results of appending vectors}
     \label{fig:append}
 \end{figure}
 
@@ -881,7 +881,7 @@ Once a vector is generated, the benchmark function enters the loop with the cond
         \end{loglogaxis}
     \end{tikzpicture}
 
-    \caption{Benchmarking results of splitting vectors.}
+    \caption{Benchmarking results of splitting vectors}
     \label{fig:split}
 \end{figure}
 
@@ -982,7 +982,7 @@ The setup routine prepares two vectors of integers in the \range{[0, N]} problem
     \end{tikzpicture}
 
     \label{fig:adding-two-vectors-par}
-    \caption{Adding elements of two \n{} sized vectors parallelized on \emph{K} number of threads.}
+    \caption{Adding elements of two \n{} sized vectors parallelized on \emph{K} number of threads}
 \end{figure}
 
 \paragraph{Results}
@@ -1066,7 +1066,7 @@ The dictionary file contains 370103 words. The benchmark is parameterized over t
     \end{tikzpicture}
 
     \label{fig:words-filter}
-    \caption{Filtering palindromes on \emph{K} number of threads.}
+    \caption{Filtering palindromes on \emph{K} number of threads}
 \end{figure}
 
 \paragraph{Results}
@@ -1122,7 +1122,7 @@ This benchmark is expected to reveal the memory overhead of using a tree instead
         \end{loglogaxis}
     \end{tikzpicture}
 
-    \caption{The memory footprint of building a vector.}
+    \caption{The memory footprint of building a vector}
     \label{fig:mem-building-vector}
 \end{figure}
 
@@ -1170,7 +1170,7 @@ The test builds a new vector of size \n{}, runs a loop from 0 to \n{}, clones a 
         \end{loglogaxis}
     \end{tikzpicture}
 
-    \caption{The memory footprint of updating and cloning a vector.}
+    \caption{The memory footprint of updating and cloning a vector}
     \label{fig:mem-update-clone}
 \end{figure}
 

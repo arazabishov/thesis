@@ -174,7 +174,7 @@ If \m{} is equal to 4, the maximum subkey value will be 3, which equals to 00000
         \matrix[value] (node-5-4) [below = 0mm of node-4-4.south] { m & n & o & p \\ };
     \end{tikzpicture}
 
-    \caption{Visualization of the radix search algorithm.}
+    \caption{Visualization of the radix search algorithm}
     \label{fig:rb-tree-example-1}
 \end{figure}
 
@@ -360,6 +360,8 @@ A root is redundant if it contains only a single child node, which is true if th
 The pop operation involves tree traversal, and it is creating \m{} new nodes. Hence, its complexity is \bigo{m \cdot log_m(n)}.
 
 \section{Relaxed radix balanced tree}
+\label{sec:rrb-tree}
+
 Relaxed radix balanced tree or \treerrb{}, extends \treerb{} to support concatenation and splitting in \bigo{log(n)} rather than linear time without compromising the performance of other operations.
 
 An invariant that \treerb{} maintains is that all nodes except the right-most ones have to be full. This enables a simple radix search implementation, but on the other hand, makes efficient sub-linear concatenation impossible.
@@ -762,7 +764,7 @@ Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-lev
         \draw[edge, out=315, in=135] (merged-2-2-1-3.south) to (merged-3-7.north);
     \end{tikzpicture}
 
-    \caption{Illustration of rebalancing algorithm: the rebalanced tree}
+    \caption{Illustration of rebalancing algorithm: a rebalanced tree}
     \label{fig:rrb-tree-rebalance}
 \end{figure}
 

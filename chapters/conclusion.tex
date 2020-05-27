@@ -68,7 +68,7 @@ The API surface of the \pvecrs{} does not expose the same set of methods as the 
     \end{tabular}
 
     \label{tab:vec-implementations}
-    \caption{A table of supported methods.}
+    \caption{A table of supported methods}
 \end{table}
 
 Having efficient appending and splitting allows us to implement several other operations, such as inserting or deleting an element at any index. The complexity of these operations is bound by the complexity of the discrete operations that will be used to implement them. Thus, uniform performance characteristics across core operations are critical for achieving good all-around performance for the general-purpose vector.
@@ -77,7 +77,7 @@ For example, element insertion at the given index can be implemented by splittin
 
 Therefore, the operations that can be implemented by combining or re-using core operations were intentionally left as future work due to the time constraints.
 
-\subsection{Improving dynamic representation}
+\subsection{Improving the dynamic representation}
 
 \paragraph{Automatically switching to the flat representation}
 A distinct feature of \pvec{} is the ability to start as a standard vector and then switch to \rrbvec{} when cloned. However, there is no mechanism to switch back to the flat representation, for example, when all cloned instances are destroyed.
@@ -109,7 +109,7 @@ An annotated example of this optimization in use is provided in figure \ref{fig:
         // execution continues
     \end{minted}
 
-    \caption{Example of switching back to the flat representation.}
+    \caption{An example of switching back to the flat representation}
     \label{fig:switching-to-flat}
 \end{figure}
 
