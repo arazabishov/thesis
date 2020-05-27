@@ -200,9 +200,9 @@ Another requirement for parallel iterators is that the type of values it works w
 
 At the core, Rayon relies on the fork-join\footnote{The fork-join pattern was first pioneered in 1963\cite{history-of-fork-join}, and was popularized by the Cilk project\cite{cilk}} pattern for dividing and distributing the work between threads.
 
-When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see figure \ref{fig:rayon-work-splitting}.
+When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see \Cref{fig:rayon-work-splitting}.
 
-A method that splits the work is \mintinline{rust}{rayon::join}, and it accepts two \emph{closures}\footnote{Rust’s closures are anonymous functions you can save in a variable or pass as arguments to other functions.}. Its usage is demonstrated in figure \ref{fig:rayon-join}.
+A method that splits the work is \mintinline{rust}{rayon::join}, and it accepts two \emph{closures}\footnote{Rust’s closures are anonymous functions you can save in a variable or pass as arguments to other functions.}. Its usage is demonstrated in \Cref{fig:rayon-join}.
 
 Next, Rayon decides whether it is beneficial to parallelize the work by evaluating the factors such as the number of available threads, the \emph{split factor}\footnote{Split factor is defined by the minimum and the maximum size of the work chunk.}, and the workload. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided further. When both closures finish working, the results are combined and returned to the caller.
 
@@ -280,7 +280,7 @@ All benchmarks were executed on a computer with an octa-core processor with hype
 \end{table}
 
 \subsection{Running benchmarks}
-Benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of a persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag, as demonstrated in figure \ref{fig:sequential-benches}. A particular benchmark can be specified by name as an argument to cargo.
+Benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of a persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag, as demonstrated in \Cref{fig:sequential-benches}. A particular benchmark can be specified by name as an argument to cargo.
 
 \floatstyle{boxed}
 \begin{figure}[!htbp]
@@ -315,7 +315,7 @@ Criterion can also generate HTML report that includes charts created by \emph{gn
 For more information on available options and parameters for Criterion, please consult the library documentation\footnote{\url{https://docs.rs/criterion/0.3.1/criterion/}}.
 
 \subsubsection*{Memory benchmark results}
-Memory benchmarks produce consistent and reproducible results. Hence it is enough to execute them only once. Due to the differences in how \emph{time} works on different operating systems, macOS is the only platform supported by the memory bencher at the moment. Figure \ref{fig:memory-benches} demonstrates how to execute the tests:
+Memory benchmarks produce consistent and reproducible results. Hence it is enough to execute them only once. Due to the differences in how \emph{time} works on different operating systems, macOS is the only platform supported by the memory bencher at the moment. \Cref{fig:memory-benches} demonstrates how to execute the tests:
 
 \floatstyle{boxed}
 \begin{figure}[!htbp]

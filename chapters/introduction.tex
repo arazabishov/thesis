@@ -174,7 +174,7 @@ There are cases when a single object might have multiple owners. In graph data s
 
 To enable multiple ownership, Rust has a type called \type{Rc<T>}, which is an abbreviation for reference counting. The \type{Rc<T>} type keeps track of the number of references to a value that determines whether or not a value is still in use. If there are zero references to a value, the value can be cleaned up without any references becoming invalid.
 
-Listing \ref{lst:rc} demonstrates how multiple ownership works using the \type{Rc<T>} pointer. On line 2, a vector is created and wrapped into reference counting pointer immediately. On the first call to \mintinline{rust}{Rc::make_mut} method, the number 42 is pushed onto the vector.
+\Cref{lst:rc} demonstrates how multiple ownership works using the \type{Rc<T>} pointer. On line 2, a vector is created and wrapped into reference counting pointer immediately. On the first call to \mintinline{rust}{Rc::make_mut} method, the number 42 is pushed onto the vector.
 
 The \mintinline{rust}{rc} variable is cloned before it is passed to \mintinline{rust}{take} by value, causing the reference count to be incremented to 2. It is important to note that the underlying vector object is not cloned until line 16, where \mintinline{rust}{Rc::make_mut} function clones the inner value to ensure unique ownership. When \mintinline{rust}{take} is finished, both \mintinline{rust}{my_rc} and the newly copied vector go out of the scope and destroyed.
 
@@ -183,6 +183,7 @@ The execution continues on line 9, where \mintinline{rust}{main} proceeds updati
 Note that \type{Rc<T>} is only for use in single-threaded scenarios. \type{Arc<T>} that stands for atomic reference counting should be used in a multi-threaded environment instead.
 
 \subsection{Enums, structs and traits}
+\label{sec:enums-structs-traits}
 
 \subsubsection*{Structs}
 

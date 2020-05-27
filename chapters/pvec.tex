@@ -19,7 +19,7 @@ The \pvecrs{} project consists of three crates:
     \item \crate{benches-mem}: The benchmarking application for measuring the memory footprint of persistent vectors. Its usage is described in detail in Chapter \ref{chapter:methodology}.
 \end{itemize}
 
-The structure of the library is demonstrated in Listing \ref{lst:library-structure}. The \dir{pvec-rs} directory is the root of the library crate. The definition of \rrbtree{}, \rbvec{}, \rrbvec{}, and \pvec{} are all located under the \dir{src} folder. The \dir{benches} and \dir{tests} folders are for runtime benchmarks and integration tests correspondingly.
+The structure of the library is demonstrated in \Cref{lst:library-structure}. The \dir{pvec-rs} directory is the root of the library crate. The definition of \rrbtree{}, \rbvec{}, \rrbvec{}, and \pvec{} are all located under the \dir{src} folder. The \dir{benches} and \dir{tests} folders are for runtime benchmarks and integration tests correspondingly.
 
 \begin{figure}[!htbp]
     \definecolor{folderbg}{RGB}{124, 166, 198}
@@ -104,7 +104,7 @@ The \pvecrs{} project can be configured using the feature flags described in Tab
     \end{tabular}
 
     \label{tab:feature-flags}
-    \caption{Feature flags for the library configuration.}
+    \caption{Feature flags for the library configuration}
 \end{table}
 
 By default, the branching factor used by the tree-based vector types is equal to 32. If \rust{small_branch} flag is specified, the branching factor will be 4. This flag is useful for integration testing to reveal issues with the re-balancing algorithm earlier as the tree ends-up being significantly taller compared to using the branching factor of 32.
@@ -202,7 +202,7 @@ The library documentation can be found at: \url{https://docs.rs/pvec/}.
 % * Using JS + D3 to visualize the implementation.
 
 \section{Memory layout}
-To define the persistent vector in Rust, we first need to understand how different parts of the data structure can be represented in the computer memory, and which Rust constructs are the most suitable for this purpose.
+To define persistent vectors in Rust, we first need to understand how different parts of the data structure can be represented in the computer memory, and which Rust constructs are the most suitable for this purpose.
 
 The foundation of a confluently persistent vector is \rrbtree{}, with additional fields such as a tail, size, and height. \rrbtree{} consists of infinitely nested nodes, which form a directed acyclic graph\footnote{A directed acyclic graph is a data structure that consists of nodes connected with directed edges, in which moving from node to node by following edges will never lead to the same node again.} in memory.
 
@@ -228,21 +228,21 @@ Rust permits updating objects only through mutable references. To update a value
 \subsection{Structures, enumerations and cache locality}
 With the knowledge of how \rc{} helps to manage the memory and its semantics we can move on to the definition of the \rrbtree{} node using the following Rust constructs:
 \begin{itemize}
-    \item Structures or \emph{structs}: is a custom data type that lets you package together multiple related values\footnote{\url{https://doc.rust-lang.org/book/ch05-00-structs.html}}.
-    \item Enumerations or \emph{enums}: allows you to define a type by enumerating its possible \emph{variants}\footnote{\url{https://doc.rust-lang.org/book/ch06-00-enums.html}}.
+    \item Structures or \emph{structs} are used to define a custom data type that lets you package together multiple related values \ref{sec:enums-structs-traits}.
+    \item Enumerations or \emph{enums} allow to define a type by enumerating its possible \emph{variants} \ref{sec:enums-structs-traits}.
 \end{itemize}
 
 Conceptually, the \rrbtree{} consists of three node types: a balanced branch, a relaxed branch and a leaf. Depending on the tree level, branching nodes reference either other branching nodes or leaves. Thus, the node definition has to be generic over the child node type.
 
 Rust forbids inheritance in structs. It does, however, provide alternative ways of defining data types that are conceptually related: enumerations and \emph{trait objects}\footnote{\url{https://doc.rust-lang.org/book/ch17-02-trait-objects.html}}.
 
-Trait objects are objects that share common behavior by implementing the same interface. The main advantage of trait objects is their extensibility. Enums, on the other hand, cannot be extended with more variants outside of their declaration. Since the tree node is an implementation detail of a persistent vector and is not expected to be extended, enums were favored over trait objects.
+Trait objects are objects that share common behavior by implementing the same interface. The main advantage of trait objects is their extensibility. Enums, on the other hand, cannot be extended with more variants outside of their declaration. Since tree nodes are an implementation detail of persistent vectors and are not expected to be extended, enums were favored over trait objects.
 
 Each enum variant can have a different set of fields. Hence, the enum size is capped by its largest variant to guarantee that all variants can be used interchangeably.
 
-\subsubsection*{The \rrbtree{} node}
+\subsubsection*{Defining \rrbtree{} node in Rust}
 
-By using structs and enums in combination with \rc{}, we can finally bring everything together to define the \rrbtree{} node. The figure \ref{fig:rrbtree-node} presents the structure as it is in the library.
+We can finally bring everything together using structs and enums in combination with \rc{} to define the \rrbtree{} node. \Cref{fig:rrbtree-node} presents the structure as it is in the library.
 
 \begin{listing}[!ht]
 
@@ -286,11 +286,11 @@ By using structs and enums in combination with \rc{}, we can finally bring every
         }
     \end{minted}
 
-    \caption{Definition of the \rrbtree{} node.}
+    \caption{Definition of the \rrbtree{} node}
     \label{fig:rrbtree-node}
 \end{listing}
 
-Each node type has received its own struct definition. An eagle eyed reader will notice that the \type{Node} enum in figure \ref{fig:rrbtree-node} could have been declared in a more concise way by having the node fields defined directly within the variant. Even though it seems to be a more intuitive approach, it comes at a hidden cost.
+Each node type has received its own struct definition. An eagle eyed reader will notice that the \type{Node} enum in \Cref{fig:rrbtree-node} could have been declared in a more concise way by having the node fields defined directly within the variant. Even though it seems to be a more intuitive approach, it comes at a hidden cost.
 
 \paragraph{The enum size and the cache locality}
 
@@ -351,15 +351,15 @@ Each node type has received its own struct definition. An eagle eyed reader will
         \draw(legalloc.east) node[right, draw=none] {Heap allocation};
     \end{tikzpicture}
 
-    \caption{The memory layout of Rust containers.}
+    \caption{The memory layout of Rust containers}
     \label{fig:memory-layout-of-rust-containers}
 \end{figure}
 
-As mentioned earlier, enums take up as much space as their largest variant. If the node fields were declared within the enum variants directly, the enum size would be equal to the size of \mintinline{rust}{RelaxedBranch}, resulting in the balanced tree reserving as much space as if it was relaxed. See an example of how the enum size is calculated in figure \ref{fig:memory-layout-of-rust-containers}.
+As illustrated in \Cref{fig:memory-layout-of-rust-containers}, enumerations take up as much space as their largest variant. If the node fields were declared within the enum variants directly, the enum size would be equal to the size of \mintinline{rust}{RelaxedBranch}, resulting in the balanced tree reserving as much space as if it was relaxed.
 
 The more space nodes use, the more expensive the memory allocations are. Also, bigger nodes are more likely to not fit into the CPU cache lines, negatively impacting the performance even more.
 
-To avoid the unnecessarily large memory footprint of the \mintinline{rust}{Node} enum, the decision was made to extract the node fields into structs as demonstrated in the figure \ref{fig:rrbtree-node}. By wrapping the struct instances into a smart pointer such as \rc{}, we explicitly move the allocation of the node to the heap.
+To avoid the unnecessarily large memory footprint of the \mintinline{rust}{Node} enum, the decision was made to extract the node fields into structs as demonstrated in the \Cref{fig:rrbtree-node}. By wrapping the struct instances into a smart pointer such as \rc{}, we explicitly move the allocation of the node to the heap.
 
 The size of the \rc{} pointer is independent of the type it encapsulates. Hence, the size of the \mintinline{rust}{Node} enum boils down to the size of the enum tag, the weak and strong reference count fields of \rc{}, and the actual pointer to the heap.
 
@@ -440,25 +440,25 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
         \draw[->, shorten >= 4pt, out=0, in=0, looseness=2] (enum-var-leaf.east) to (leaf.east);
     \end{tikzpicture}
 
-    \caption{The memory layout of the \rrbtree{} node.}
+    \caption{The memory layout of the \rrbtree{} node}
     \label{fig:memory-layout-of-rrbtree-node}
 \end{figure}
 
-The figure \ref{fig:memory-layout-of-rrbtree-node} is the visualization of how the enum and struct definitions of \rrbtree{} node are arranged in memory.
+\Cref{fig:memory-layout-of-rrbtree-node} visualizes how the enum and struct definitions of the \rrbtree{} node are arranged in memory.
 
 \section{Pay only for the features you use}
 The \pvecrs{} project draws inspiration from one of the Rust key design traits --- zero-cost abstractions. In this chapter, we will look at how \pvec{} follows that design principle by offering optimizations such as transience and dynamic representation, without sacrificing Rust's safety guarantees.
 
 \subsection{Transience as the language feature}
-Popular persistent data structure libraries, such s \emph{immutable-js}\footnote{\url{https://immutable-js.github.io/immutable-js/}}, or collections in the standard library of \emph{Scala}\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, often provide an interface that is radically different from the interface of the ephemeral data structures.
+Popular persistent data structure libraries, such as \emph{immutable-js}\footnote{\url{https://immutable-js.github.io/immutable-js/}}, or collections in the standard library of \emph{Scala}\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, often provide an interface that is very different from the interface of the ephemeral data structures.
 
-As demonstrated in Listing \ref{lst:conventional-interface}, instead of updating the vector in-place, the operation returns a new instance that contains the change. When a collection is set up like that, the library can guarantee that the original vector will stay unmodified, eliminating the whole class of bugs such as race conditions.
+As demonstrated in \Cref{lst:conventional-interface}, instead of updating the vector in-place, the operation returns a new instance that contains the change. When a collection is set up like that, the library can guarantee that the original vector will stay unmodified, eliminating the whole class of bugs such as race conditions.
 
 This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. The solution to this problem was first introduced in the \emph{Clojure} programming language in the shape of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies \ref{sec:transience}.
 
 Rust's compiler, however, eliminates race conditions by forbidding simultaneous mutation of value by enforcing ownership and borrowing rules. The ownership rule essentially means that an object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Further than that, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
 
-This leads us to a question if the traditional persistent collection interface is needed in Rust. The short answer is no because compiler guards developers from common mistakes. Nicholas Matsakis, the lead engineer behind the Rust's compiler, has discussed this question in his blog\footnote{\url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}.
+This leads us to a question of whether the traditional persistent collection interface is needed in Rust. The short answer is no because the compiler protects developers from common mistakes. Nicholas Matsakis, the lead engineer of the Rust's compiler, elaborated why in Rust persistent vectors can have an ordinary interface in his blog\footnote{\url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}.
 
 \subsubsection*{Unique access as transience}
 Unique access as a term stems from the fact that in Rust, a mutable reference to an object must be \emph{unique}. By leveraging this guarantee, persistent vectors in Rust can have a conventional mutable interface without sacrificing safety.
@@ -507,7 +507,7 @@ Unique access as a term stems from the fact that in Rust, a mutable reference to
     \label{lst:conventional-interface}
 \end{listing}
 
-As demonstrated in \rust{mutable_api} in Listing \ref{lst:conventional-interface}, the conventional interface allows to update the vector in-place without creating copies.
+As demonstrated in \rust{mutable_api} in \Cref{lst:conventional-interface}, the conventional interface allows to update the vector in-place without creating copies.
 
 This is possible because of the conditional \emph{copy-on-write} semantics of \rc{} pointers that are used at the core of \rrbtree{}. If the reference count is at most one, \rust{Rc::make_mut} will not copy the underlying value but rather update it in-place.
 
@@ -564,7 +564,7 @@ Essentially, a persistent vector type -- \pvec{}, can be backed by two different
 
 \pvec{} has two representations: \type{Flat} that is using \stdvec{}, and \type{Tree} that is backed by \rrbvec{}. The initial capacity of both representations is equal to the branching factor of 32 by default.
 
-Spilling happens by converting the flat vector into an iterator of sub-arrays that are 32 elements wide and pushing them directly onto \rrbtree{} as leaf nodes. If the last chunk is smaller than 32, then it will be used as the tail for the new \rrbvec{}. See figure \ref{fig:switching-representations} that visualizes the transition.
+Spilling happens by converting the flat vector into an iterator of sub-arrays that are 32 elements wide and pushing them directly onto \rrbtree{} as leaf nodes. If the last chunk is smaller than 32, then it will be used as the tail for the new \rrbvec{}. See \Cref{fig:switching-representations} that visualizes the transition.
 
 One could have considered splitting up the original vector into chunks and reusing them instead of copying. Unfortunately, heap allocators do not have a mechanism for safely splitting an existing allocation into smaller ones. The Rust's allocator interface\footnote{\url{https://doc.rust-lang.org/std/alloc/struct.System.html}} reflects this limitation by exposing functions that allow allocating and freeing memory but no subdivision of existing allocations.
 
@@ -615,6 +615,6 @@ Additionally, the cost of spilling needs to be paid only once, and will be amort
         \draw[edge, out=270, in=90] (representation-flat-box.south) to (representation-tree-box.north);
     \end{tikzpicture}
 
-    \caption{Visualization of how the vector representation is switched.}
+    \caption{Visualization of switching the vector representation}
     \label{fig:switching-representations}
 \end{figure}

@@ -425,7 +425,7 @@ The concatenation algorithm used in this project is from \cite{rrb-vector-practi
 
 The algorithm consists of two stages: descending the tree, and then, merging and rebalancing nodes. The time complexity of the presented concatenation algorithm is \bigo{m^2 \cdot{} log_m(n)}.
 
-The recursive function in Listing \ref{lst:rrb-tree-concatenation} descends the tree by selecting the rightmost node of the left tree and the leftmost node of the right tree. If one of the trees is taller than the other, the function descends into a taller tree only until nodes of both trees are at the same level.
+The recursive function in \Cref{lst:rrb-tree-concatenation} descends the tree by selecting the rightmost node of the left tree and the leftmost node of the right tree. If one of the trees is taller than the other, the function descends into a taller tree only until nodes of both trees are at the same level.
 
 When the bottom level with leaf nodes is reached, the function stops descending and starts merging and rebalancing nodes to ensure the \bigo{log_m(n)} bound on the tree height.
 
@@ -600,7 +600,7 @@ Concatenation starts at the bottom of the tree by merging the leaf nodes. The re
     \label{fig:rrb-tree-rebalance-level-1}
 \end{figure}
 
-Rebalancing at level 1 involves the left and right branches together with the newly created branch from the previous step. The algorithm avoids processing nodes where rebalancing is not beneficial. For example, in Figure \ref{fig:rrb-tree-rebalance-level-2} where the \emph{full} nodes from the left-hand side tree are re-used without rebalancing them.
+Rebalancing at level 1 involves the left and right branches together with the newly created branch from the previous step. The algorithm avoids processing nodes where rebalancing is not beneficial. For example, in \Cref{fig:rrb-tree-rebalance-level-2} where the \emph{full} nodes from the left-hand side tree are re-used without rebalancing them.
 
 \begin{figure}[H]
     \colorlet{colorleft}{red!30}
@@ -677,7 +677,7 @@ Rebalancing at level 1 involves the left and right branches together with the ne
     \label{fig:rrb-tree-rebalance-level-2}
 \end{figure}
 
-Figure \ref{fig:rrb-tree-rebalance} is the last step that rebalances the top-level nodes of the left and right trees, producing a new root. If the root contains only a single child, its child will be promoted to be the root to avoid unnecessary overhead.
+\Cref{fig:rrb-tree-rebalance} is the last step that rebalances the top-level nodes of the left and right trees, producing a new root. If the root contains only a single child, its child will be promoted to be the root to avoid unnecessary overhead.
 
 \begin{figure}[H]
     \colorlet{colorleft}{red!30}

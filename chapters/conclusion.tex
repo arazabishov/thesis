@@ -84,7 +84,7 @@ A distinct feature of \pvec{} is the ability to start as a standard vector and t
 
 One way to achieve this is by flattening the \rrbtree{} into a standard vector when the underlying tree is not shared with any clones. One could use Rust's destructors to observe when \pvec{} clones go out of the scope. The challenge is to be able to say when the tree is not shared anymore. A brute force approach would be traversing the tree and counting references, but obviously, it is very in-efficient.
 
-An annotated example of this optimization in use is provided in figure \ref{fig:switching-to-flat}.
+An annotated example of this optimization in use is provided in \Cref{fig:switching-to-flat}.
 
 \begin{figure}[H]
     \centering
