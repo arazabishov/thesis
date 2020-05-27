@@ -462,7 +462,7 @@ When the bottom level with leaf nodes is reached, the function stops descending 
 
 The \textproc{Rebalance} function accepts three lists of nodes as arguments. The left and right lists constitute all nodes of both trees at the given level except two: the rightmost node of the left tree and the leftmost node of the right tree. Those two nodes are already rebalanced and passed as the middle argument. Three lists are concatenated together into a single merged list.
 
-The goal of rebalancing is to arrange the children of merged nodes in such a way that all nodes except the rightmost branch are filled with values. When the \textproc{Rebalance} function completes re-arranging nodes, it returns a new branch containing rebalanced nodes. Pseudocode for rebalancing can be found in Appendix \ref{lst:rrb-tree-rebalance}.
+The goal of rebalancing is to arrange the children of merged nodes in such a way that all nodes except the rightmost branch are filled with values. When the \textproc{Rebalance} function completes re-arranging nodes, it returns a new branch containing rebalanced nodes. Pseudocode for rebalancing can be found in \Cref{lst:rrb-tree-rebalance}.
 
 The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-level-0}-\ref{fig:rrb-tree-rebalance}. Note, presented figures exclude parts of trees that are not important for conveying the idea to preserve space.
 

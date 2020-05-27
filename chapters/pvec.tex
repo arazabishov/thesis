@@ -16,7 +16,7 @@ The \pvecrs{} project consists of three crates:
 \begin{itemize}
     \item The library crate itself with the persistent vector implementation.
     \item \crate{web-vis}: a web application for visualization of the data structure in the browser.
-    \item \crate{benches-mem}: The benchmarking application for measuring the memory footprint of persistent vectors. Its usage is described in detail in Chapter \ref{chapter:methodology}.
+    \item \crate{benches-mem}: The benchmarking application for measuring the memory footprint of persistent vectors. Its usage is described in detail in \Cref{chapter:methodology}.
 \end{itemize}
 
 The structure of the library is demonstrated in \Cref{lst:library-structure}. The \dir{pvec-rs} directory is the root of the library crate. The definition of \rrbtree{}, \rbvec{}, \rrbvec{}, and \pvec{} are all located under the \dir{src} folder. The \dir{benches} and \dir{tests} folders are for runtime benchmarks and integration tests correspondingly.
@@ -90,7 +90,7 @@ The structure of the library is demonstrated in \Cref{lst:library-structure}. Th
 \end{figure}
 
 \subsection{Configurability}
-The \pvecrs{} project can be configured using the feature flags described in Table \ref{tab:feature-flags}.
+The \pvecrs{} project can be configured using the feature flags described in \Cref{tab:feature-flags}.
 
 \begin{table}[H]
 
@@ -114,7 +114,7 @@ To compile persistent vectors for use in multi-threaded environment Rust require
 To access the \rayon{}'s parallel iterator implementations, the library user has to use both the \rust{arc} and \rust{rayon_iter} feature flags when including the library.
 
 \subsection{The library APIs}
-The \pvecrs{} project is the Rust library crate that offers several persistent vector implementations listed in Table \ref{tab:vec-implementations}.
+The \pvecrs{} project is the Rust library crate that offers several persistent vector implementations listed in \Cref{tab:vec-implementations}.
 
 \begin{table}[!htbp]
 
@@ -189,7 +189,7 @@ Operations that interact with a single value, such as push, pop, and get, will b
 \subsubsection*{Iterators}
 Iterators\footnote{\url{https://doc.rust-lang.org/std/iter/trait.Iterator.html}} are a powerful alternative to \emph{for} loops that offer a variety of operators for processing collection elements.
 
-The foundation of iterators for \pvecrs{} vectors is the \rrbtree{} iterator implementation that presents a tree as a collection of leaf nodes. Instead of reading individual values using the radix search, the tree iterator returns the entire leaf node. Vector iterators cache the node and read values from it until it is exhausted, after which they request the next node from the tree iterator, minimizing the number of the tree-traversals and improving performance. This optimization can be thought of as the generalization of the tail optimization described in Section \ref{sec:tail-optimization}.
+The foundation of iterators for \pvecrs{} vectors is the \rrbtree{} iterator implementation that presents a tree as a collection of leaf nodes. Instead of reading individual values using the radix search, the tree iterator returns the entire leaf node. Vector iterators cache the node and read values from it until it is exhausted, after which they request the next node from the tree iterator, minimizing the number of the tree-traversals and improving performance. This optimization can be thought of as the generalization of the tail optimization described in \Cref{sec:tail-optimization}.
 
 \subsubsection*{Parallel iterators}
 Parallel iterators process collection elements on multiple threads. The parallel iterator implementation for \pvecrs{} is based on the data parallelism framework \rayon{}, and can be enabled using the \rust{arc} and \rust{rayon_iter} feature flags. Compared to sequential iterators, the parallel ones do not guarantee the deterministic order of processing values.

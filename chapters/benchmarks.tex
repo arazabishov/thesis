@@ -17,7 +17,7 @@ Implementations that are prefixed with \relaxed{} in the figure legend were conf
 \section{Sequential benchmarks}
 Each benchmark described in this section focuses on a particular operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify vector, such as push, will have a complementary version of the benchmark, which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in the tree-based and standard vectors correspondingly.
 
-The following operations were evaluated for vector implementations in \ref{tab:vec-implementations}:
+The following operations were evaluated for vector implementations in \Cref{tab:vec-implementations}:
 \begin{table}[!htbp]
     \centering
 
@@ -42,7 +42,7 @@ Some benchmarks depend on preconditions. For example, to test indexing, we first
 Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree-based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean runtime in \millis{}.
 
 \paragraph{Results}
-This section contains performance numbers for the non-threadsafe vector implementations. Threadsafe variants are evaluated and discussed separately in section \ref{sec:perf-rc-vs-arc}.
+This section contains performance numbers for the non-threadsafe vector implementations. Threadsafe variants are evaluated and discussed separately in \Cref{sec:perf-rc-vs-arc}.
 
 \subsection{Indexing}
 In this section, we will define benchmarks for accessing values that model the most common ways of working with vector:
@@ -153,7 +153,7 @@ The difference between \rbvec{} and \rrbvec{} becomes noticeable as the problem 
 This, however, is not the case for small problem sizes in the \range{[0, 100]} range, for which the concatenation algorithm produces a balanced tree. Hence, both balanced and relaxed vectors demonstrate similar performance in that range.
 
 \paragraph{Dynamic representation}
-\pvec{} switches its internal representation from the standard vector to \rrbvec{} as soon as cloned. This is evident from the plot \ref{fig:index-sequentially}, where \pvec{} is 4.21 faster than \rbvec{}, but slower than \stdvec{} by a factor of 1.75.
+\pvec{} switches its internal representation from the standard vector to \rrbvec{} as soon as cloned. This is evident from the plot \Cref{fig:index-sequentially}, where \pvec{} is 4.21 faster than \rbvec{}, but slower than \stdvec{} by a factor of 1.75.
 
 \subsubsection*{Iterator}
 Results of the iterator benchmarks show approximately ten-fold improvement in performance over sequential indexing. This is expected, as iterators read the contents of the tree by chunks rather than by index.
