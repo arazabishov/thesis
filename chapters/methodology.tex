@@ -112,9 +112,7 @@ For this project, for each input argument, criterion is configured to capture 10
 \subsection{Garbage collection}
 One of the design goals for this project was to avoid using experimental and unsafe Rust language features. Hence, \pvecrs{}, relies on the memory management means provided by the Rust's standard library only, such as \rc{}. Other automatic memory management mechanisms such as third-party garbage collectors were left out as the future work.
 
-\subsubsection*{Threadsafe reference counting}
-Atomic reference-counted pointers are expected to introduce additional overhead due to the thread-safety guarantees. The goal is to measure the impact of this overhead in tests, by running the sequential benchmarks first using \rc{}, and then \arc{} pointers.
-
+\paragraph{Threadsafe reference counting}
 Parallel benchmarks will be evaluated using only \arc{} pointers, as Rust's compiler forbids passing non-threadsafe types between threads, such as \rc{}.
 
 \section{Parallel benchmarks and Rayon}
@@ -246,7 +244,7 @@ The first option is not ideal because it only evaluates the heap memory usage. A
 Benchmarking by measuring the process footprint allows to capture both the stack and the heap usage, and it does not depend on any special Rust debug or allocator features. This, in turn, means that the benchmarks can be optimized as if they were compiled for the production use, putting them as close as possible to real use cases.
 
 \paragraph{Implementation}
-A new module is introduced to \pvecrs{} -- \crate{pvec-memory}, that includes the binary for executing the memory benchmarks. Its responsibilities are to configure, run and, collect the test results. It will be referred to as \emph{memory bencher} from now on. \todo{A call graph for the memory bencher, time, and benchmarks.}
+A new module is introduced to \pvecrs{} -- \crate{pvec-memory}, that includes the binary for executing the memory benchmarks. Its responsibilities are to configure, run and, collect the test results. It will be referred to as \emph{memory bencher} from now on.
 
 The memory bencher contains a list of tests, input sizes, and vector types. It executes benchmarks by running them through the command line program called \emph{time}, which outputs information about the process, including the maximum amount of memory used in bytes. The memory bencher finds this value in the \emph{maximum resident set size} field in the output of \emph{time}.
 

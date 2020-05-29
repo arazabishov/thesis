@@ -894,13 +894,6 @@ Once a vector is generated, the benchmark function enters the loop with the cond
 \paragraph{Results}
 The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of \kilo{20}, after which it degrades and gets slower than \imrsvec{} and \rrbvec{} by 5.95. The difference is more significant for \rbvec{} at the factor of 65.65 for the size of \kilo{400}.
 
-% NOTE: this can go under the summary part of the
-%  section, rather than being its own sub-section
-\subsection{Rc vs Arc}
-\label{sec:perf-rc-vs-arc}
-\todo{Execute sequential benchmarks using \arc{} pointer}
-\stdvec{} is not included in the comparison, as its implementation does not rely on the reference counting pointers.
-
 \section{Parallel benchmarks}
 \label{sec:par-benchmarks}
 The benchmarks were executed against \stdvec{} and vectors from \pvecrs{}, where \rbvec{}, \rrbvec{}, and \pvec{} were compiled with the threadsafe reference-counted pointer -- \arc{}.
@@ -1127,7 +1120,7 @@ This benchmark is expected to reveal the memory overhead of using a tree instead
 \end{figure}
 
 \paragraph{Results}
-The tree-based vectors use the amount of memory proportional to their size. The \rbvec{} and \pvec{} types, however, consistently use 2.2 times more memory compared to \stdvec{}. On the other hand, \imrsvec{} shows excellent results reviling \stdvec{} with a marginal difference of 1.18 on average. 
+The tree-based vectors use the amount of memory proportional to their size. The \rbvec{} and \pvec{} types, however, consistently use 2.2 times more memory compared to \stdvec{}. On the other hand, \imrsvec{} shows excellent results reviling \stdvec{} with a marginal difference of 1.18 on average.
 
 \subsection{Updating and cloning a vector}
 The test builds a new vector of size \n{}, runs a loop from 0 to \n{}, clones a vector, and updates a value at the given index. All cloned instances are accumulated in another vector to observe how well structural sharing helps to save memory. The vector sizes are in \range{[\kilo{1}, \kilo{60}]} range.
