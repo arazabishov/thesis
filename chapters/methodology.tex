@@ -3,7 +3,7 @@
 \chapter{Methodology}
 \label{chapter:methodology}
 
-Big \bigochar{} is a useful tool for reasoning about scalability and performance in theory, and by design, it does not consider factors such as execution environment. It disregards constant factors as they are not significant for the growth rate of functions. It also does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influences performance. Furthermore, it also applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms, which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
+Big \bigochar{} is a useful theoretical tool for reasoning about scalability and performance, and by design, it does not consider factors such as execution environment. It disregards constant factors as they are not significant for the growth rate of functions. It also does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influence performance. Furthermore, the same applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms, which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
 
 Thus, in this chapter, I will introduce a methodology for the experimental performance evaluation of \rrbvec{}, \pvec{}, and their variants, in comparison to implementations from \imrsvec{} and Rust's standard library. We will look at:
 
@@ -15,18 +15,18 @@ Thus, in this chapter, I will introduce a methodology for the experimental perfo
 To begin with, I will present the focus areas.
 
 \section{Evaluation dimensions}
-To understand how effective proposed optimizations are, we need to evaluate various tree-based vectors, such as \rbvec{}, \rrbvec{}, and \pvec{}. Implementations from \imrsvec{} and the standard library will be evaluated as well. All vector variants are specified in \Cref{tab:vec-implementations}.
+To evaluate the effectiveness of the proposed optimizations, we need to test various tree-based vectors, such as \rbvec{}, \rrbvec{}, and \pvec{}. Implementations from \imrsvec{} and the standard library will be evaluated as well. All vector variants are specified in \Cref{tab:vec-implementations}.
 
 \begin{table}[!htbp]
     \centering
 
     \begin{tabular} { |l| p{11cm} | }
         \hline
-        \stdvec{} & A vector from the Rust's standard library. \\ \hline
-        \rbvec{} & \rbtree{} based vector. \\ \hline
-        \rrbvec{} & \rrbtree{} based vector. \\ \hline
-        \pvec{} & \rrbtree{} based vector with dynamic representation. \\ \hline
-        \imrsvec{} & \rrbtree{} based vector from the third party library \emph{im-rs}\footnotemark{}. \\ \hline
+        \stdvec{} & A vector implementation from the Rust's standard library \\ \hline
+        \rbvec{} & The \rbtree{}-based vector implementation \\ \hline
+        \rrbvec{} & The \rrbtree{}-based vector implementation \\ \hline
+        \pvec{} & The \rrbtree{}-based vector implementation with dynamic representation \\ \hline
+        \imrsvec{} & The \rrbtree{}-based vector implementation from the third party library \emph{im-rs}\footnotemark{} \\ \hline
     \end{tabular}
 
     \label{tab:vec-implementations}
@@ -54,9 +54,9 @@ Space or memory benchmarks are designed to:
 The objectives are the questions that we will address when reviewing benchmark results. They apply both to the runtime and memory tests.
 
 \subsubsection*{Balanced vs. relaxed vectors}
-As an instance of \rrbtree{} is not perfectly balanced and involves the use of size tables for the radix search, it is expected to be somewhat slower in core operations. The goal is to reveal the overhead induced by the relaxed nodes if present at all.
+As instances of \rrbtree{} are generally not perfectly balanced and involve the use of size tables for the radix search, they are expected to be somewhat slower compared to \rbtree{} instances in core operations. The goal is to measure the overhead induced by the relaxed nodes if present at all.
 
-Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The count of the relaxed nodes is partially affected by the size of the vector.
+Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The number of the relaxed nodes is affected by the vector size.
 
 \subsubsection*{Dynamic representation}
 A substantial advantage of the tree-based vectors is that they are cheap to copy. Other operations, however, are faster for \stdvec{} due to its optimal memory layout for CPU. Dynamic representation offers strong \stdvec{} performance until the vector is cloned, switching its representation to \rrbvec{}.
