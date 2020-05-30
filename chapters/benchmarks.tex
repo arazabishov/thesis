@@ -8,16 +8,16 @@
 In this chapter, we will define sequential, parallel, and memory benchmarks, and then evaluate the results of executing them. The overall performance will be discussed, as well as the impact of the following optimizations:
 
 \begin{itemize}
-    \item Effect of \rrbtree{} relaxation on performance of all vector operations.
+    \item The effect of \rrbtree{} relaxation on performance of all vector operations.
     \item The performance impact of the unique access optimization.
-    \item Effectiveness of the dynamic representation.
+    \item The effectiveness of the dynamic representation.
 \end{itemize}
 
 \paragraph{Reading notes}
-Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \emph{rb} tree in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when it is flat. If not specified, the vector is backed by the balanced \rbtree{}.
+Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \treerrb{} in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when the flat representation is used. If not specified, the balanced \treerb{} is used.
 
 \section{Sequential benchmarks}
-Each benchmark described in this section focuses on a particular operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify vector, such as push, will have a complementary version of the benchmark, which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithms used in the tree-based and standard vectors correspondingly.
+Each benchmark described in this section focuses on a particular operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify a vector instance, such as push, will have a complementary version of the benchmark, which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithm used in the tree-based and standard vectors correspondingly.
 
 The following operations were evaluated for vector implementations in \Cref{tab:vec-implementations}:
 \begin{table}[!htbp]
@@ -33,8 +33,8 @@ The following operations were evaluated for vector implementations in \Cref{tab:
         Splitting & Slicing one vector into two at a given position. \\ \hline
     \end{tabular}
 
-    \label{tab:vec-core-operations}
-    \caption{A table of core operations}
+    \label{tab:operations-sequential-benchmarks}
+    \caption{Operations evaluated in the sequential benchmarks}
 \end{table}
 
 \paragraph{Benchmark structure}
@@ -44,7 +44,7 @@ Some benchmarks depend on preconditions. For example, to test indexing, we first
 Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree-based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean runtime in \millis{}.
 
 \paragraph{Results}
-This section contains performance numbers for the non-threadsafe vector implementations. Threadsafe variants are evaluated and discussed separately in \Cref{sec:perf-rc-vs-arc}.
+This section contains performance numbers for the non-threadsafe vector implementations.
 
 \subsection{Indexing}
 In this section, we will define benchmarks for accessing values that model the most common ways of working with vector:
@@ -65,7 +65,7 @@ Figures for the index operation are separated by sequential and random access, w
 \subsubsection*{Index sequentially}
 The benchmark loops over the array of \range{[0, N)} indices, and reads values from a vector at the given position. Only immutable references to values are acquired.
 
-Iterators consume the tree-based vectors by chunks, rather than by individual values. They also they take the ownership of values instead of borrowing them. Hence, the results cannot be compared to the test of access by index.
+Iterators consume the tree-based vectors by chunks, rather than by individual values. They also they take the ownership of values instead of borrowing them.
 
 \begin{figure}[!htbp]
 
@@ -145,9 +145,9 @@ Iterators consume the tree-based vectors by chunks, rather than by individual va
 \end{figure}
 
 \paragraph{Results}
-As expected, the \stdvec{} shows the best results in this test. As it is backed by a contiguous chunk of memory, it takes full advantage of CPU cache locality. Besides, its structure is not affected by the method used to build it, when \rbtree{} and \rrbtree{} based vectors are.
+As expected, \stdvec{} shows the best results in this test. As it is represented by a contiguous chunk of memory, it takes full advantage of CPU cache locality. Besides, its structure is not affected by the method used to build it, when \rbtree{} and \rrbtree{} based vectors are.
 
-Both balanced and relaxed \imrsvec{} variants tend to be slower in comparison to \rrbvec{} in the \range{[100, \mega{1}]} input range by a factor of 2.06. For smaller inputs, \rrbvec{} it is slightly faster with a difference of 1.18.
+Both balanced and relaxed \imrsvec{} variants are slower in comparison to \rrbvec{} in the \range{[100, \mega{1}]} input range by a factor of 2.06. For smaller inputs, \rrbvec{} it is slightly faster with a difference of 1.18.
 
 \paragraph{Balanced vs. relaxed}
 The difference between \rbvec{} and \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the relaxed one by a factor of 2.68 in the \range{[100, \mega{1}]} input range. This is expected because \rrbvec{} introduces relaxed nodes, which rely on the size tables to compute the path to the value.
@@ -166,7 +166,7 @@ Results of the iterator benchmarks show approximately ten-fold improvement in pe
 As iterator does not use size tables for index calculation for \rrbvec{}, it performs identically well compared to \rbvec{}. The same applies to \imrsvec{}.
 
 \subsubsection*{Index randomly}
-In this benchmark, values will be read at random positions. Thus, it is quite likely that desired values will be located far apart in memory, potentially causing a cache invalidation. Additionally, results will show whether the performance degenerates with randomness, as it would with linked lists, for example.
+In this benchmark, values will be read at random positions. Thus, it is quite likely that tested values will be located far apart in memory, potentially causing a cache miss. Additionally, results show whether the performance degenerates with randomness, as it would with linked lists, for example.
 
 \begin{figure}[!htbp]
 
@@ -229,7 +229,7 @@ In this benchmark, values will be read at random positions. Thus, it is quite li
 By iterating \n{} times, a value is accessed at random index, which is generated within the \range{[0, N)} range by using the \crate{rand} crate\footnote{A Rust library for random number generation: \url{https://crates.io/crates/rand}}. According to the \crate{rand} documentation, generated indices are uniformly distributed. The number generator is explicitly seeded to produce the same stream of randomness between runs.
 
 \paragraph{Results}
-A noticeable difference compared to the sequential benchmark is that the performance gap between \pvec{} and \stdvec{} is reduced from 1.76 to 1.14. The reason why \stdvec{} has lost its advantage is because of the frequent cache invalidation on access to random memory locations.
+A noticeable difference compared to the sequential benchmark is that the performance gap between \pvec{} and \stdvec{} is reduced from 1.76 to 1.14. The reason why \stdvec{} has lost its advantage is because of the frequent cache misses on access to random memory locations.
 
 \paragraph{Balanced vs. relaxed}
 \rbvec{} outperforms \rrbvec{} by 1.90 in the \range{[100, \mega{1}]} range. Both \rrbvec{} and \imrsvec{} are equally fast with insignificant marginal differences.
@@ -238,12 +238,11 @@ A noticeable difference compared to the sequential benchmark is that the perform
 It is clear that \pvec{}, when flat, is marginally slower compared to \stdvec{}. The performance difference remains consistent over the input range at 1.75.
 
 \subsection{Updating}
-There are two dimensions in which the update operation is evaluated. The first one is the order in which vector values are updated: sequential and random. The second dimension introduces the clone operation to measure the cost of copying.
+There are two dimensions in which the update operation is evaluated. The first one is the order in which vector values are updated: sequential and random. The second dimension introduces the clone operation to measure the cost of copying:
 
-The benchmark list:
 \begin{itemize}
-    \item Sequentially, with and without \emph{clone}
-    \item At random positions, with and without \emph{clone}
+    \item Sequentially, with and without \emph{clone}.
+    \item At random positions, with and without \emph{clone}.
 \end{itemize}
 
 The setup routine for all benchmarks is identical. As for the index benchmarks, it generates both balanced and relaxed variants of the tree-based vectors. The type of inserted values is an unsigned 64-bit integer.
@@ -253,12 +252,12 @@ The vector size is determined by the benchmark argument. The problem size domain
 \paragraph{The cost of naive clone vs. path copying}
 The path copying algorithm of \rbtree{} enables cheap copies. \pvec{} takes advantage of that by switching from the flat to the tree-based representation when cloned. Hence, the objectives are:
 \begin{itemize}
-    \item Compare performance of naive and path copying algorithms.
+    \item Compare the performance of naive and path copying algorithms.
     \item Evaluate the efficiency of dynamic representation in \pvec{}.
 \end{itemize}
 
 \paragraph{The overhead of relaxed nodes in \rrbtree{}}
-Relaxed nodes are more expensive to clone because of the size tables. Also, \rrbtree{} is not perfectly balanced as \rbtree{}, potentially causing taller trees. The results will reveal if there is measurable overhead in practice.
+Relaxed nodes are more expensive to clone because of the size tables. Also, \rrbtree{} is not perfectly balanced as \rbtree{}, potentially causing taller trees. The results reveal if there is measurable overhead in practice.
 
 \paragraph{Extending benchmarks with the clone operation}
 The test keeps track of the cloned instance in a variable to ensure that at least two objects exist simultaneously when the update is executed. This is necessary because \rc{} pointers clone the underlying value on mutation only when the reference count is bigger than one. Thus, a clone must be present in the scope to enforce path copying.
@@ -547,12 +546,12 @@ When building a vector in the \range{[20, 100]} range, tree-based types are slig
 In the cloning benchmark, persistent vectors once more demonstrate how effective they are when copied, by \rbvec{} being faster than \stdvec{} by a staggering factor of 12.85.
 
 \paragraph{Dynamic representation}
-Overall, \pvec{} is the fastest vector, mostly due to the combination of using \stdvec{} with the pre-allocated space\footnote{\pvec{} is initialized to the capacity of branching factor, that is 32 in the test configuration.} for small sizes. Closer to the end of the size range, \stdvec{} and \pvec{} align in performance with the average difference of 1.27.
+Overall, \pvec{} is the fastest vector, mostly due to the combination of using \stdvec{} with the pre-allocated space\footnote{\pvec{} is initialized to the capacity of branching factor, that is 32 in the test configuration.} for small sizes. Closer to the end of the size range, \stdvec{} and \pvec{} align in performance with an average difference of 1.27.
 
-When cloned, \pvec{} is losing only to \rbvec{} by in-significant 1.35, demonstrating the effectiveness of the dynamic representation.
+When cloned, \pvec{} is losing only to \rbvec{} by insignificant 1.35, demonstrating the effectiveness of the dynamic representation.
 
 \subsubsection*{Adding values to an existing vector}
-Push operation does not produce relaxed nodes in balanced trees. Hence, there is no way to evaluate the impact of relaxation in the benchmark of building a vector from scratch. Thus, in this benchmark, values are added to an existing vector, where vector can be both balanced and relaxed depending on the setup routine.
+The push operation does not produce relaxed nodes in balanced trees. Hence, there is no way to evaluate the impact of relaxation in the benchmark of building a vector from scratch. Thus, in this benchmark, values are added to an existing vector, where vector can be both balanced and relaxed depending on the setup routine.
 
 Objectives of the benchmark are:
 \begin{itemize}
@@ -560,7 +559,7 @@ Objectives of the benchmark are:
     \item Measure the overhead of using size tables when cloning relaxed nodes.
 \end{itemize}
 
-The setup routine generates a vector of the fixed size of \n{} and passes it to the test function. The balanced, \rbtree{} based vector is created by pushing values directly into it, while the \rrbtree{} based one, is created by concatenating several vectors together. Once a vector is created, the test function pushes \n{} values onto it.
+The setup routine generates a vector of the fixed size of \n{} and passes it to the test function. The balanced, \rbtree{}-based vector is created by pushing values directly into it, while the \rrbtree{}-based one, is created by concatenating several vectors together. Once a vector is created, the test function pushes \n{} values onto it.
 
 \begin{figure}[!htbp]
 
@@ -649,14 +648,14 @@ The setup routine generates a vector of the fixed size of \n{} and passes it to 
 \end{figure}
 
 \paragraph{Results}
-Even though size tables increase the size of the node and add complexity to the implementation, both relaxed and balanced trees show nearly identical performance in this test.
+Even though size tables increase the node size in \rrbtree{} and add complexity to the implementation, both relaxed and balanced trees show nearly identical performance in this test.
 
-When push is called continuously, even for relaxed nodes, only balanced nodes are added to the tree. Eventually, all new nodes at the end of the tree, except the root, will be balanced. Thus, there is nearly no overhead of running push over a relaxed \rrbvec{} in the given benchmarks.
+When push is called repeatedly, even for relaxed nodes, only balanced nodes are added to the tree. Eventually, all new nodes at the end of the tree, except the root, will be balanced. Thus, there is nearly no overhead of running push over a relaxed \rrbvec{} in the given benchmarks.
 
 \subsection{Popping}
 The pop operation manages the vector capacity as well as push. For \stdvec{}, it means shrinking the array and copying elements over. For tree-based vectors, it implies de-allocating nodes and reducing the height of the tree when necessary.
 
-The benchmark is divided into two tests, namely pop and pop clone. The first test calls pop continuously in the loop until the vector is emptied, with the problem size range of \range{[20, \kilo{60}]}.
+The benchmark is divided into two tests, namely pop and pop clone. The first test calls pop repeatedly in the loop until the vector is emptied, with the problem size range of \range{[20, \kilo{60}]}.
 
 In the second benchmark, each pop operation will be followed by a clone. Both tests include balanced and relaxed vector types, which are prepared in the setup routine. The problem size range is \range{[20, \kilo{40}]}.
 
@@ -816,11 +815,11 @@ The benchmark function iterates over generated vectors and appends them into a v
 \end{figure}
 
 \paragraph{Results}
-Based on the results, the naive copying of \stdvec{} is the fastest concatenation algorithm up to the problem size of \kilo{40}. However, after surpassing \kilo{40} it quickly degenerates and loses to \rrbvec{} by 6.53, with a maximum difference of 12.85 for the size of \mega{1}.
+Based on the results, the naive copying of \stdvec{} is the fastest concatenation algorithm up to the problem size of \kilo{40}. However, after surpassing \kilo{40} it quickly degenerates and loses to \rrbvec{} by a factor of 6.53, with a maximum difference of 12.85 for the size of \mega{1}.
 
 Even though not for all input sizes, we can see that \rrbvec{}'s concatenation algorithm scales better and eventually outperforms \stdvec{}.
 
-\imrsvec{} catches up to \stdvec{} only at the size of \kilo{400}, still being slower than \rrbvec{} by 1.29 at that point.
+\imrsvec{} catches up to \stdvec{} only at the size of \kilo{400}, still being slower than \rrbvec{} by a factor of 1.29 at that point.
 
 \paragraph{Balanced vs. relaxed}
 For the input size up to \kilo{2}, \rbvec{} and \rrbvec{} show similar results. The simplicity of naive concatenation used by \rbvec{} is sufficient to be as fast as \rrbvec{} due to the small problem size.
@@ -900,9 +899,9 @@ The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of 
 \label{sec:par-benchmarks}
 The benchmarks were executed against \stdvec{} and vectors from \pvecrs{}, where \rbvec{}, \rrbvec{}, and \pvec{} were compiled with the threadsafe reference-counted pointer -- \arc{}.
 
-As of the time of writing, \imrsvec{} does not implement the Rayon's \emph{IntoParallelIterator} trait. Since all other tested vectors rely on it, the decision was made not to include \imrsvec{} in the parallel benchmarks to avoid the unfair comparison.
+As of the time of writing, \imrsvec{} does not implement the Rayon's \emph{IntoParallelIterator} trait. Since all other tested vectors rely on it, the decision was made not to include \imrsvec{} in the parallel benchmarks to avoid an unfair comparison.
 
-Benchmarks were parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation used as the baseline.
+The benchmarks were parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation used as the baseline.
 
 The results are discussed from the perspective of:
 \begin{itemize}
@@ -910,7 +909,7 @@ The results are discussed from the perspective of:
     \item The impact of the relaxed append and split operations.
 \end{itemize}
 
-The results are presented in the form of a three-dimensional graph, where x and y-axis correspond to the problem size and number of used threads, while z stands for the mean runtime.
+The results are presented in the form of a three-dimensional graph, where the x and y-axis correspond to the problem size and number of used threads, while z stands for the mean runtime.
 
 \subsection{Adding elements of two vectors.}
 Given two equally sized vectors of integers, the test function adds values at the corresponding indices and returns a new instance of a vector with results. The benchmark is subdivided into three steps:
@@ -985,14 +984,13 @@ The setup routine prepares two vectors of integers in the \range{[0, N]} problem
 
 When executed in parallel, \rrbvec{} starts outperforming \rbvec{} at the size of 1024 elements. The reason why difference becomes apparent after surpassing that size is that the concatenation algorithm used in this project produces balanced \rbtree{} when the height of the tree does not exceed two levels. With the branching factor of 32, the capacity of the tree of two levels is equal to 1024.
 
-As the vector size grows, Rayon performs more slices to achieve optimal vector size per a single thread. This, in turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has the naive implementation of append and split, its performance degrades with the input size growth. The difference in execution time, depending on size falls into the 1.0-2.3 range.
+As the vector size grows, Rayon performs more slices to achieve optimal vector size per a single thread. This, in turn, results in a higher number of concatenations necessary to combine execution results. Since \rbvec{} has the naive implementation of append and split, its performance degrades with the input size growth. The difference in execution time, depending on size falls into the factor of 1.0-2.3 range.
 
 To keep available threads busy, Rayon divides the available pool of work into smaller pieces. Hence, the growing number of threads increases the performance gap between \rbvec{} and \rrbvec{} even further, as split and append are used more frequently. In the test with 2, 4 and 8 threads, \rbvec{} is slower than \rrbvec{} by a factor of 1.0-2.3, 1.0-2.8, and 1.1-2.12 correspondingly.
 
-Even though \rrbvec{}'s append and split operations are faster for the large-sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that appends and splits constitute only a small number of all operations used in this test. Operations such as push and get, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by 1.8-1.9 and 1.6-1.7 in the sequential and 4-threaded parallel benchmarks correspondingly.
+Even though \rrbvec{}'s append and split operations are faster for large-sized vectors, \stdvec{} showed the best results in all tests. It is important to keep in mind that appends and splits constitute only a small number of all operations used in this test. Operations such as push and get, which were extensively used in this benchmark, are still faster for \stdvec{}. Thus, the closest runner up -- \pvec{}, is slower by a factor of 1.8-1.9 and 1.6-1.7 in the sequential and 4-threaded parallel benchmarks correspondingly.
 
 \paragraph{Effect of parallelism}
-% TODO: this is not entirely true, because 4 threads benchmark runs slightly faster for large datasets compared to sequential bench.
 The sequential variant of the benchmark outperformed all subsequent parallel tests. This can be explained by the overhead induced by the distribution of work between multiple threads, which outweighs the benefits of solving a relatively simple problem in parallel.
 
 \subsection{Check if a word is a palindrome}
@@ -1065,9 +1063,9 @@ The dictionary file contains 370103 words. The benchmark is parameterized over t
 \end{figure}
 
 \paragraph{Results}
-As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test, as both of them are backed by a balanced \rbtree{}. When the benchmark is parallelized, \rrbvec{} gains advantage due to its efficient slice and concatenation operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0 for the test run with two threads, and 1.7-2.5 for four threads.
+As expected, \rbvec{} and \rrbvec{} are equally fast in the sequential test, as both of them are represented by a balanced \rbtree{}. When the benchmark is parallelized, \rrbvec{} gains advantage due to its efficient slice and concatenation operations. The difference between variants grows along with the increasing count of threads. Specifically, it is 1.5-2.0 for the test run with two threads, and 1.7-2.5 for four threads.
 
-The increase in the thread count causes a higher count of vector slices and concatenations. Thus, the bigger the problem size and the thread count is, the more advantages \rrbvec{} provides, demonstrating performance results comparable to \stdvec{}.
+The increase in the thread number causes a higher number of vector splits and concatenations. Thus, the bigger the problem size and the thread number is, the more advantages \rrbvec{} provides, demonstrating performance results comparable to \stdvec{}.
 
 \section{Memory benchmarks}
 The goals for the memory tests are the following:
