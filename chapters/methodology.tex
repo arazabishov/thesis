@@ -59,26 +59,27 @@ As instances of \rrbtree{} are generally not perfectly balanced and involve the 
 Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The number of the relaxed nodes is affected by the vector size.
 
 \subsubsection*{Dynamic representation}
-A substantial advantage of the tree-based vectors is that they are cheap to copy. Other operations, however, are faster for \stdvec{} due to its optimal memory layout for CPU. Dynamic representation offers strong \stdvec{} performance until the vector is cloned, switching its representation to \rrbvec{}.
+A substantial advantage of the tree-based vectors is that they are cheap to copy. Other operations, however, are faster for \stdvec{} due to its optimal memory layout. Dynamic representation offers strong \stdvec{} performance until the vector is cloned, switching its representation to \rrbvec{}.
 
 Ideally, \pvec{} should demonstrate the same performance of the type that represents it. Unfortunately, as \pvec{} itself is an additional abstraction, it might introduce some overhead.
 
 The goal is to measure the performance of \pvec{} in practice and to check if it adds overhead over the types used as its representations: \stdvec{} and \rrbvec{}.
 
 \subsubsection*{Unique access}
-While \rrbvec{} performs very well as a persistent data structure, it is not very optimal when persistence is not required. An example is a function that creates and returns an instance of \rrbvec{}, where all versions except the returned one are disregarded.
+While \rrbvec{} performs well as a persistent data structure, it can perform even better when persistence is not required. An example is a function creating and returning an instance of \rrbvec{}, where all versions except the returned one are disregarded.
 
-Luckily, the persistent vector presented in this project takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is similar to transience in the Clojure's persistent vector, but not entirely identical \cite{improving-performance-through-transience}.
+Luckily, the persistent vector presented in this project takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is similar to transience in the Clojure's persistent vector implementation, but not entirely identical \cite{improving-performance-through-transience}.
 
 In Rust, non-transient, persistent behavior can be enforced by cloning the object before performing a mutation. The objective is to measure the cost of using the clone operation in the persistent vector.
 
 \section{Measuring the runtime}
-Experimental performance evaluation introduces another set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for high demanding tasks, by reducing runtime for others \cite{statistically-rigorous-java-performance-evaluation}. Such non-deterministic behavior may lead to profiling results that vary from run to run significantly.
+Experimental performance evaluation introduces a set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for demanding tasks, by reducing runtime for others \cite{statistically-rigorous-java-performance-evaluation}. Such non-deterministic behavior may lead to profiling results that vary from run to run significantly.
 
+% TODO: clarify what drop is in the introduction.
 Benchmarking frameworks were introduced to solve this problem. They are designed to get stable measurements by executing the same test thousands of times. Some of them, such as criterion for Haskell\footnote{\url{https://hackage.haskell.org/package/criterion}} and Rust\footnote{\url{https://crates.io/crates/criterion}}, JMH for Java\footnote{\url{https://openjdk.java.net/projects/code-tools/jmh/}}, and ScalaMeter for Scala\footnote{\url{https://scalameter.github.io/}}, introduce statistical methods for the detection and elimination of exceptionally different runs, known as outliers.
 
 \subsection{Benchmarking frameworks for Rust}
-There are several benchmarking frameworks available for Rust, and unfortunately, none of them reached a stable release yet. However, some of them are being actively used in the Rust community and proven to produce reliable results.
+There are several benchmarking frameworks available for Rust, and unfortunately, none of them reached a stable release yet. However, some of them are being actively used in the Rust community and have proven to produce reliable results.
 
 There are several criteria which a suitable framework has to meet:
 \begin{itemize}
@@ -90,12 +91,12 @@ There are several criteria which a suitable framework has to meet:
 \end{itemize}
 
 \subsubsection*{Rust's benchmark tests}
-Rust's testing framework provides an experimental feature\footnote{At the moment of writing, benchmarks are available only in the nightly build of Rust.} that enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function\footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code, which otherwise would be considered "dead" or unused.} which is opaque for the compiler.
+Rust's testing framework provides an experimental feature\footnote{At the moment of writing in May 2020, benchmarks are available only in the nightly build of Rust.} that enables developers to write test benchmarks. Those benchmarks are executed thousands of times until results are stabilized. Also, it provides a black-box function\footnote{Black box function contains inline assembly instructions, which compiler cannot make any assumptions about. Hence, it prevents the compiler from optimizing the code, which otherwise would be considered "dead" or unused.} which is opaque for the compiler.
 
-However, it does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks that rely on certain preconditions.
+However, Rust's testing framework does not detect and eliminate anomalies. It also does not provide APIs for setup routines, which makes it impossible to create benchmarks that rely on preconditions.
 
 \subsubsection*{Criterion for Rust}
-Criterion for Rust is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, set up routines, and is capable of generating graphs using gnuplot\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid the timing of \emph{drop}.
+Criterion for Rust is a powerful and statistically rigorous tool for profiling code. It features outlier elimination, setup routines, and is capable of generating graphs using gnuplot\footnote{\url{http://www.gnuplot.info/}}. At the moment of writing, it is the only framework that has an option to avoid the timing of \emph{drop}.
 
 It is compatible with the stable release of the Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project.
 
@@ -107,10 +108,10 @@ All tree-based vector implementations, such as \rbvec{}, \rrbvec{} and \pvec{} w
 
 Each benchmark was executed against a range of input arguments. The input range is specified on the case by case basis depending on the benchmark.
 
-For this project, for each input argument, criterion is configured to capture 10 samples. The count of runs per sample is determined dynamically by the library to achieve optimal execution time.
+For this project, for each input argument, Criterion is configured to capture 10 samples. The number of runs per sample is determined dynamically by the library to achieve optimal execution time.
 
 \subsection{Garbage collection}
-One of the design goals for this project was to avoid using experimental and unsafe Rust language features. Hence, \pvecrs{}, relies on the memory management means provided by the Rust's standard library only, such as \rc{}. Other automatic memory management mechanisms such as third-party garbage collectors were left out as the future work.
+One of the design goals for this project was to avoid using experimental and unsafe Rust language features. Hence, \pvecrs{}, relies on the memory management means provided by the Rust's standard library only, such as \rc{}. Other automatic memory management mechanisms such as third-party garbage collectors were left out for future work.
 
 \paragraph{Threadsafe reference counting}
 Parallel benchmarks will be evaluated using only \arc{} pointers, as Rust's compiler forbids passing non-threadsafe types between threads, such as \rc{}.
@@ -118,20 +119,27 @@ Parallel benchmarks will be evaluated using only \arc{} pointers, as Rust's comp
 \section{Parallel benchmarks and Rayon}
 Unlike the sequential benchmarks that measure operations in isolation, the parallel benchmarks time the whole experiment, including several vector operations and the framework used to parallelize the work.
 
-It is considered to be an acceptable tradeoff, as the objective is to evaluate the overall performance. Additionally, we also want to check whether the relaxed append and split of \rrbvec{} have a positive performance impact.
+This is an acceptable tradeoff, as the objective is to evaluate the overall performance. Additionally, we also want to check whether the relaxed append and split of \rrbvec{} have a positive performance impact.
 
-The data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to facilitate the parallelism. Thus, data structures with the fast split and append operations are critical for optimal performance for such frameworks.
+Data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to facilitate the parallelism. Thus, data structures with the fast split and append operations are critical for optimal performance for such frameworks.
 
 In this section, we will take a look at how to configure Rayon and review how it distributes the work across threads.
 
 \paragraph{Rayon}
-Rayon is a data parallelism library for Rust that helps to turn sequential code into parallel with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon, on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores as long as it is beneficial.
+Rayon is a data parallelism library for Rust that helps to turn sequential code into parallel one with as little work as possible. Loops and iterators are often used to process collections sequentially. Rayon, on the other hand, offers a potentially more efficient alternative to them in the form of parallel iterators. It takes advantage of modern processors, by dividing the work between available cores as long as it is beneficial.
 
 \paragraph{Parallel iterators}
-\begin{figure}[!htbp]
+\begin{listing}[!htbp]
     \centering
 
-    \begin{minted}{rust}
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
         // sequential iterator
         vec![1, 2, 3]
             .into_iter()
@@ -144,14 +152,14 @@ Rayon is a data parallelism library for Rust that helps to turn sequential code 
     \end{minted}
 
     \caption{An example of using sequential and parallel iterators}
-    \label{fig:par-iter-example}
-\end{figure}
+    \label{lst:par-iter-example}
+\end{listing}
 
 The convenience of Rust iterators is in the provided operators that are called \emph{combinators}. Combinators can be chained and combined, allowing a developer to perform complex manipulations of iterators safely and efficiently.
 
-Parallel iterators provide a similar set of combinators, even though not entirely identical. As iterators process values sequentially, there is a set of combinators that expect values to be emitted in a particular order. As the parallel iterators are designed to process data in any order, inherently sequential combinators are not applicable. Thus, Rayon might not be a suitable solution for algorithms relying on the sequential order of execution.
+Combinators provided by parallel iterators are similar to the iterator ones but entirely identical. As iterators process values sequentially, there is a set of combinators that expect values to be emitted in a particular order. As the parallel iterators are designed to process data in any order, inherently sequential combinators are not applicable. Thus, Rayon might not be a suitable solution for algorithms relying on the sequential order of execution.
 
-Another requirement for parallel iterators is that the type of values it works with have to implement the \emph{Send} trait. It means using non-threadsafe types such as \rc{} in combination with Rayon is prohibited.
+Another requirement for parallel iterators is that the type of values it works with have to implement the \type{Send} trait. Therefore, using non-threadsafe types such as \rc{} in combination with Rayon is prohibited.
 
 \subsection{Work splitting}
 \begin{figure}[!htbp]
@@ -196,18 +204,25 @@ Another requirement for parallel iterators is that the type of values it works w
     \label{fig:rayon-work-splitting}
 \end{figure}
 
-At the core, Rayon relies on the fork-join\footnote{The fork-join pattern was first pioneered in 1963\cite{history-of-fork-join}, and was popularized by the Cilk project\cite{cilk}} pattern for dividing and distributing the work between threads.
+At the core, Rayon relies on the fork-join\footnote{The fork-join pattern was pioneered in 1963 \cite{history-of-fork-join}, and was popularized by the Cilk project \cite{cilk}} pattern for dividing and distributing the work between threads.
 
-When parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see \Cref{fig:rayon-work-splitting}.
+When a parallel iterator receives values from a collection like a vector, Rayon attempts to repeatedly divide the work into chunks among threads until the chunk is small enough for a single thread. For an example, see \Cref{fig:rayon-work-splitting}.
 
-A method that splits the work is \mintinline{rust}{rayon::join}, and it accepts two \emph{closures}\footnote{Rust’s closures are anonymous functions you can save in a variable or pass as arguments to other functions.}. Its usage is demonstrated in \Cref{fig:rayon-join}.
+A method that splits the work is \mintinline{rust}{rayon::join}, and it accepts two \emph{closures}\footnote{Rust’s closures are functions that can be saved in a variable or passed as arguments to other functions.}. Its usage is demonstrated in \Cref{lst:rayon-join}.
 
-Next, Rayon decides whether it is beneficial to parallelize the work by evaluating the factors such as the number of available threads, the \emph{split factor}\footnote{Split factor is defined by the minimum and the maximum size of the work chunk.}, and the workload. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided further. When both closures finish working, the results are combined and returned to the caller.
+Next, Rayon decides whether it is beneficial to parallelize the work by evaluating the factors such as the number of available threads, the \emph{split factor}\footnote{The split factor is defined by the minimum and the maximum size of the work chunk.}, and the workload. If the problem is small enough, it is solved sequentially. Otherwise, it is subdivided further. When both closures finish working, the results are combined and returned to the caller.
 
-\begin{figure}[!htbp]
+\begin{listing}[!htbp]
+
     \centering
-
-    \begin{minted}{rust}
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{rust}
         rayon::join(
             || do_something(...),
             || do_something_else(...)
@@ -215,12 +230,12 @@ Next, Rayon decides whether it is beneficial to parallelize the work by evaluati
     \end{minted}
 
     \caption{An example of using Rayon's join}
-    \label{fig:rayon-join}
-\end{figure}
+    \label{lst:rayon-join}
+\end{listing}
 
-By default, the thread number allocated by Rayon is equal to the number of cores available in the system. To observe how the thread count affects the performance, Rayon's thread pool will be configured to work with 2, 4, 8, and 16 threads.
+By default, the thread number allocated by Rayon is equal to the number of cores available in the system. To observe how the thread number affects the performance, Rayon's thread pool will be configured to work with 2, 4, 8, and 16 threads.
 
-\subsection{Load balancing}
+\subsection{Work distribution}
 Ideally, tasks split between threads take the same amount of time to process. Unfortunately, this is often not the case, resulting in poor utilization of resources. To fairly distribute the work, Rayon attaches a work queue to each thread. A thread keeps processing the queue until it becomes empty. When the queue is empty, a thread can steal work from another thread. This technique is known as work-stealing.
 
 \section{Measuring the memory footprint}
@@ -229,7 +244,7 @@ This section presents a methodology used to evaluate the memory footprint of bot
 \subsection{Memory profiling tools}
 As of the time of writing, there is no established practice or a framework for measuring the memory usage tailored towards Rust.
 
-However, the operating systems already come with profiling tools for measuring memory usage. These tools should provide reliable results, as the memory footprint of the process is not changing as much between runs. Hence, it should be sufficient to run each test once.
+However, the operating systems already provide profiling tools for measuring memory usage. These tools should provide reliable results, as the memory footprint of the process does not change as much between runs. Hence, it should be sufficient to run each test once.
 
 Two approaches were considered:
 \begin{itemize}
@@ -244,18 +259,18 @@ The first option is not ideal because it only evaluates the heap memory usage. A
 Benchmarking by measuring the process footprint allows to capture both the stack and the heap usage, and it does not depend on any special Rust debug or allocator features. This, in turn, means that the benchmarks can be optimized as if they were compiled for the production use, putting them as close as possible to real use cases.
 
 \paragraph{Implementation}
-A new module is introduced to \pvecrs{} -- \crate{pvec-memory}, that includes the binary for executing the memory benchmarks. Its responsibilities are to configure, run and, collect the test results. It will be referred to as \emph{memory bencher} from now on.
+A new module is introduced to \pvecrs{} -- \crate{pvec-memory}, that includes an application for executing the memory benchmarks. Its responsibilities are to configure, run, and collect the test results. It will be referred to as \emph{memory bencher} from now on.
 
 The memory bencher contains a list of tests, input sizes, and vector types. It executes benchmarks by running them through the command line program called \emph{time}, which outputs information about the process, including the maximum amount of memory used in bytes. The memory bencher finds this value in the \emph{maximum resident set size} field in the output of \emph{time}.
 
 The program code occupies a part of the process memory and needs to be accounted for. The bencher measures the footprint of the program without running any tests and then subtracts it from the benchmark results.
 
-It is important to emphasize that the \emph{time} utility included in macOS is different from the GNU\footnote{\url{https://www.gnu.org/software/time/}} variant, that comes with more options and outputs the \emph{maximum resident set size} in kilobytes instead of bytes. The memory bencher was only executed on macOS and required changes to support other platforms.
+The \emph{time} utility included in macOS is different from the GNU\footnote{\url{https://www.gnu.org/software/time/}} variant, that comes with more options and outputs the \emph{maximum resident set size} in kilobytes instead of bytes. The memory bencher was only executed on macOS and required changes to support other platforms.
 
 \section{Presentation of results}
 The measurements are done in a number of samples that can be configured. For this project, the number of samples is set to ten. Each sample consists of one or typically more iterations of the routine. The elapsed time between the beginning and the end of the iterations, divided by the number of iterations, gives an estimate of the time taken by each iteration.
 
-As measurement progresses, the sample iteration counts are increased. The presented graphs use the mean measured time for each function. Additionally, benchmarks were configured to avoid timing the execution of \emph{drop}.
+As measurement progresses, the number of iterations per sample increases. The presented graphs use the mean measured time for each function. Additionally, benchmarks were configured to avoid the timing of the execution of \emph{drop}.
 
 \subsection{Execution environment}
 All benchmarks were executed on a computer with an octa-core processor with hyper-threading support, 32GB of DDR4 RAM, and 1TB solid-state drive. The operating system is macOS Catalina 10.15.4, with the stable Rust compiler version 1.42.0.
@@ -278,13 +293,20 @@ All benchmarks were executed on a computer with an octa-core processor with hype
 \end{table}
 
 \subsection{Running benchmarks}
-Benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of a persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag, as demonstrated in \Cref{fig:sequential-benches}. A particular benchmark can be specified by name as an argument to cargo.
+The benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of a persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag, as demonstrated in \Cref{lst:sequential-benches}. A particular benchmark can be specified by name as an argument to cargo.
 
 \floatstyle{boxed}
-\begin{figure}[!htbp]
-    \centering
+\begin{listing}[!htbp]
 
-    \begin{minted}{bash}
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{bash}
         # benches of the non-threadsafe implementation
         cargo bench
 
@@ -293,33 +315,47 @@ Benchmarks can be compiled and executed using Rust's package manager named \emph
     \end{minted}
 
     \caption{Executing sequential benchmarks}
-    \label{fig:sequential-benches}
-\end{figure}
+    \label{lst:sequential-benches}
+\end{listing}
 
 To execute parallel benchmarks, the user needs to pass both the \arc{} and \emph{rayon\_iter} feature flags:
-\begin{figure}[!htbp]
-    \centering
+\begin{listing}[!htbp]
 
-    \begin{minted}{bash}
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{bash}
         cargo bench --features=arc,rayon_iter
     \end{minted}
 
     \caption{Executing parallel benchmarks}
-    \label{fig:parallel-benches}
-\end{figure}
+    \label{lst:parallel-benches}
+\end{listing}
 
-Criterion can also generate HTML report that includes charts created by \emph{gnuplot}\footnote{\url{http://www.gnuplot.info/}}. Results can be found in the \dir{pvec-rs/target/criterion} directory, and if \emph{gnuplot} is available, the HTML report will be located in the \dir{report/index.html} subdirectory.
+Criterion can also generate HTML reports that includes charts created by \emph{gnuplot}\footnote{\url{http://www.gnuplot.info/}}. Results can be found in the \dir{pvec-rs/target/criterion} directory, and if \emph{gnuplot} is available, the HTML report will be located in the \dir{report/index.html} subdirectory.
 
 For more information on available options and parameters for Criterion, please consult the library documentation\footnote{\url{https://docs.rs/criterion/0.3.1/criterion/}}.
 
 \subsubsection*{Memory benchmark results}
-Memory benchmarks produce consistent and reproducible results. Hence it is enough to execute them only once. Due to the differences in how \emph{time} works on different operating systems, macOS is the only platform supported by the memory bencher at the moment. \Cref{fig:memory-benches} demonstrates how to execute the tests:
+Memory benchmarks produce consistent and reproducible results. Hence it is enough to execute them only once. Due to the differences in how \emph{time} works on different operating systems, macOS is the only platform supported by the memory bencher at the moment. \Cref{lst:memory-benches} demonstrates how to execute the tests:
 
 \floatstyle{boxed}
-\begin{figure}[!htbp]
-    \centering
+\begin{listing}[!htbp]
 
-    \begin{minted}{bash}
+    \centering
+    \begin{minted}[
+        fontsize=\small,
+        stripnl=false,
+        framesep=4mm,
+        frame=lines,
+        autogobble,
+        linenos
+    ]{bash}
         # navigate to the pvec-memory crate
         cd pvec-memory
 
@@ -330,7 +366,7 @@ Memory benchmarks produce consistent and reproducible results. Hence it is enoug
     \end{minted}
 
     \caption{Executing memory benchmarks}
-    \label{fig:memory-benches}
-\end{figure}
+    \label{lst:memory-benches}
+\end{listing}
 
-The generated report is located in the \dir{pvec-rs/target/release/report} directory, and it is subdivided into folders, each named after the benchmark. Each folder contains csv\footnote{Comma-separated values} files, where each file is name after the evaluated vector type. The report file contains two columns corresponding to the input size and the memory footprint in bytes.
+The generated report is located in the \dir{pvec-rs/target/release/report} directory, and it is subdivided into folders, each named after the benchmark. Each folder contains csv\footnote{Comma-separated values.} files, where each file is name after the evaluated vector type. The report file contains two columns corresponding to the input size and the memory footprint in bytes.
