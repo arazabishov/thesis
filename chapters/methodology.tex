@@ -292,7 +292,7 @@ All benchmarks were executed on a computer with an octa-core processor with hype
 \end{table}
 
 \subsection{Running benchmarks}
-The benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of a persistent vector. To select the threadsafe variant, the user can pass the \arc{} feature flag, as demonstrated in \Cref{lst:sequential-benches}. A particular benchmark can be specified by name as an argument to cargo.
+The benchmarks can be compiled and executed using Rust's package manager named \emph{cargo}. By default, sequential benchmarks are executed against the non-threadsafe variant of a persistent vector. To select the threadsafe variant, the user can pass the \emph{arc} feature flag, as demonstrated in \Cref{lst:sequential-benches}. A particular benchmark can be specified by name as an argument to cargo.
 
 \floatstyle{boxed}
 \begin{listing}[!htbp]
@@ -317,7 +317,7 @@ The benchmarks can be compiled and executed using Rust's package manager named \
     \label{lst:sequential-benches}
 \end{listing}
 
-To execute parallel benchmarks, the user needs to pass both the \arc{} and \emph{rayon\_iter} feature flags:
+To execute parallel benchmarks, the user needs to pass both the \emph{arc} and \emph{rayon\_iter} feature flags:
 \begin{listing}[!htbp]
 
     \centering
@@ -355,8 +355,8 @@ Memory benchmarks produce consistent and reproducible results. Hence it is enoug
         autogobble,
         linenos
     ]{bash}
-        # navigate to the pvec-memory crate
-        cd pvec-memory
+        # navigate to the benches-mem crate
+        cd benches-mem
 
         # execute the script that invokes
         # cargo to compile and run benchmarks

@@ -1,6 +1,6 @@
 \newcommand{\balanced}{}
-\newcommand{\standard}{\emph{(s)}}
-\newcommand{\relaxed}{\emph{(r)}}
+\newcommand{\standard}{\rust{(s)}}
+\newcommand{\relaxed}{\rust{(r)}}
 
 \chapter{Benchmarks and results}
 \label{chapter:benchmarks-and-results}
@@ -1083,6 +1083,7 @@ This benchmark is expected to reveal the memory overhead of using a tree instead
     \begin{tikzpicture}
         \pgfplotstableread[col sep=comma]{data/mem_push/im-rs-vector-balanced.csv}\imrsvectorbalanced;
         \pgfplotstableread[col sep=comma]{data/mem_push/pvec-rrbvec-balanced.csv}\pvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/mem_push/pvec-std.csv}\pvecstd;
         \pgfplotstableread[col sep=comma]{data/mem_push/rbvec.csv}\rbvecbalanced;
         \pgfplotstableread[col sep=comma]{data/mem_push/std-vec.csv}\stdvector;
 
@@ -1106,6 +1107,9 @@ This benchmark is expected to reveal the memory overhead of using a tree instead
 
             \addplot[thin, color=mred, mark=*,] table {\rbvecbalanced};
             \addlegendentry{\rbvec{}}
+
+            \addplot[thin, color=mgreen, mark=diamond,] table {\pvecstd};
+            \addlegendentry{\pvec{} \standard{}}
 
             \addplot[thin, color=mgreen, mark=square,] table {\pvecbalanced};
             \addlegendentry{\pvec{} \balanced{}}
@@ -1131,6 +1135,7 @@ The test builds a new vector of size \n{}, runs a loop from 0 to \n{}, clones a 
     \begin{tikzpicture}
         \pgfplotstableread[col sep=comma]{data/mem_update_clone/im-rs-vector-balanced.csv}\imrsvectorbalanced;
         \pgfplotstableread[col sep=comma]{data/mem_update_clone/pvec-rrbvec-balanced.csv}\pvecbalanced;
+        \pgfplotstableread[col sep=comma]{data/mem_update_clone/pvec-std.csv}\pvecstd;
         \pgfplotstableread[col sep=comma]{data/mem_update_clone/rbvec.csv}\rbvecbalanced;
         \pgfplotstableread[col sep=comma]{data/mem_update_clone/std-vec.csv}\stdvector;
 
@@ -1155,6 +1160,9 @@ The test builds a new vector of size \n{}, runs a loop from 0 to \n{}, clones a 
             \addplot[thin, color=mred, mark=*,] table {\rbvecbalanced};
             \addlegendentry{\rbvec{}}
 
+            \addplot[thin, color=mgreen, mark=diamond,] table {\pvecstd};
+            \addlegendentry{\pvec{} \standard{}}
+
             \addplot[thin, color=mgreen, mark=square,] table {\pvecbalanced};
             \addlegendentry{\pvec{} \balanced{}}
 
@@ -1168,4 +1176,4 @@ The test builds a new vector of size \n{}, runs a loop from 0 to \n{}, clones a 
 \end{figure}
 
 \paragraph{Results}
-The results demonstrate the strongest advantage of the tree-based vectors -- the ability to preserve memory by structural sharing. The tree-based vectors show similar results, with \imrsvec{} being slightly ahead of \pvec{} by consuming 0.71 less memory. \pvec{} and \imrsvec{} are slightly more than a \mbytes{100} large the peak size. On the other hand, \stdvec{} does not scale well, consuming more than ten gigabytes of memory at the benchmark input of \kilo{60}.
+The results demonstrate the strongest advantage of the tree-based vectors -- the ability to preserve memory by structural sharing. The tree-based vectors show similar results, with \imrsvec{} being slightly ahead of \pvec{} by consuming 0.71 less memory. \pvec{} and \imrsvec{} are slightly more than a \mbytes{100} large at the peak size. On the other hand, \stdvec{} does not scale well, consuming more than ten gigabytes of memory at the benchmark input of \kilo{60}.

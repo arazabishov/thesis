@@ -97,7 +97,7 @@ An annotated example of this optimization in use is provided in \Cref{lst:switch
 \paragraph{Starting as an array allocated on the stack}
 The flat vector representation is efficient because of its cache-friendly memory layout. Since the vector size is not known at the compile-time, it is allocated on the heap. In comparison to the stack, heap allocation is more complex and expensive as it requires the memory allocator to track and manage allocated blocks of memory. Additionally, heap-allocated objects are more likely to cause cache invalidation, as CPU will have to reach a memory segment that potentially is located far outside of its caches.
 
-In an attempt to improve the cache locality properties of the standard vector, authors of the \crate{SmallVec}\footnote{\url{https://docs.rs/smallvec/1.2.0/smallvec/}} library introduced a vector implementation that stores a certain number of elements on the stack, and falls back to the heap for larger sizes.
+In an attempt to improve the cache locality properties of the standard vector, authors of the \crate{smallvec}\footnote{\url{https://docs.rs/smallvec/1.2.0/smallvec/}} library introduced a vector implementation that stores a certain number of elements on the stack, and falls back to the heap for larger sizes.
 
 The dynamic representation can be extended with the new representation type that allocates vector on the stack. The vector first will be allocated on the stack, then spill to the heap when exceeding a certain size threshold, and switched to \rrbvec{} when cloned.
 
