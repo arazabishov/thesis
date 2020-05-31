@@ -1,5 +1,3 @@
-% TODO: you should be using terms flat and tree representation (to match with the documentation)
-
 \chapter{Methodology}
 \label{chapter:methodology}
 
@@ -369,3 +367,14 @@ Memory benchmarks produce consistent and reproducible results. Hence it is enoug
 \end{listing}
 
 The generated report is located in the \dir{pvec-rs/target/release/report} directory, and it is subdivided into folders, each named after the benchmark. Each folder contains csv\footnote{Comma-separated values.} files, where each file is name after the evaluated vector type. The report file contains two columns corresponding to the input size and the memory footprint in bytes.
+
+\subsection{Verbose benchmark results}
+Verbose benchmark results are published separately due to the number and the size of the report files. They include additional data, such as:
+\begin{itemize}
+    \item Mean, median, and the standard deviation values per benchmark run.
+    \item Violin plots demonstrating the stability of results.
+\end{itemize}
+
+The violin plots reveal how stable the measurements are. The wider the violin is, the more significant is the difference between timings of collected samples.
+
+The benchmark reports are published in two configurations: with a non-threadsafe\footnote{\url{https://abishov.com/pvec-rs/reports/rc/report/index.html}} and a threadsafe\footnote{\url{https://abishov.com/pvec-rs/reports/arc/report/index.html}} reference counting pointers.
