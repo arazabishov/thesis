@@ -14,7 +14,7 @@ In this chapter, we will define sequential, parallel, and memory benchmarks, and
 \end{itemize}
 
 \paragraph{Reading notes}
-Implementations that are prefixed with \relaxed{} in the figure legend were configured to use the relaxed \treerrb{} in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when the flat representation is used. If not specified, the balanced \treerb{} is used.
+Implementations that are postfixed with \relaxed{} in the figure legend were configured to use the relaxed \treerrb{} in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when the flat representation is used. If not specified, the balanced \treerb{} is used.
 
 \section{Sequential benchmarks}
 Each benchmark described in this section focuses on a particular operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify a vector instance, such as push, will have a complementary version of the benchmark, which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithm used in the tree-based and standard vectors correspondingly.
