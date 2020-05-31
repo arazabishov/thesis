@@ -350,7 +350,7 @@ Each node type has received its own struct definition. An eagle eyed reader will
     \label{fig:memory-layout-of-rust-containers}
 \end{figure}
 
-As illustrated\footnote{The illustration contains a subset of containers from the Rust container cheat sheet: \url{https://docs.google.com/presentation/d/1q-c7UAyrUlM-eZyTo1pd8SZ0qwA_wYxmPZVOQkoDmH4}.} in \Cref{fig:memory-layout-of-rust-containers}, enumerations take up as much space as their largest variant. If the node fields were declared within the enum variants directly, the enum size would be equal to the size of \mintinline{rust}{RelaxedBranch}, resulting in the balanced tree reserving as much space as if it was relaxed.
+As illustrated in \Cref{fig:memory-layout-of-rust-containers}, enumerations take up as much space as their largest variant\footnote{The illustration contains a subset of containers from the Rust container cheat sheet: \url{https://docs.google.com/presentation/d/1q-c7UAyrUlM-eZyTo1pd8SZ0qwA_wYxmPZVOQkoDmH4}.}. If the node fields were declared within the enum variants directly, the enum size would be equal to the size of \mintinline{rust}{RelaxedBranch}, resulting in the balanced tree reserving as much space as if it was relaxed.
 
 The more space nodes use, the more expensive the memory allocations are. Also, bigger nodes are more likely to not fit into the CPU cache lines, negatively impacting the performance even more.
 
