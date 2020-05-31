@@ -75,7 +75,6 @@ In Rust, non-transient, persistent behavior can be enforced by cloning the objec
 \section{Measuring the runtime}
 Experimental performance evaluation introduces a set of unique challenges. For instance, depending on the workload, operating systems may allocate more resources for demanding tasks, by reducing runtime for others \cite{statistically-rigorous-java-performance-evaluation}. Such non-deterministic behavior may lead to profiling results that vary from run to run significantly.
 
-% TODO: clarify what drop is in the introduction.
 Benchmarking frameworks were introduced to solve this problem. They are designed to get stable measurements by executing the same test thousands of times. Some of them, such as criterion for Haskell\footnote{\url{https://hackage.haskell.org/package/criterion}} and Rust\footnote{\url{https://crates.io/crates/criterion}}, JMH for Java\footnote{\url{https://openjdk.java.net/projects/code-tools/jmh/}}, and ScalaMeter for Scala\footnote{\url{https://scalameter.github.io/}}, introduce statistical methods for the detection and elimination of exceptionally different runs, known as outliers.
 
 \subsection{Benchmarking frameworks for Rust}
@@ -87,7 +86,7 @@ There are several criteria which a suitable framework has to meet:
     \item Detection and elimination of outliers.
     \item A way for setting up a benchmark before each run.
     \item A way for preventing compiler optimizing benchmark code away.
-    \item An option to measure execution time without \emph{drop}\footnote{Used to run some code when a value goes out of scope. In other languages, it is sometimes referred to as a destructor.}.
+    \item An option to measure execution time without \emph{drop}\footnote{See \Cref{sec:enums-structs-traits} for an introduction to \emph{drop}.}.
 \end{itemize}
 
 \subsubsection*{Rust's benchmark tests}

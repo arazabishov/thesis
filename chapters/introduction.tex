@@ -29,7 +29,7 @@ Ownership is Rust's most unique feature, and it enables Rust to make memory safe
 \begin{itemize}
     \item Each value in Rust has a variable that is called its owner.
     \item There can only be one owner at a time.
-    \item When the owner goes out of scope, the value will be dropped.
+    \item When the owner goes out of scope, the value is dropped.
 \end{itemize}
 
 \paragraph{Borrowing}
@@ -278,6 +278,16 @@ Structs are the most common way to declare complex custom data types in Rust. A 
 \end{listing}
 
 A \emph{trait} is a language feature used to define a set of methods that implement behavior. Moreover, they can be used to reuse behavior without reusing state\cite{schaerli-ducasse-nierstrasz-traits}. A distinct ability of traits is that they can be implemented outside of the type declaration, including types that belong to other modules. Traits support default function implementations, as well as inheritance. \Cref{lst:trait} shows how traits can be used to define the common contract between several data types.
+
+\paragraph{Drop}
+\emph{Dropping} is the process of cleaning-up a value that goes out of the scope in a Rust program. By default, the compiler generates code that automatically drops the value, but there is also a way to override the default behavior by implementing the \type{Drop} trait. The \type{Drop} trait requires to implement one method named drop that takes a mutable reference to self.
+
+\subsection{Cargo and crates}
+\emph{Cargo} is the package manager for Rust. It manages Rust dependencies by distributing, downloading, and compiling packages.
+
+Rust packages are called \emph{crates}. The package registry of the Rust community is located at \url{https://crates.io/}.
+
+Every \emph{crate}, including \pvecrs{}, has a \emph{Cargo.toml} configuration file that contains feature flags, dependencies and their versions, and the crate metadata such as name, version, and description.
 
 \section{Persistent data structures}
 \label{sec:psds}
