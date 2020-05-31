@@ -155,7 +155,7 @@ The \pvecrs{} project is the Rust library crate that offers several persistent v
         Returns a mutable reference to an element. & & & \\ \hdashline
 
         \rust{fn append(&mut self, v: &mut Vec<T>)} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$m^2 \cdot log_m(n)$} \\
-        Moves all values of \rust{v} into \rust{self}, leaving other empty. & & & \\ \hdashline
+        Concatenates two vectors by moving all values of \rust{v} into \rust{self}, leaving other empty. & & & \\ \hdashline
 
         \rust{fn split_off(&mut self, at: usize) -> Vec<T>} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
         Splits the collection into two at the given index. & & & \\ \hdashline
@@ -195,11 +195,6 @@ The foundation of iterators for \pvecrs{} vectors is the \rrbtree{} iterator imp
 Parallel iterators process collection elements on multiple threads. The parallel iterator implementation for \pvecrs{} is based on the data parallelism framework \rayon{}, and can be enabled using the \rust{arc} and \rust{rayon_iter} feature flags. Compared to sequential iterators, the parallel ones do not guarantee the deterministic order of processing values.
 
 The library documentation can be found at: \url{https://docs.rs/pvec/}.
-
-% \subsection{Visualization}
-% * The web-vis crate and serde-serializer flag.
-% * Wasmpack for compiling Rust to WebAssembly.
-% * Using JS + D3 to visualize the implementation.
 
 \section{Memory layout}
 To define persistent vectors in Rust, we first need to understand how different parts of the data structure can be represented in the computer memory, and which Rust constructs are the most suitable for this purpose.
@@ -355,7 +350,7 @@ Each node type has received its own struct definition. An eagle eyed reader will
     \label{fig:memory-layout-of-rust-containers}
 \end{figure}
 
-As illustrated in \Cref{fig:memory-layout-of-rust-containers}, enumerations take up as much space as their largest variant. If the node fields were declared within the enum variants directly, the enum size would be equal to the size of \mintinline{rust}{RelaxedBranch}, resulting in the balanced tree reserving as much space as if it was relaxed.
+As illustrated\footnote{The illustration contains a subset of containers from the Rust container cheat sheet: \url{https://docs.google.com/presentation/d/1q-c7UAyrUlM-eZyTo1pd8SZ0qwA_wYxmPZVOQkoDmH4}.} in \Cref{fig:memory-layout-of-rust-containers}, enumerations take up as much space as their largest variant. If the node fields were declared within the enum variants directly, the enum size would be equal to the size of \mintinline{rust}{RelaxedBranch}, resulting in the balanced tree reserving as much space as if it was relaxed.
 
 The more space nodes use, the more expensive the memory allocations are. Also, bigger nodes are more likely to not fit into the CPU cache lines, negatively impacting the performance even more.
 
