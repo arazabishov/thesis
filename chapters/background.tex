@@ -1,40 +1,39 @@
 \chapter{Background}
-
-This chapter gives an introduction to the \treerb{} and \treerrb{} data structures that are used as the foundation for persistent vectors:
+This chapter gives an introduction to the \emph{radix balanced tree} and \emph{relaxed radix balanced tree} data structures that are used as the foundation for persistent vectors:
 
 \begin{itemize}
-    \item First, we will take a look at \emph{radix balanced tree}, its organization, and algorithms such as \emph{radix search} and \emph{path copying} that are used at the core of all vector operations.
-    \item Then, we will proceed to its extension --- \emph{relaxed radix balanced tree} that enables efficient concatenation and splitting.
-    \item Finally, we will get an overview of what is \emph{transience} and how it can be used to improve the performance of persistent data structures.
+    \item First, we will take a look at \emph{radix balanced trees}, their organization, and algorithms such as \emph{radix search} and \emph{path copying} that are used at the core of all vector operations.
+    \item Then we will proceed to an extension --- \emph{relaxed radix balanced tree}, which enables efficient concatenation and splitting.
+    \item Finally, we discuss the concept of \emph{transience} and how it can be used to improve the performance of persistent data structures.
 \end{itemize}
 
 \section{Radix balanced tree}
 \label{chapter:radix-balanced-tree}
 
-Radix balanced tree or \treerb{} is an \m{}-ary tree that uses integers as keys to find values. The data structure was pioneered by Rich Hickey as the foundation for the persistent vector implementation in Clojure \cite{the-clojure-programming-language}.
+Radix balanced trees or \treerb{}s are \m{}-ary trees that use integers as keys to find values. The data structure was pioneered by Rich Hickey as the foundation for the persistent vector implementation in Clojure \cite{the-clojure-programming-language}.
 
-\treerb{} consists of nodes which reference other subtrees or values. We will be referring to the former and latter types of nodes as \emph{branches} and \emph{leaves} correspondingly. The number of subtrees and values in the node is configurable and will be defined as \m{} or the \emph{branching factor}. The branching factor can be any number that is a power of 2, allowing an efficient radix search implementation.
+\treerb{}s consist of nodes that reference subtrees or values. We will be referring to the former and latter types of nodes as \emph{branch} nodes and \emph{leaves} correspondingly. The number of subtrees and values in the node is configurable and is defined as \m{} or the \emph{branching factor}. The branching factor can be any number that is a power of 2, allowing an efficient radix search implementation.
 
-The higher the value of \m{} is, the wider and shallower the tree will be. From now on the height of a tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
+The higher the value of \m{}, the wider and shallower the tree will be for the given number of elements. From now on the height of a tree will be referred to as \h{}, where $h_{max}$ is the upper boundary:
 
 \begin{equation}
     \label{eq:h-max}
     h_{max} = log_m(n)
 \end{equation}
 
-When \m{} is a large value, for example, 32, the tree becomes shallow, and the complexity of accessing values by traversing the tree from the root to a leaf becomes \emph{effectively} constant. For example, if the maximum value of 32 bit signed integer is substituted for $n$ in \Cref{eq:h-max} then $h_{max}$ will never exceed 7 levels. Thus, due to its strong performance guarantees, \treerb{} serves as a solid foundation for a general-purpose persistent vector implementation.
+When \m{} is a large value, for example 32, the tree becomes shallow, and the complexity of accessing values by traversing the tree from the root to a leaf becomes \emph{effectively} constant. For example, if the maximum value of 32 bit signed integer is substituted for $n$ in \Cref{eq:h-max} then $h_{max}$ will never exceed 7 levels. Thus, due to its strong performance guarantees, \treerb{} serves as a solid foundation for a general-purpose persistent vector implementation.
 
 In the following sections, we will take a look at \treerb{} algorithms used to implement vector operations\footnote{For a formal definition of \treerb{}, refer to \cite{improving-performance-through-transience}}.
 
 \subsection{Radix search}
 \label{sec:rb-tree-radix-search}
 
-An algorithm that is used to lookup values in \treerb{} is called \emph{radix search}. It serves as foundation for other operations that involve the tree traversal, such as push, pop, and update.
+The algorithm used to lookup values in \treerb{} is called \emph{radix search}. It serves as a foundation for other operations that involve the tree traversal, such as push, pop, and update.
 
 \subsubsection*{Bit partitioning}
-Radix search accepts a key of the integer type as an argument. It can be thought of as a composite key, where each subkey is a sequence of bits. Conceptually, the idea is to divide the key into bit blocks, where each block is an index specific to the tree level.
+Radix search accepts an integer key as an argument. It can be thought of as a composite key, where each subkey is a sequence of bits. Conceptually, the idea is to divide the key into bit blocks, where each block is an index, specific to the tree level.
 
-As demonstrated in \Cref{eq:bits-per-level}, the bit block size can be calculated from the branching factor. It will be referred to as \x{} or \emph{bits per level}. When the branching factor \m{} is 16 \x{} is 4, meaning that the subkey size is equal to 4 bits.
+As demonstrated in \Cref{eq:bits-per-level}, the bit block size can be calculated from the branching factor. It will be referred to as \x{} or \emph{bits per level}. When the branching factor \m{} is 16, \x{} is 4, meaning that the subkey size is equal to 4 bits.
 
 \begin{equation}
     \label{eq:bits-per-level}
@@ -52,9 +51,9 @@ Let us consider an example of processing a key that addresses a value in the tre
     54_{10} = 00110110_2
 \end{equation}
 
-Since the tree height is three, we have three corresponding subkeys: $11_2$, $01_2$, and $10_2$. Let us assume that we are interested in extracting the subkey for the child node on the second level--$01_2$.
+Since the tree height is three, we have three corresponding subkeys: $11_2$, $01_2$, and $10_2$. Let us assume that we are interested in extracting the subkey for the child node on the second level that corresponds to the $01_2$ bits.
 
-The first step is to get rid of the bits following the subkey of our interest. Logical right shift operation\footnote{A logical right shift is a bitwise operation that shifts all the bits of its first operand to the right by number of bits specified in the second operand.} denoted as $\ggg$, will push specified count of 0s into key $k$, where $l$ is the \emph{level} at which current node is located:
+The first step is to get rid of the bits following the subkey of our interest. The logical right shift operation\footnote{A logical right shift is a bitwise operation that shifts all the bits of its first operand to the right by number of bits specified in the second operand.} denoted as $\ggg$, will push the specified number of 0s into a key $k$, where $l$ is the \emph{level} at which current node is located:
 
 \begin{equation}
     k \ggg ((l - 1) \cdot x).
@@ -70,7 +69,7 @@ A bitwise "and" takes two equal-length binary representations and executes the "
 
 Only the last two bits of the mask are set to 1, meaning that all bits of the key except the last two will be masked to 0. The result of the "and"-ing operation will be the value of the subkey.
 
-A mask must be of the same type as a key and can be calculated from the branching factor \m{}:
+A mask is of the integer type and is calculated from the branching factor \m{}:
 
 \begin{equation}
     \mathit{mask} = m - 1.
@@ -210,9 +209,9 @@ The persistent \emph{update} operation returns a new tree version that includes 
 \subsubsection*{Path copying}
 When updating a \treerb{}, the radix search algorithm is used to build a path to the value. In order to avoid mutating the original tree instance, each node on the path is copied. This process is called as \emph{path copying} \cite{planar-point-location}. It is important to emphasize that nodes that are not a part of the path are reused.
 
-The update operation performs the \h{} count copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{eq:h-max}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m \cdot log_m(n)}} complexity of the update operation.
+The update operation performs the \h{} copies of \m{} sized nodes, where \h{} is the maximum height of the tree. As described in \Cref{eq:h-max}, \h{} is bound by \bigo{log_m(n)}, which results in {\bigo{m \cdot log_m(n)}} complexity of the update operation.
 
-For large branching factors \m{} such as 32, the performance becomes effectively \bigo{1}. For example, if the tree is full, where the count of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7.
+For large branching factors \m{} such as 32, the performance becomes effectively \bigo{1}. For example, if the tree is full, where the number of all elements $n$ is bound by the maximum value of 32 bit integer\footnote{2147483647}, \h{} will be at most 7.
 
 \begin{listing}[ht!]
     \begin{algorithmic}[1]
@@ -237,18 +236,18 @@ For large branching factors \m{} such as 32, the performance becomes effectively
     \label{lst:rb-tree-update}
 \end{listing}
 
-From the implementation perspective, the difference between update and radix search is that every visited node, including root, must be copied. The return value is the root node for the new version of the tree.
+From an implementation perspective, the difference between update and radix search is that every visited node, including root, must be copied. The return value is the root node for the new version of the tree.
 
 \subsection{Push}
-The push operation is used to add new values to the end of \treerb{}. It employs \emph{path copying} to preserve the original tree without changes. It accepts the root node and new value as arguments and returns a new version of the tree.
+The push operation is used to add new values to the end of an \treerb{}. It employs \emph{path copying} to preserve the original tree without changes. It accepts the root node and new value as arguments and returns a new version of the tree.
 
 The \treerb{} size is used as the search key. For example, if the tree size is 9, a key for the new value will be 9. The size is incremented after the operation completes.
 
 Since the push operation adds new values, it has to manage the tree capacity. Generally, there are two cases that require special handling:
 
 \begin{itemize}
-    \item The case when a path to a leaf node includes branches that are not created yet. The solution is to generate missing nodes while descending the tree.
-    \item The \emph{root overflow} or when the tree size exceeds its \emph{capacity}\footnote{Capacity is the maximum number of elements a tree can accommodate.}. It can be solved by adding a new level to the tree by creating a new root node and setting the old one as the first child of the new root.
+    \item The case when a path to a leaf node includes branch nodes that are not created yet. The solution is to generate missing nodes while descending the tree.
+    \item The situation when the tree size exceeds its \emph{capacity}\footnote{Capacity is the maximum number of elements a tree can accommodate.} is known as \emph{root overflow}. It can be solved by adding a new level to the tree by creating a new root node and setting the old one as the first child of the new root.
 \end{itemize}
 
 The complexity of the operation is \bigo{m \cdot log_m(n)} as it traverses and creates new nodes from the root to a leaf.
@@ -306,9 +305,9 @@ The complexity of the operation is \bigo{m \cdot log_m(n)} as it traverses and c
 \end{listing}
 
 \subsection{Pop}
-The purpose of pop is to remove values from the end of \treerb{}. It accepts root as input and returns both a removed value and a new version of a structure.
+The purpose of pop is to remove values from the end of an \treerb{}. It accepts root as input and returns both a removed value and a new version of a structure.
 
-Pop is responsible for reducing the capacity of \treerb{} when needed, including the removal of empty branches and leaves. Similar to update and push operations, it relies on the path copying algorithm to avoid modifying the existing version of the tree.
+Pop is responsible for reducing the capacity of \treerb{}s when needed, including the removal of empty branches and leaves. Similar to the update and the push operations, it relies on the path copying algorithm to avoid modifying the existing version of the tree.
 
 \begin{listing}[ht!]
 
@@ -351,11 +350,11 @@ Pop is responsible for reducing the capacity of \treerb{} when needed, including
     \label{lst:rb-tree-pop}
 \end{listing}
 
-Since \treerb{} is a complete\footnote{A complete \m{}-ary tree is an \m{}-ary tree, which is maximally space-efficient. It must be filled on every level except for the last level. However, if the last level is not complete, all nodes of the tree must be "as far left as possible".} tree, all entries to the right of \nil{} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, checking if the first entry is \nil{} is sufficient to understand if a node must be removed. If it is true, the empty child will be replaced with a \nil{} reference in the parent node.
+Since \treerb{} is a complete\footnote{A complete \m{}-ary tree is a tree that must be filled on every level except for the last one. If the last level is partially filled, all nodes of the tree must be "as far left as possible".} tree, all entries to the right of \nil{} must be absent as well. As shown in \Cref{lst:rb-tree-pop}, checking if the first entry is \nil{} is sufficient. If \nil{}, the empty child will be replaced with a \nil{} reference in the parent node.
 
-A root is redundant if it contains only a single child node, which is true if the second entry is \nil{}.  The original root is \emph{demoted} by replacing it with the first child node, which becomes the new root.
+A root is redundant if it contains only a single child node, the case if the second entry is \nil{}.  The original root is \emph{demoted} by replacing it with the first child node, which becomes the new root.
 
-The pop operation involves tree traversal, and it is creating \m{} new nodes. Hence, its complexity is \bigo{m \cdot log_m(n)}.
+The pop operation traverses a tree and creates \m{} new nodes. Hence, its complexity is \bigo{m \cdot log_m(n)}.
 
 \section{Relaxed radix balanced tree}
 \label{sec:rrb-tree}
@@ -364,12 +363,12 @@ Relaxed radix balanced tree or \treerrb{} is a \emph{confluently} persistent dat
 
 An invariant that \treerb{} maintains is that all nodes except the right-most ones have to be full. This enables a simple radix search implementation, but on the other hand, makes efficient sub-linear concatenation impossible.
 
-The \treerrb{} relaxes this constraint by allowing nodes to be partially full, and introduces a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
+\treerrb{}s relax this constraint by allowing nodes to be partially full, and introduce a rebalancing algorithm to ensure that the tree height does not exceed the \bigo{log(n)} bound to keep performance guarantees for other operations.
 
-In this section, we will look at how \treerrb{} works, specifically the concatenation algorithm and the relaxed variant of the radix search. For details of the implementation of the split, relaxed push, and pop operations, please refer to the project source code\footnote{\url{https://github.com/arazabishov/pvec-rs}} or to \cite{improving-performance-through-transience}.
+In this section, we will look at how \treerrb{}s work, specifically the concatenation algorithm and the relaxed variant of the radix search. For details of the implementation of the split, relaxed push, and pop operations, please refer to the project source code\footnote{\url{https://github.com/arazabishov/pvec-rs}} or to \cite{improving-performance-through-transience}.
 
 \subsection{Relaxed radix search}
-With relaxed \treerrb{} constraints, there is no reliable way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at the corresponding index. The sizes table values are re-calculated when the subtree is modified, for example, when concatenating or pushing new values.
+With relaxed \treerrb{} constraints, there is no efficient way to calculate the size of the subtree without additional metadata. Hence, the \emph{sizes} array is introduced to keep track of the subtree size. The \emph{sizes} array is \m{} elements long, where each value represents the subtree size at the corresponding index. The sizes table values are re-calculated when the subtree is modified, for example, when concatenating or pushing new values.
 
 When the radix search encounters a relaxed node, it compares the entire search key against entries in the size table. A subtree contains the desired value if the corresponding size table entry is bigger than or equal to the search key. Before descending into a subtree and repeating the search step, the search key is subtracted the size of the subtree.
 
@@ -421,7 +420,7 @@ Since the tree traversal involves scanning an \m{} long \emph{sizes} array for e
 \end{listing}
 
 \subsection{Concatenation}
-The concatenation algorithm used in this project is from \cite{rrb-vector-practical-general-purpose-im-sequence}, which produces a slightly more balanced tree than initially proposed by \cite{efficient-immutable-vectors}. It achieves it by allowing the relaxed tree nodes to have \m{} children instead of $\m{} - 1$.
+The concatenation algorithm used in this project is from \cite{rrb-vector-practical-general-purpose-im-sequence}, which produces a slightly more balanced tree than the initially proposed version from \cite{efficient-immutable-vectors}. It achieves it by allowing the relaxed tree nodes to have \m{} children instead of $\m{} - 1$.
 
 The algorithm consists of two stages: descending the tree, and then, merging and rebalancing nodes. The time complexity of the presented concatenation algorithm is \bigo{m^2 \cdot{} log_m(n)}.
 
@@ -464,7 +463,7 @@ The \textproc{Rebalance} function accepts three lists of nodes as arguments. The
 
 The goal of rebalancing is to arrange the children of merged nodes in such a way that all nodes except the rightmost branch are filled with values. When the \textproc{Rebalance} function completes re-arranging nodes, it returns a new branch containing rebalanced nodes. Pseudocode for rebalancing can be found in \Cref{lst:rrb-tree-rebalance}.
 
-The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-level-0}-\ref{fig:rrb-tree-rebalance}. Note, presented figures exclude parts of trees that are not important for conveying the idea to preserve space.
+The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-level-0}--\ref{fig:rrb-tree-rebalance}. Note, the presented figures exclude parts of trees that are not important for conveying the idea to preserve space.
 
 \begin{figure}[H]
     \colorlet{colorleft}{red!30}
@@ -526,11 +525,11 @@ The rebalancing process is illustrated in Figures \ref{fig:rrb-tree-rebalance-le
         \node[draw, dashed, inner sep=1mm, fit=(left-3-3) (left-3-3) (right-3-1) (left-3-3)] {};
     \end{tikzpicture}
 
-    \caption{Illustration of rebalancing algorithm at level 0}
+    \caption{Illustration of the rebalancing algorithm at level 0}
     \label{fig:rrb-tree-rebalance-level-0}
 \end{figure}
 
-Concatenation starts at the bottom of the tree by merging the leaf nodes. The result is a new rebalanced branch with leaves that will be used when rebalancing nodes at level 1.
+Concatenation starts at the bottom of the tree by merging the leaf nodes. The result is a new rebalanced branch node with leaves that will be used when rebalancing nodes at level 1.
 
 \begin{figure}[H]
     \colorlet{colorleft}{red!30}
@@ -596,11 +595,11 @@ Concatenation starts at the bottom of the tree by merging the leaf nodes. The re
         \node[draw, dashed, inner sep=1mm, fit=(merged-1-1) (merged-1-1) (left-2-4) (right-2-1)] {};
     \end{tikzpicture}
 
-    \caption{Illustration of rebalancing algorithm at level 1}
+    \caption{Illustration of the rebalancing algorithm at level 1}
     \label{fig:rrb-tree-rebalance-level-1}
 \end{figure}
 
-Rebalancing at level 1 involves the left and right branches together with the newly created branch from the previous step. The algorithm avoids processing nodes where rebalancing is not beneficial. For example, in \Cref{fig:rrb-tree-rebalance-level-2} where the \emph{full} nodes from the left-hand side tree are re-used without rebalancing them.
+Rebalancing at level 1 involves the left and right branch nodes together with the newly created branch node from the previous step. The algorithm avoids processing nodes where rebalancing is not beneficial. For example, in \Cref{fig:rrb-tree-rebalance-level-2} where the \emph{full} nodes from the left-hand side tree are reused without rebalancing them.
 
 \begin{figure}[H]
     \colorlet{colorleft}{red!30}
@@ -673,7 +672,7 @@ Rebalancing at level 1 involves the left and right branches together with the ne
         \node[draw, dashed, inner sep=1mm, fit=(merged-1-1) (merged-1-1) (left-1-1) (right-1-1)] {};
     \end{tikzpicture}
 
-    \caption{Illustration of rebalancing algorithm at level 2}
+    \caption{Illustration of the rebalancing algorithm at level 2}
     \label{fig:rrb-tree-rebalance-level-2}
 \end{figure}
 
@@ -762,7 +761,7 @@ Rebalancing at level 1 involves the left and right branches together with the ne
         \draw[edge, out=315, in=135] (merged-2-2-1-3.south) to (merged-3-7.north);
     \end{tikzpicture}
 
-    \caption{Illustration of rebalancing algorithm: a rebalanced tree}
+    \caption{Illustration of the rebalancing algorithm: a rebalanced tree}
     \label{fig:rrb-tree-rebalance}
 \end{figure}
 
@@ -807,12 +806,12 @@ Even though persistent data structures minimize the cost of creating new version
     \label{lst:clojure-vector-example}
 \end{listing}
 
-As demonstrated in \Cref{lst:clojure-vector-example}, working with transient types requires special syntax such as \mintinline{clojure}{transient}, \mintinline{clojure}{conj!}, and \mintinline{clojure}{persistent}\footnote{\url{https://clojure.org/reference/transients}}.
+As demonstrated in \Cref{lst:clojure-vector-example}, working with transient types requires special syntax such as \mintinline{clojure}{transient}, \mintinline{clojure}{conj!}, and \mintinline{clojure}{persistent!}\footnote{\url{https://clojure.org/reference/transients}}.
 
 \subsection{Guarantees and limitations}
-Clojure ensures that transients do not violate the guarantees of persistent data structures by enforcing the following rules:
+Clojure ensures that transience does not violate the guarantees of persistent data structures by enforcing the following rules:
 \begin{itemize}
     \item A transient vector created from a persistent one does not modify the original version. The cost of creating a transient instance is \bigo{1}, as well as transforming it back to persistent.
     \item Transients are confined to the thread they are created on, effectively forbidding sharing between threads and eliminating the possibility of race conditions.
-    \item Transients are not allowed to be used after converting them back to persistent to avoid in-directly modifying a persistent version.
+    \item Transients are not allowed to be used after converting them back to persistent to avoid indirectly modifying a persistent version.
 \end{itemize}

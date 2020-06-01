@@ -1,9 +1,9 @@
 \chapter{Persistent vectors in Rust}
 \label{chapter:persistent-vectors-in-rust}
 
-The purpose of this chapter is bifold: to present the \pvecrs{} project and to discuss its unique design traits in the context of Rust. First, we will take a look at the project structure, the types offered by the library, and how it can be configured.
+The purpose of this chapter is twofold: to present the \pvecrs{} project and to discuss its unique design features in the context of Rust. First, we will take a look at the project structure, the types offered by the library, and how it can be configured.
 
-Then, we will take a look at the design and optimizations of the persistent vector implementation in Rust and their specifics:
+Then, we will look at the design and optimizations of persistent vectors in Rust and their specifics:
 
 \begin{itemize}
     \item First, we will take a look at the memory layout of \rrbtree{} and how it supports the implementation of cloning and path copying.
@@ -15,8 +15,8 @@ Then, we will take a look at the design and optimizations of the persistent vect
 The \pvecrs{} project consists of three crates:
 \begin{itemize}
     \item The library crate itself with the persistent vector implementation.
-    \item \crate{web-vis}: a web application for visualization of the data structure in the browser.
-    \item \crate{benches-mem}: The benchmarking application for measuring the memory footprint of persistent vectors. Its usage is described in detail in \Cref{chapter:methodology}.
+    \item \crate{web-vis}: a crate with web application for visualization of the data structure in the browser.
+    \item \crate{benches-mem}: The benchmarking crate for measuring the memory footprint of persistent vectors. Its usage is described in detail in \Cref{chapter:methodology}.
 \end{itemize}
 
 The structure of the library is demonstrated in \Cref{lst:library-structure}. The \dir{pvec-rs} directory is the root of the library crate. The definition of \rrbtree{}, \rbvec{}, \rrbvec{}, and \pvec{} are all located under the \dir{src} folder. The \dir{benches} and \dir{tests} folders are for runtime benchmarks and integration tests correspondingly.
@@ -114,9 +114,9 @@ To compile persistent vectors for use in multi-threaded environment Rust require
 To access the \rayon{}'s parallel iterator implementations, the library user has to use both the \rust{arc} and \rust{rayon_iter} feature flags when including the library.
 
 \subsection{The library APIs}
-The \pvecrs{} project is the Rust library crate that offers several persistent vector implementations listed in \Cref{tab:vec-implementations}.
+The \pvecrs{} project is a Rust library crate that offers several persistent vector implementations listed below:
 
-\begin{table}[!htbp]
+\begin{table}[!ht]
 
     \centering
     \begin{tabular} { |p{18mm}|p{112mm}| }
@@ -142,16 +142,16 @@ The \pvecrs{} project is the Rust library crate that offers several persistent v
 
         \textbf{A vector function} & \stdvec{} & \rbvec{} & \rrbvec{} \\ \hline
 
-        \rust{fn push(&mut self, e: T)} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$log_m(n)$}  & \multirow{2}{*}{$log_m(n)$} \\
+        \rust{fn push(&mut self, e: T)} & \multirow{2}{*}{$1$} & \multirow{2}{*}{$log_m(n)$}  & \multirow{2}{*}{$log_m(n)$} \\
         Appends an element to the back of a collection & & & \\ \hdashline
 
-        \rust{fn pop(&mut self) -> Option<T>} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$m \cdot log_m(n)$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
+        \rust{fn pop(&mut self) -> Option<T>} & \multirow{2}{*}{$1$} & \multirow{2}{*}{$m \cdot log_m(n)$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
         Returns the last removed value or \rust{None} if vector is empty. & & & \\ \hdashline
 
-        \rust{fn get(&self, i: usize) -> Option<&T>} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$log_m(n)$}  & \multirow{2}{*}{$log_m(n)$} \\
+        \rust{fn get(&self, i: usize) -> Option<&T>} & \multirow{2}{*}{$1$} & \multirow{2}{*}{$log_m(n)$}  & \multirow{2}{*}{$log_m(n)$} \\
         Returns a reference to an element. & & & \\ \hdashline
 
-        \rust{fn get_mut(&mut self, i: usize) -> Option<&mut T>} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$m \cdot log_m(n)$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
+        \rust{fn get_mut(&mut self, i: usize) -> Option<&mut T>} & \multirow{2}{*}{$1$} & \multirow{2}{*}{$m \cdot log_m(n)$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
         Returns a mutable reference to an element. & & & \\ \hdashline
 
         \rust{fn append(&mut self, v: &mut Vec<T>)} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$m^2 \cdot log_m(n)$} \\
@@ -160,10 +160,10 @@ The \pvecrs{} project is the Rust library crate that offers several persistent v
         \rust{fn split_off(&mut self, at: usize) -> Vec<T>} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$m \cdot log_m(n)$} \\
         Splits the collection into two at the given index. & & & \\ \hdashline
 
-        \rust{fn len(&self) -> usize} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$C$}  & \multirow{2}{*}{$C$} \\
+        \rust{fn len(&self) -> usize} & \multirow{2}{*}{$1$} & \multirow{2}{*}{$1$}  & \multirow{2}{*}{$1$} \\
         Returns the number of elements in the vector. & & & \\ \hdashline
 
-        \rust{fn is_empty(&self) -> bool} & \multirow{2}{*}{$C$} & \multirow{2}{*}{$C$}  & \multirow{2}{*}{$C$} \\
+        \rust{fn is_empty(&self) -> bool} & \multirow{2}{*}{$1$} & \multirow{2}{*}{$1$}  & \multirow{2}{*}{$1$} \\
         Returns \rust{true} if the vector contains no elements. & & & \\ \hdashline
 
         \rust{fn into_iter(self) -> Iterator} & \multirow{2}{*}{$n$} & \multirow{2}{*}{$n$}  & \multirow{2}{*}{$n$} \\
@@ -177,9 +177,9 @@ The \pvecrs{} project is the Rust library crate that offers several persistent v
     \caption{A table of methods supported by persistent vectors}
 \end{table}
 
-All vectors provide methods with identical method signatures with the difference in how much each operation costs, and how they are implemented. \Cref{tab:vector-apis} lists available functions and their complexity.
+All vectors provide methods with identical method signatures with the difference in how much each operation costs. \Cref{tab:vector-apis} lists available functions and their complexity.
 
-Complexity of operations in \Cref{tab:vector-apis} is expressed using the Big O notation. The \bigo{1} value was substituted by $C$ for brevity.
+The complexity of operations in \Cref{tab:vector-apis} is expressed using the Big \bigochar{} notation. The \bigo{1} value was substituted by $1$ for brevity.
 
 The characteristics of the \rbvec{} and \rrbvec{} operations are effectively constant given that $m = 32$, and the input size $n$ is bound by the maximum capacity of the 32-bit integer resulting in $log_m(n) < 7$.
 
@@ -203,7 +203,7 @@ The foundation of a confluently persistent vector is \rrbtree{}, with additional
 
 As the persistent vector can be arbitrarily large, the Rust compiler is not able to measure its size during compilation. Hence, the memory allocation on the stack is not possible without additional constraints, such as the fixed vector capacity.
 
-In fact, the Rust compiler will abort the compilation if a \emph{recursive data type}\footnote{\url{https://doc.rust-lang.org/book/ch15-01-box.html\#enabling-recursive-types-with-boxes}} definition is encountered. A recursive data type is a type that contains itself, such as a tree node. The solution is to use dynamic memory allocation instead of static. Rust offers a particular type of pointers for this purpose known as smart pointers, such as \boxptr{}, \rc{}, etc.
+In fact, the Rust compiler will abort the compilation if a \emph{recursive data type}\footnote{\url{https://doc.rust-lang.org/book/ch15-01-box.html\#enabling-recursive-types-with-boxes}} definition is encountered. A recursive data type is a type that contains itself, such as a tree node. The solution is to use dynamic memory allocation instead of static. Rust offers a particular type of pointers for this purpose known as smart pointers\footnote{See \Cref{sec:memory-management-in-rust} for more details.}, such as \boxptr{}, \rc{}, etc.
 
 As \rrbtree{} employs structural sharing, several tree instances might point to the same sub-tree. In other words, one node can be referenced by several parent nodes simultaneously. Even though \boxptr{} enables recursive types, it does not allow shared ownership of the underlying value. A smart pointer that supports a notion of shared ownership is known as \rc{} or reference counting pointer.
 
@@ -213,7 +213,7 @@ In a nutshell, a reference counting pointer allows shared ownership of the objec
 \subsubsection*{Copy-on-write semantics}
 Rust’s \rc{} conforms to the ownership and borrowing rules that are enforced during runtime rather than compile-time. It allows shared immutable access to the value as well as regular reference does, and permits unique mutable access only if other references do not exist.
 
-The \mintinline{rust}{Rc::make_mut} method allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are no other pointers to the value, then \mintinline{rust}{Rc::make_mut} immediately returns a mutable reference. Otherwise, it clones the inner value to a new allocation to ensure unique ownership and then returns a reference to it. This mechanism will be referred to as conditional \emph{copy-on-write} behavior.
+The \mintinline{rust}{Rc::make_mut} method allows us to safely acquire a mutable pointer to the value regardless of the reference count. If there are no other pointers to the value, then \mintinline{rust}{Rc::make_mut} immediately returns a mutable reference. Otherwise, it clones the inner value to a new allocation to ensure unique ownership and then returns a reference to it. This behavior is known as \emph{copy-on-write}.
 
 \subsubsection*{Path copying}
 When updating the tree, the path leading from the root node to the affected leaf is copied to preserve the original tree from changes. The copy-on-write semantics of \rc{} is the foundation for the path copying algorithm implementation in \rrbtree{}.
@@ -223,19 +223,19 @@ Rust permits updating objects only through mutable references. To update a value
 \subsection{Structures, enumerations and cache locality}
 With the knowledge of how \rc{} helps to manage the memory and its semantics we can move on to the definition of the \rrbtree{} node using the following Rust constructs:
 \begin{itemize}
-    \item Structures or \emph{structs} are used to define a custom data type that lets you package together multiple related values \ref{sec:enums-structs-traits}.
-    \item Enumerations or \emph{enums} allow to define a type by enumerating its possible \emph{variants} \ref{sec:enums-structs-traits}.
+    \item Structures or \emph{structs} are used to define a custom data type that lets you package together multiple related values.
+    \item Enumerations or \emph{enums} allow to define a type by enumerating its possible \emph{variants}.
 \end{itemize}
 
-Conceptually, the \rrbtree{} consists of three node types: a balanced branch, a relaxed branch and a leaf. Depending on the tree level, branching nodes reference either other branching nodes or leaves. Thus, the node definition has to be generic over the child node type.
+Conceptually, the \rrbtree{} consists of three node types: a balanced branch node, a relaxed branch node, and a leaf. Depending on the tree level, branch nodes reference either other branch nodes or leaves. Thus, the node definition has to be generic over the child node type.
 
-Rust forbids inheritance in structs. It does, however, provide alternative ways of defining data types that are conceptually related: enumerations and \emph{trait objects}\footnote{\url{https://doc.rust-lang.org/book/ch17-02-trait-objects.html}}.
+Rust does not support inheritance in structs. It does, however, provide alternative ways of defining data types that are conceptually related: enumerations and \emph{trait objects}\footnote{\url{https://doc.rust-lang.org/book/ch17-02-trait-objects.html}}.
 
 Trait objects are objects that share common behavior by implementing the same interface. The main advantage of trait objects is their extensibility. Enums, on the other hand, cannot be extended with more variants outside of their declaration. Since tree nodes are an implementation detail of persistent vectors and are not expected to be extended, enums were favored over trait objects.
 
 Each enum variant can have a different set of fields. Hence, the enum size is capped by its largest variant to guarantee that all variants can be used interchangeably.
 
-\subsubsection*{Defining \rrbtree{} node in Rust}
+\subsubsection*{Defining \rrbtree{} nodes in Rust}
 
 We can finally bring everything together using structs and enums in combination with \rc{} to define the \rrbtree{} node. \Cref{fig:rrbtree-node} presents the structure as it is in the library.
 
@@ -285,7 +285,7 @@ We can finally bring everything together using structs and enums in combination 
     \label{fig:rrbtree-node}
 \end{listing}
 
-Each node type has received its own struct definition. An eagle eyed reader will notice that the \type{Node} enum in \Cref{fig:rrbtree-node} could have been declared in a more concise way by having the node fields defined directly within the variant. Even though it seems to be a more intuitive approach, it comes at a hidden cost.
+Each node type has received its own struct definition. An eagle-eyed reader will notice that the \type{Node} enum in \Cref{fig:rrbtree-node} could have been declared in a more concise way by having the node fields defined directly within the variant. Even though it seems to be a more intuitive approach, it comes at a hidden cost.
 
 \paragraph{The enum size and the cache locality}
 
@@ -442,14 +442,14 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
 \Cref{fig:memory-layout-of-rrbtree-node} visualizes how the enum and struct definitions of the \rrbtree{} node are arranged in memory.
 
 \section{Pay only for the features you use}
-The \pvecrs{} project draws inspiration from one of the Rust key design traits --- zero-cost abstractions. In this chapter, we will look at how \pvec{} follows that design principle by offering optimizations such as transience and dynamic representation, without sacrificing Rust's safety guarantees.
+The \pvecrs{} project draws inspiration from one of the Rust key design traits --- zero-cost abstractions. In this section, we will look at how \pvec{} follows that design principle by offering optimizations such as transience and dynamic representation, without sacrificing Rust's safety guarantees.
 
 \subsection{Transience as the language feature}
-Popular persistent data structure libraries, such as \emph{immutable-js}\footnote{\url{https://immutable-js.github.io/immutable-js/}}, or collections in the standard library of \emph{Scala}\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, often provide an interface that is very different from the interface of the ephemeral data structures.
+Popular persistent collection libraries, such as \emph{immutable-js}\footnote{\url{https://immutable-js.github.io/immutable-js/}} for JavaScript, or collections in the standard library of \emph{Scala}\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, often provide an interface that is different from the interface of the ephemeral data structures.
 
 As demonstrated in \Cref{lst:conventional-interface}, instead of updating the vector in-place, the operation returns a new instance that contains the change. When a collection is set up like that, the library can guarantee that the original vector will stay unmodified, eliminating the whole class of bugs such as race conditions.
 
-This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. The solution to this problem was first introduced in the \emph{Clojure} programming language in the shape of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies \ref{sec:transience}.
+This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. The solution to this problem was first introduced in the \emph{Clojure} programming language in the shape of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies\footnote{See \Cref{sec:transience} for more details.}.
 
 Rust's compiler, however, eliminates race conditions by forbidding simultaneous mutation of value by enforcing ownership and borrowing rules. The ownership rule essentially means that an object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Further than that, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
 

@@ -2,29 +2,29 @@
 
 Rust is a modern, open-source programming language with a focus on memory safety and performance. Its rich type system eliminates several classes of bugs and makes the language powerful and expressive for building high-level programs such as web servers and command-line interface applications. With direct access to computer memory and hardware, Rust is an excellent language for embedded and low-level programming as well.
 
-However, due to the emphasis on memory safety, it is common to get errors when building a Rust program, such as forbidden simultaneous sharing and mutation. Often, compile-time errors caused by it can be avoided by better design, but sometimes, the best resolution is to clone the value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of time and space. Thus, resorting to it, especially for large-sized collections might be in-efficient.
+However, due to the emphasis on memory safety, it is common to get errors when building a Rust program, such as forbidden simultaneous sharing and mutation. Often, compile-time errors of that kind can be avoided by better design, but sometimes, the best resolution is to clone the value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of time and space. Thus, resorting to it, especially for large-sized collections might be inefficient.
 
-Persistent data structures are data structures that provide access to all their previous versions. Often persistence is achieved through copying, and thus, various data structure designs have been developed throughout the years to optimize for this operation. The standard library of the Scala programming language\footnote{\url{https://www.scala-lang.org/}} provides a persistent vector implementation that demonstrates good performance for all operations, including copying.
+\emph{Persistent} data structures are data structures that provide access to all their previous versions. Often persistence is achieved through copying, and thus, various data structure designs have been developed throughout the years to optimize for this operation. For example, the standard library of the Scala programming language\footnote{\url{https://www.scala-lang.org/}} provides a persistent vector implementation that demonstrates good performance for all operations, including copying.
 
 This thesis presents \pvecrs{}, a project that contributes a vector implementation with efficient clone operation that borrows ideas from persistent data structures. The project explores novel approaches to optimize the vector's performance by relying on ownership and borrowing rules enforced by Rust, as well as aiming to achieve a convenient, familiar interface to developers. The proposed optimizations are evaluated and discussed based on the results of the sequential and parallel tests.
 
-In this introductory chapter, we will look at the background for the \pvecrs{} project. First, in \Cref{sec:rust}, we will look at the Rust programming language. Then, in \Cref{sec:psds}, we will take a closer look at persistent data structures and their classification. Finally, \Cref{sec:contributions} gives an overview of the contributions made in this project.
+In this chapter, we will look at the background for the \pvecrs{} project starting with \Cref{sec:rust} for the Rust programming language, followed by \Cref{sec:psds} dedicated to persistent data structures and their classification. Finally, \Cref{sec:contributions} gives an overview of the contributions made in this project.
 
 \section{The Rust programming language}
 \label{sec:rust}
 
 Rust is a relatively new programming language developed at Mozilla that favors reliability and performance. It is a statically typed language with type inference, with high-level constructs such as closures, pattern matching, and algebraic data types. At the same time, Rust gives the option to control low-level details, such as memory management, without all the unsafety traditionally associated with it.
 
-Rust does not have a garbage collector and can be configured to exclude the standard library, allowing it to be used for programming microcontrollers, operating systems, and drivers, the domain that has been occupied mainly by C/C++. It avoids the tradeoff between control and safety by statically checking memory correctness at compile-time without introducing any runtime overhead \cite{reed-patina}.
+Rust does not have a garbage collector and can be configured to exclude the standard library, allowing it to be used for programming microcontrollers, operating systems, and drivers, a domain that has been occupied mainly by C/C++. It avoids the tradeoff between control and safety by statically checking memory correctness at compile-time without introducing any runtime overhead \cite{reed-patina}.
 
-The advanced type system of Rust guarantees memory safety by enforcing ownership and borrowing rules, making Rust a unique programming language that helps to write fast, safe and reliable software.
+Rust's advanced type system guarantees memory safety by enforcing ownership and borrowing rules, making Rust a unique programming language that helps to write fast, safe, and reliable software.
 
-The project presented in the thesis, \pvecrs{}, contributes persistent vectors to the Rust programming language. The following sections are a basic introduction to the relevant parts of Rust touched in this thesis. For a more in-depth overview of the more advanced language features, see the Rust book\cite{rust-book-2e}.
+The project presented in the thesis, \pvecrs{}, contributes persistent vectors to the Rust programming language. The following sections are a basic introduction to the relevant parts of Rust touched in this thesis. For a more in-depth overview of the more advanced language features, see the Rust book \cite{rust-book-2e}.
 
 \subsection{Ownership and borrowing}
 
 \paragraph{Ownership}
-Ownership is Rust's most unique feature, and it enables Rust to make memory safety guarantees without needing a garbage collector. Every object allocated in Rust always has an \emph{owner}. Ownership can be transferred from one function to another by \emph{moving} the object. Rust's compiler is capable of tracking these movements and identify the location where the object is no longer used, or in Rust's terminology, where it goes out of scope, and generate code for destroying that object. To summarize:
+Ownership is Rust's most unique feature, and it enables Rust to make memory safety guarantees without needing a garbage collector. Every object allocated in Rust always has exactly one \emph{owner}. Ownership can be transferred from one function to another by \emph{moving} the object. Rust's compiler is capable of tracking these movements and identify the location where the object is no longer used, or in Rust's terminology, where it goes out of scope, and generate code for destroying that object. To summarize:
 
 \begin{itemize}
     \item Each value in Rust has a variable that is called its owner.
@@ -98,9 +98,11 @@ Rust has a second language hidden inside it that does not enforce memory safety 
 The \pvecrs{} project is designed and implemented without using unsafe Rust features to take advantage of all compile-time checks to minimize the risk of introducing bugs.
 
 \subsection{Memory management: the stack and the heap}
+\label{sec:memory-management-in-rust}
+
 Programming languages such as Java, do not give direct control over the stack and the heap memory, by abstracting them away from a developer. However, systems programming languages like Rust, allow explicit control over memory allocation on the stack or the heap.
 
-The stack is very fast and is where memory is allocated in Rust by default. The allocation is local to a function call and is limited in size. The heap, on the other hand, is slower and is explicitly allocated by program, but it is virtually unlimited in size and is globally accessible \cite{rust-book-2e}.
+By default, Rust allocates objects on the stack. The allocation is local to a function call and is limited in size. The heap allocations, on the other hand, have to be explicitly requested by the developer, and they are virtually unlimited in size and globally accessible \cite{rust-book-2e}.
 
 The following section gives an overview of how Rust supports heap allocation.
 
@@ -131,10 +133,10 @@ The following section gives an overview of how Rust supports heap allocation.
 \paragraph{Box}
 The most straightforward smart pointer is \type{Box<T>} that allows storing data on the heap rather than the stack.
 
-When box pointer in \Cref{lst:box} goes out of the scope on line 4, corresponding heap allocation gets freed as well.
+When the box pointer in \Cref{lst:box} goes out of the scope on line 4, the corresponding heap allocation gets freed as well.
 
 \paragraph{Rc or reference counting}
-There are cases when a single object might have multiple owners. In graph data structures, multiple edges might point to the same node, and that node is conceptually owned by all of the edges that point to it. A node should not be cleaned up unless it does not have any edges pointing to it \cite{rust-book-2e}.
+There are cases when a single object might have multiple owners. For example, in graph data structures, multiple edges might point to the same node, and that node is conceptually owned by all of the edges that point to it. A node should not be cleaned up unless it does not have any edges pointing to it \cite{rust-book-2e}.
 
 \begin{listing}[!ht]
 
@@ -277,7 +279,7 @@ Structs are the most common way to declare complex custom data types in Rust. A 
     \label{lst:trait}
 \end{listing}
 
-A \emph{trait} is a language feature used to define a set of methods that implement behavior. Moreover, they can be used to reuse behavior without reusing state\cite{schaerli-ducasse-nierstrasz-traits}. A distinct ability of traits is that they can be implemented outside of the type declaration, including types that belong to other modules. Traits support default function implementations, as well as inheritance. \Cref{lst:trait} shows how traits can be used to define the common contract between several data types.
+A \emph{trait} is a language feature used to define a set of methods that implement behavior. Moreover, they can be used to reuse behavior without reusing state \cite{schaerli-ducasse-nierstrasz-traits}. A distinct ability of traits is that they can be implemented outside of the type declaration, including types that belong to other modules. Traits support default function implementations, as well as inheritance. \Cref{lst:trait} shows how traits can be used to define the common contract between several data types.
 
 \paragraph{Drop}
 \emph{Dropping} is the process of cleaning-up a value that goes out of the scope in a Rust program. By default, the compiler generates code that automatically drops the value, but there is also a way to override the default behavior by implementing the \type{Drop} trait. The \type{Drop} trait requires to implement one method named drop that takes a mutable reference to self.
@@ -313,11 +315,11 @@ Multiple data structure designs were proposed, often offering good performance f
 \subsection{Tries}
 Since most write operations modify only some parts of a data structure, a complete copy is often unnecessary. A better approach is to use the similarity between the new and old versions by \emph{sharing} structure between them. For example, instead of using a single memory block to represent a data structure, it can be split into smaller pieces or \emph{nodes} linked together as a \emph{tree}. Since modifications only apply to some nodes, the rest of them remain unchanged and can be shared without copying.
 
-Inspired by Bagwell's paper Ideal Hash Trees \cite{ideal-hash-trees}, Rich Hickey pioneered the first persistent vector to offer uniformly good performance across different operations comparable to mutable vectors for the Clojure programming language. The Clojure's vector is \emph{fully} persistent, as it allows us to read and write to all versions.
+Inspired by Bagwell's paper Ideal Hash Trees \cite{ideal-hash-trees}, Rich Hickey pioneered the first persistent vector to offer uniformly good performance across different operations comparable to mutable vectors for the Clojure programming language. Clojure's vectors are \emph{fully} persistent, as they allow us to read and write to all versions.
 
-Persistent vector is a \emph{bit-array mapped trie}, or simply a "wide" tree with a high branching factor. Thus, tries are very shallow, being at most 7 levels deep when the branching factor is equal to 32, offering effectively constant time for almost all operations. Wide nodes and shallow height also help to improve cache locality and to reduce the cache misses.
+A persistent vector is a \emph{bit-array mapped trie}, or simply a "wide" tree with a high branching factor. Thus, tries\footnote{Generally, a trie is a kind of a tree data structure used to store key-value pairs where keys are usually strings.} are very shallow, being at most 7 levels deep when the branching factor is equal to 32, offering effectively constant time for almost all operations. Wide nodes and shallow height help to improve cache locality and to reduce cache misses.
 
-Later, Bagwell and Rompf introduced \emph{relaxed radix balanced tree} based on the design of Clojure's persistent vectors \cite{efficient-immutable-vectors}. \treerrb{} offers efficient concatenation and splitting, enabling vectors to be suitable data structures for parallel processing. Later it became a foundation for parallel vector in the Scala's standard library \cite{rrb-vector-practical-general-purpose-im-sequence}.
+Later, Bagwell and Rompf introduced \emph{relaxed radix balanced tree} based on the design of Clojure's persistent vectors \cite{efficient-immutable-vectors}. \treerrb{} offers efficient concatenation and splitting, enabling vectors to be suitable data structures for parallel processing. Later it became a foundation for parallel vectors in Scala's standard library \cite{rrb-vector-practical-general-purpose-im-sequence}.
 
 The \treerrb{} data structure is used to implement persistent vectors in \pvecrs{} and is explored further in \Cref{sec:rrb-tree}.
 
@@ -328,7 +330,7 @@ The purpose of this thesis is to explore and evaluate novel ideas proposed by Ni
 The following contributions are made in this thesis:
 \begin{itemize}
     \item A persistent vector implementation based on \treerrb{} with efficient concatenation and splitting to make it a reasonable data structure for use in parallel programming.
-    \item An extension for the data parallelism library Rayon, fused with persistent vectors to create an efficient general-purpose parallel vector.
+    \item An extension for the data parallelism library Rayon, fused with persistent vectors to create an efficient general-purpose parallel vector implementation.
     \item Describing and implementing novel optimizations specific to Rust, specifically \emph{dynamic representation} and \emph{unique access} optimizations.
     \item An extensive performance evaluation of the contributed persistent and parallel vectors, as well as the effectiveness of the proposed optimizations.
 \end{itemize}
