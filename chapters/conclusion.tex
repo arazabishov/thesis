@@ -124,9 +124,9 @@ Especially in Rust, the options listed above require either using the unsafe sub
 \section{Towards the library of persistent data structures for Rust}
 Vector is only one of many other general-purpose data structures provided by the Rust standard library, such as \type{LinkedList}, \type{HashMap}, \type{HashSet}, and others. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, the hash array mapped tries \cite{ideal-hash-trees} can be used as a foundation for \type{HashMap}.
 
-In fact, there are other projects that implement persistent collections for Rust today, such as \imrs{}\footnote{\url{https://docs.rs/im/14.3.0/im/}} and \rpds{}\footnote{\url{https://docs.rs/rpds/0.7.0/rpds/}}. Even though they do not offer the same optimizations and interface as \pvecrs{}, they are a viable alternative for someone who needs other persistent data structures today.
+In fact, there are other projects that implement persistent collections for Rust today, such as \imrs{}\footnote{\url{https://docs.rs/im/14.3.0/im/}} and \rpds{}\footnote{\url{https://docs.rs/rpds/0.7.0/rpds/}}. Even though they do not offer the same optimizations and interface as \pvecrs{}, they are a viable alternative for someone who needs a wider selection of persistent data structures today.
 
 \begin{center}
-    \vspace*{6cm}
+    \vspace*{5cm}
     \includegraphics[width=8cm, angle=0, trim=10 10 10 10, clip]{images/ferris-waving.png}
 \end{center}
