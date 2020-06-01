@@ -2,9 +2,9 @@
 
 Rust is a modern, open-source programming language with a focus on memory safety and performance. Its rich type system eliminates several classes of bugs and makes the language powerful and expressive for building high-level programs such as web servers and command-line interface applications. With direct access to computer memory and hardware, Rust is an excellent language for embedded and low-level programming as well.
 
-However, due to the emphasis on memory safety, it is common to get errors when building a Rust program, such as forbidden simultaneous sharing and mutation. Often, compile-time errors of that kind can be avoided by better design, but sometimes, the best resolution is to clone the value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of time and space. Thus, resorting to it, especially for large-sized collections might be inefficient.
+However, due to the emphasis on memory safety, it is common to get errors when building a Rust program, such as forbidden simultaneous sharing and mutation. Often, such compile-time errors of that kind can be avoided by better design, but sometimes, the best resolution is to clone the value before sharing it. Naive cloning by copying, however, is an expensive operation both in terms of time and space. Thus, resorting to it, especially for large-sized collections might be inefficient.
 
-\emph{Persistent} data structures are data structures that provide access to all their previous versions. Often persistence is achieved through copying, and thus, various data structure designs have been developed throughout the years to optimize for this operation. For example, the standard library of the Scala programming language\footnote{\url{https://www.scala-lang.org/}} provides a persistent vector implementation that demonstrates good performance for all operations, including copying.
+\emph{Persistent data structures} are data structures that provide access to all their previous versions. Often, persistence is achieved through copying, and thus, various data structure designs have been developed throughout the years to optimize for this operation. For example, the standard library of the Scala programming language\footnote{\url{https://www.scala-lang.org/}} provides a persistent vector implementation that demonstrates good performance for all operations, including copying.
 
 This thesis presents \pvecrs{}, a project that contributes a vector implementation with efficient clone operation that borrows ideas from persistent data structures. The project explores novel approaches to optimize the vector's performance by relying on ownership and borrowing rules enforced by Rust, as well as aiming to achieve a convenient, familiar interface to developers. The proposed optimizations are evaluated and discussed based on the results of the sequential and parallel tests.
 
@@ -93,7 +93,7 @@ On line 10 a new mutable reference is created with the \mintinline{rust}{&mut} o
 When the function \mintinline{rust}{take} is invoked the ownership to the \mintinline{rust}{vec} object is transferred to the variable \mintinline{rust}{my_data}. The \emph{move} happens because \mintinline{rust}{take} accepts the object by value rather than by a reference. Compiler will error on attempt to use \mintinline{rust}{vec} after it has been moved on line 13.
 
 \paragraph{Unsafe Rust}
-Rust has a second language hidden inside it that does not enforce memory safety guarantees: it is called \emph{unsafe} Rust. Rust forces developers to find a safer solution to problematic code or mark it as unsafe and thus highlight the code as a potential source of problems during future debugging.
+Rust has another language hidden inside it that does not enforce memory safety guarantees: it is called \emph{unsafe} Rust. Rust forces developers to find a safer solution to problematic code or mark it as unsafe and thus highlight the code as a potential source of problems during future debugging.
 
 The \pvecrs{} project is designed and implemented without using unsafe Rust features to take advantage of all compile-time checks to minimize the risk of introducing bugs.
 
@@ -294,7 +294,7 @@ Every \emph{crate}, including \pvecrs{}, has a \emph{Cargo.toml} configuration f
 \section{Persistent data structures}
 \label{sec:psds}
 
-\emph{Ephemeral} data structures are data structures that do not keep the history of their versions. Once an ephemeral data structure is modified, there is no mechanism to go back to previous states. This behavior is typical for collections provided by the standard library of modern general-purpose programming languages.
+\emph{Ephemeral} data structures are standard data structures that do not keep the history of their versions. Once an ephemeral data structure is modified, there is no mechanism to go back to previous states. This behavior is typical for collections provided by the standard library of modern general-purpose programming languages.
 
 \emph{Persistent} data structures, on the other hand, are set up in a different way to allow access to any version, old or new, at any time \cite{making-data-structures-persistent}. Persistent data structures were adopted in functional programming\footnote{Functional programming is a programming paradigm where programs are constructed by applying and composing functions.} languages such as Scala\footnote{\url{https://www.scala-lang.org/}} and Clojure\footnote{\url{https://clojure.org/}}.
 
@@ -303,7 +303,7 @@ Persistent data structures are categorized based on the operations which they of
 \begin{itemize}
     \item \textit{Partial persistence} --- Read-only access to any previous version of the data structure with the ability to update only the newest one. The versions are ordered linearly.
     \item \textit{Full persistence} --- Read and write operations are available for all versions. The versions are structured as a tree.
-    \item \textit{Confluent persistence} --- Full persistence with ability to merge several previous versions into a single new one. The versions form a directed acyclic graph \cite{fully-persistent-lists-with-catenation}.
+    \item \textit{Confluent persistence} --- Full persistence with the ability to merge several previous versions into a single new one. The versions form a directed acyclic graph \cite{fully-persistent-lists-with-catenation}.
     \item \textit{Functional persistence} --- This model takes its name from functional programming, where objects are immutable. In comparison to the previous models, it prohibits change of the internal representation of the data structure \cite{purely-functional-data-structures}.
 \end{itemize}
 
@@ -319,7 +319,7 @@ Inspired by Bagwell's paper Ideal Hash Trees \cite{ideal-hash-trees}, Rich Hicke
 
 A persistent vector is a \emph{bit-array mapped trie}, or simply a "wide" tree with a high branching factor. Thus, tries\footnote{Generally, a trie is a kind of a tree data structure used to store key-value pairs where keys are usually strings.} are very shallow, being at most 7 levels deep when the branching factor is equal to 32, offering effectively constant time for almost all operations. Wide nodes and shallow height help to improve cache locality and to reduce cache misses.
 
-Later, Bagwell and Rompf introduced \emph{relaxed radix balanced tree} based on the design of Clojure's persistent vectors \cite{efficient-immutable-vectors}. \treerrb{} offers efficient concatenation and splitting, enabling vectors to be suitable data structures for parallel processing. Later it became a foundation for parallel vectors in Scala's standard library \cite{rrb-vector-practical-general-purpose-im-sequence}.
+Later, Bagwell and Rompf introduced \emph{relaxed radix balanced trees} based on the design of Clojure's persistent vectors \cite{efficient-immutable-vectors}. \treerrb{}s offer efficient concatenation and splitting, enabling vectors to be suitable data structures for parallel processing. Later it became a foundation for parallel vectors in Scala's standard library \cite{rrb-vector-practical-general-purpose-im-sequence}.
 
 The \treerrb{} data structure is used to implement persistent vectors in \pvecrs{} and is explored further in \Cref{sec:rrb-tree}.
 
@@ -327,10 +327,10 @@ The \treerrb{} data structure is used to implement persistent vectors in \pvecrs
 \label{sec:contributions}
 The purpose of this thesis is to explore and evaluate novel ideas proposed by Nicholas Matsakis for optimizations that emerge at the intersection of the unique Rust features and persistent data structures to contribute a persistent vector implementation with excellent performance and idiomatic Rust interface.
 
-The following contributions are made in this thesis:
+The thesis makes the following contributions:
 \begin{itemize}
-    \item A persistent vector implementation based on \treerrb{} with efficient concatenation and splitting to make it a reasonable data structure for use in parallel programming.
-    \item An extension for the data parallelism library Rayon, fused with persistent vectors to create an efficient general-purpose parallel vector implementation.
+    \item A persistent vector implementation based on \treerrb{} with efficient concatenation and splitting to make it a reasonable data structure for parallel programming.
+    \item An extension for the data parallelism library Rayon, combined with persistent vectors for creating an efficient implementation of general-purpose parallel vectors.
     \item Describing and implementing novel optimizations specific to Rust, specifically \emph{dynamic representation} and \emph{unique access} optimizations.
     \item An extensive performance evaluation of the contributed persistent and parallel vectors, as well as the effectiveness of the proposed optimizations.
 \end{itemize}
