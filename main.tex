@@ -21,12 +21,6 @@
 \usepackage{multirow, array}
 \usepackage{arydshln}
 
-\usepackage[
-  colorinlistoftodos,
-  prependcaption,
-  textsize=small
-]{todonotes}
-
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc,url}
 \urlstyle{sf}
@@ -43,7 +37,7 @@
 
 \usepackage{amssymb}
 \usepackage{tikz}
-\usetikzlibrary{matrix,arrows,backgrounds,fit}
+\usetikzlibrary{matrix,arrows,backgrounds,fit,positioning}
 
 \usepackage{forest}
 \usepackage{pgfplots}
@@ -185,6 +179,6 @@
 \pdfbookmark[1]{List of Tables}{bm-tables}
 \listoftables
 
-% TODO: bibliography and listings are not in the table of contents
-\printbibliography
+\printbibliography[heading=bibintoc]
+
 \end{document}

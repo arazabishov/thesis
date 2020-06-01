@@ -893,7 +893,7 @@ The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of 
 \label{sec:par-benchmarks}
 The benchmarks were executed against \stdvec{} and vectors from \pvecrs{}, where \rbvec{}, \rrbvec{}, and \pvec{} were compiled with the threadsafe reference counting pointer -- \arc{}.
 
-As of the time of writing, \imrsvec{} does not implement the Rayon's \type{IntoParallelIterator} trait, and therefore, was not included in the parallel benchmarks.
+At the time of writing, \imrsvec{} does not implement the \type{IntoParallelIterator} trait, and therefore, is not included in the parallel benchmarks.
 
 The benchmarks were parameterized over two dimensions: the vector size and the number of threads. To see whether parallelism is beneficial, each benchmark has an analogous, sequential implementation used as the baseline.
 
