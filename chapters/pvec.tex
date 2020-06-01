@@ -90,8 +90,7 @@ The structure of the library is demonstrated in \Cref{lst:library-structure}. Th
 \end{figure}
 
 \subsection{Configurability}
-The \pvecrs{} project can be configured using the feature flags described in \Cref{tab:feature-flags}.
-
+The \pvecrs{} project can be configured using the feature flags described below:
 \begin{table}[H]
 
     \centering
@@ -131,6 +130,8 @@ The \pvecrs{} project is a Rust library crate that offers several persistent vec
 \end{table}
 
 \rbvec{} and \rrbvec{} are based on \rrbtree{}. Both types implement the \emph{tail}\footnote{See \Cref{sec:tail-optimization} for details on the \emph{tail} optimization.} optimization and offer effectively constant \rust{push}, \rust{pop}, \rust{get}, and \rust{get_mut} operations, with the difference that \rrbvec{} offers efficient \rust{append} and \rust{split_off}. \pvec{}, on the other hand, inherits performance properties of the underlying representation that is either \stdvec{} or \rrbvec{}.
+
+All vectors provide methods with identical method signatures with the difference in how much each operation costs. The table below lists available functions and their complexity:
 
 \begin{table}[!ht]
     \newcolumntype{P}[1]{>{\centering\arraybackslash}p{#1}}
@@ -177,9 +178,7 @@ The \pvecrs{} project is a Rust library crate that offers several persistent vec
     \caption{A table of methods supported by persistent vectors}
 \end{table}
 
-All vectors provide methods with identical method signatures with the difference in how much each operation costs. \Cref{tab:vector-apis} lists available functions and their complexity.
-
-The complexity of operations in \Cref{tab:vector-apis} is expressed using the Big \bigochar{} notation. The \bigo{1} value was substituted by $1$ for brevity.
+The complexity of operations is expressed using the Big \bigochar{} notation. The \bigo{1} value was substituted by $1$ for brevity.
 
 The characteristics of the \rbvec{} and \rrbvec{} operations are effectively constant given that $m = 32$, and the input size $n$ is bound by the maximum capacity of the 32-bit integer resulting in $log_m(n) < 7$.
 
