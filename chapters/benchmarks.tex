@@ -886,12 +886,6 @@ Once a vector is generated, the benchmark function enters the loop with the cond
     \label{fig:split}
 \end{figure}
 
-
-% TODO: you have to be open about:
-%  1: split_off and append are fast*er* compared to vec only for large sizes
-%   1.1: this is part of the reason why in par benchmarks tree-based vectors suck
-%  2: split_off benchmark is biased as it favors the use-case that is faster for the tree-based implementations
-
 \paragraph{Results}
 The performance advantage of \stdvec{} over \rrbvec{} is 3.24 up to the size of \kilo{20}, after which it degrades and gets slower than \imrsvec{} and \rrbvec{} by 5.95. The difference is more significant for \rbvec{} at the factor of 65.65 for the size of \kilo{400}.
 
