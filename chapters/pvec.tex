@@ -16,7 +16,7 @@ The \pvecrs{} project consists of three crates:
 \begin{itemize}
     \item The library crate itself with the persistent vector implementation.
     \item \crate{web-vis}: a crate with web application for visualization of the data structure in the browser.
-    \item \crate{benches-mem}: The benchmarking crate for measuring the memory footprint of persistent vectors. Its usage is described in detail in \Cref{chapter:methodology}.
+    \item \crate{benches-mem}: The benchmarking crate for measuring the memory footprint of persistent vectors. Its usage is described in detail in \Cref{chapter:evaluation}.
 \end{itemize}
 
 The structure of the library is demonstrated in \Cref{lst:library-structure}. The \dir{pvec-rs} directory is the root of the library crate. The definition of \rrbtree{}, \rbvec{}, \rrbvec{}, and \pvec{} are all located under the \dir{src} folder. The \dir{benches} and \dir{tests} folders are for runtime benchmarks and integration tests correspondingly.
@@ -442,18 +442,18 @@ This, in turn, means that the \mintinline{rust}{Node} enum variants will be equa
 \Cref{fig:memory-layout-of-rrbtree-node} visualizes how the enum and struct definitions of the \rrbtree{} node are arranged in memory.
 
 \section{Pay only for the features you use}
-The \pvecrs{} project draws inspiration from one of the Rust key design traits --- zero-cost abstractions. In this section, we will look at how \pvec{} follows that design principle by offering optimizations such as transience and dynamic representation, without sacrificing Rust's safety guarantees.
+The \pvecrs{} project draws inspiration from one of the Rust key design features --- zero-cost abstractions. In this section, we will look at how \pvec{} follows that design principle by offering optimizations such as transience and dynamic representation, without sacrificing Rust's safety guarantees.
 
 \subsection{Transience as the language feature}
-Popular persistent collection libraries, such as \emph{immutable-js}\footnote{\url{https://immutable-js.github.io/immutable-js/}} for JavaScript, or collections in the standard library of \emph{Scala}\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, often provide an interface that is different from the interface of the ephemeral data structures.
+Popular persistent collection libraries in other languages, such as \emph{immutable-js}\footnote{\url{https://immutable-js.github.io/immutable-js/}} for JavaScript, or collections in the standard library of \emph{Scala}\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, often provide an interface that is different from the interface of the standard data structures.
 
 As demonstrated in \Cref{lst:conventional-interface}, instead of updating the vector in-place, the operation returns a new instance that contains the change. When a collection is set up like that, the library can guarantee that the original vector will stay unmodified, eliminating the whole class of bugs such as race conditions.
 
-This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. The solution to this problem was first introduced in the \emph{Clojure} programming language in the shape of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies\footnote{See \Cref{sec:transience} for more details.}.
+This, in turn, means that every modification will cause a copy. For example, in a pure function where vector processing is scoped strictly to the function body, there is no risk of introducing a race condition, and therefore, no need to create new copies. A solution to this problem was first introduced in the \emph{Clojure} programming language in the form of \emph{transient} data types. A \emph{transient}, persistent vector is a vector that is persistent but can be updated in-place without generating unnecessary copies\footnote{See \Cref{sec:transience} for more details.}.
 
-Rust's compiler, however, eliminates race conditions by forbidding simultaneous mutation of value by enforcing ownership and borrowing rules. The ownership rule essentially means that an object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Further than that, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
+Rust's compiler, however, eliminates race conditions by forbidding simultaneous mutation of value by enforcing ownership and borrowing rules. The ownership rule essentially means that an object can be owned only by a single entity at a time. Borrowing rules state that any number of immutable references can be created given that there is no \emph{mutable} references existing. Furthermore, if a mutable reference exists, Rust ensures that it is the only \emph{unique} reference.
 
-This leads us to a question of whether the traditional persistent collection interface is needed in Rust. The short answer is no because the compiler protects developers from common mistakes. Nicholas Matsakis, the lead engineer of the Rust's compiler, elaborated why in Rust persistent vectors can have an ordinary interface in his blog\footnote{\url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}.
+This leads us to the question of whether the traditional persistent collection interface is needed in Rust. The short answer is no because the compiler protects developers from common mistakes. Nicholas Matsakis, the lead engineer of the Rust compiler, elaborated why in Rust persistent vectors can have an ordinary interface in his blog\footnote{\url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}.
 
 \subsubsection*{Unique access as transience}
 Unique access as a term stems from the fact that in Rust, a mutable reference to an object must be \emph{unique}. By leveraging this guarantee, persistent vectors in Rust can have a conventional mutable interface without sacrificing safety.
@@ -511,28 +511,28 @@ When cloned on line 5, the reference count of the root node of the underlying \r
 Path copying that is delayed to the first update means that the clone operation is effectively free in cases when a vector is cloned and shared for read-only purposes.
 
 \paragraph{Transience in Clojure is different}
-Transience in Clojure\footnote{\url{https://clojure.org/reference/transients}} is not identical to unique access based optimization in Rust, and these are the main differences:
+Transience in Clojure\footnote{\url{https://clojure.org/reference/transients}} is not identical to the unique access optimization in Rust. These are the main differences:
 
 \begin{itemize}
     \item In Clojure, transient vectors are confined to the thread they are created on. Therefore, they cannot be modified on another thread. Persistent vectors in Rust can be safely moved between threads as long as the ownership and borrowing rules are followed.
-    \item Calling any methods on a transient vector after it transitions back to persistent is prohibited and will cause an exception in Clojure. In Rust, there are no special restrictions imposed on vectors.
-    \item In order to initialize a transient collection in Clojure, one has to use special syntax such as the \mintinline{clojure}{transient} function, or \mintinline{clojure}{persistent!} to convert a transient instance back to persistent.
+    \item Calling any method on a transient vector after it transitions back to persistent is prohibited and will cause an exception in Clojure. In Rust, there are no special restrictions imposed on vectors.
+    \item To initialize a transient collection in Clojure, one has to use special syntax such as the \mintinline{clojure}{transient} function, or \mintinline{clojure}{persistent!} to convert a transient instance back to persistent.
 \end{itemize}
 
 \subsection{Dynamic representation}
 A unique property of \pvec{} is that it features an interface identical to the standard vector, contrary to the conventional persistent interface that is significantly different.
 
-If two vector types have identical interfaces, in theory, they can be used interchangeably without any additional changes made to the program. Hence, it becomes possible to dynamically choose a vector type depending on the context and performance requirements.
+If two vector types have identical interfaces, they can be used interchangeably without any additional changes made to the program. Hence, it becomes possible to dynamically choose a vector type depending on the context and performance requirements.
 
-The dynamic representation explores this idea by using both the standard and tree-based vectors to ensure the best possible performance, depending on the use case.
+The dynamic representation explores this idea by using both standard and the tree-based vectors to ensure the best possible performance, depending on the situation.
 
 \subsubsection*{Deciding when to switch the representation}
-The standard vector is very fast in almost all operations due to its efficient, hardware friendly design. Exceptions are the operations that rely on copying, such as concat, split, and clone. The tree-based vector, on the other hand, offers effectively \bigo{1} clones and good all-around performance.
+Standard vectors are very fast in almost all operations due to their efficient, hardware friendly design. Exceptions are operations that rely on copying, such as concat, split, and clone. Tree-based vectors, on the other hand, offers effectively \bigo{1} clones and good all-around performance.
 
-To take the best of both worlds, a vector can start as the standard vector and when it is cloned, it will be transformed into the tree-based one. Essentially, by switching the representation only when cloning, we offset the cost of using trees until they are beneficial\footnote{Nicholas Matsakis proposed a variation of this idea as future work in his blog: \url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}. This optimization fits into the overall "Pay only for the features you use" idea, as it prevents the user from paying the abstraction cost until it is used.
+To take the best of both worlds, a vector can start as standard vector and when it is cloned, it will be transformed into a tree-based one. Essentially, by switching the representation only when cloning, we offset the cost of using trees until they are beneficial\footnote{Nicholas Matsakis proposed a variation of this idea as future work in his blog: \url{http://smallcultfollowing.com/babysteps/blog/2018/02/01/in-rust-ordinary-vectors-are-values/}}. This optimization fits into the overall "Pay only for the features you use" idea, as it prevents the user from paying the abstraction cost until it is used.
 
 \subsubsection*{Switching the representation}
-Essentially, a persistent vector type -- \pvec{}, can be backed by two different vector types at runtime. It starts as \stdvec{}, and then switches to the \rrbvec{} on the first clone. The process of switching from one vector type to another is called \emph{spilling}, as it maps a contiguous chunk of memory into smaller pieces that are used as leaf nodes to build \rrbvec{}.
+Essentially, a persistent vector type \pvec{}, can be backed by two different vector types at runtime. It starts as \stdvec{}, and then switches to the \rrbvec{} on the first clone. The process of switching from one vector type to another is called \emph{spilling}, as it maps a contiguous chunk of memory into smaller pieces that are used as leaf nodes to build \rrbvec{}.
 
 \begin{listing}[H]
 
@@ -610,6 +610,6 @@ Additionally, the cost of spilling needs to be paid only once, and will be amort
         \draw[edge, out=270, in=90] (representation-flat-box.south) to (representation-tree-box.north);
     \end{tikzpicture}
 
-    \caption{Visualization of switching the vector representation}
+    \caption{Switching the vector representation}
     \label{fig:switching-representations}
 \end{figure}

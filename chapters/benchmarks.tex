@@ -5,7 +5,7 @@
 \chapter{Benchmarks and results}
 \label{chapter:benchmarks-and-results}
 
-In this chapter, we will define sequential, parallel, and memory benchmarks, and then evaluate the results of executing them. The overall performance will be discussed, as well as the impact of the following optimizations:
+In this chapter, we will define our sequential, parallel, and memory benchmarks, and then evaluate the results of executing them. The overall performance will be discussed, as well as the impact of the following optimizations:
 
 \begin{itemize}
     \item The effect of \rrbtree{} relaxation on performance of all vector operations.
@@ -14,10 +14,10 @@ In this chapter, we will define sequential, parallel, and memory benchmarks, and
 \end{itemize}
 
 \paragraph{Reading notes}
-Implementations that are postfixed with \relaxed{} in the figure legend were configured to use the relaxed \treerrb{} in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when the flat representation is used. If not specified, the balanced \treerb{} is used.
+Implementations postfixed with \relaxed{} in the figure legends were configured to use the relaxed \treerrb{} in the benchmark. \standard{} stands for standard and will be applied only to \pvec{} when the flat representation is used. If not specified, the balanced \treerb{} is used.
 
 \section{Sequential benchmarks}
-Each benchmark described in this section focuses on a particular operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify a vector instance, such as push, will have a complementary version of the benchmark, which also uses the clone operation. This is necessary for comparison of the path copying and naive algorithm used in the tree-based and standard vectors correspondingly.
+Each benchmark described in this section focuses on a particular operation of a vector. To avoid ambiguous results, each test exercises only one operation at a time. Operations that modify a vector instance, such as push, will have a complementary version of the benchmark, which also uses the clone operation. It is necessary to compare the path copying and naive algorithm used in the tree-based and standard vectors correspondingly.
 
 The following operations were evaluated for vector implementations in \Cref{tab:vec-implementations}:
 \begin{table}[!htbp]
@@ -38,7 +38,7 @@ The following operations were evaluated for vector implementations in \Cref{tab:
 \end{table}
 
 \paragraph{Benchmark structure}
-Some benchmarks depend on preconditions. For example, to test indexing, we first need to create a vector with values. Since building a vector instance is not a part of that test, it happens in the setup routine. Hence, benchmarks with preconditions are executed in two steps: setup and the actual test.
+Some benchmarks depend on preconditions. For example, to test indexing, we first need to create a vector with values. Since building a vector instance is not a part of that test, it happens in the setup routine. Hence, benchmarks with preconditions are executed in two steps: the setup and the actual test.
 
 \paragraph{Benchmarking dimensions}
 Every benchmark for a core operation is parameterized over the vector size. By providing different arguments, we can observe how the performance of vectors is affected in response. This is especially insightful for the tree-based implementations, where the size of the vector influences the height of the tree, which has a negative impact on performance. The output of a benchmark for a given size is the mean runtime in \millis{}.
@@ -60,12 +60,12 @@ The indexing benchmarks share the same setup routine for generating a vector. Ba
 
 The vector size is passed as an argument and falls into the range of \range{[20, \mega{1}]}.
 
-Figures for the index operation are separated by sequential and random access, where the sequential benchmark results are subdivided into the index and iterator figures.
+Figures for the index operation are separated by sequential and random access, where the sequential benchmark results are subdivided into index and iterator figures.
 
 \subsubsection*{Index sequentially}
-The benchmark loops over the array of \range{[0, N)} indices, and reads values from a vector at the given position. Only immutable references to values are acquired.
+The benchmark loops over an array of \range{[0, N)} indices, and reads values from a vector at the given position. Only immutable references to values are acquired.
 
-Iterators consume the tree-based vectors by chunks, rather than by individual values. They also they take the ownership of values instead of borrowing them.
+Iterators consume the tree-based vectors by chunks, rather than by individual values. They also take ownership of values instead of borrowing them.
 
 \begin{figure}[!htbp]
 
@@ -145,9 +145,9 @@ Iterators consume the tree-based vectors by chunks, rather than by individual va
 \end{figure}
 
 \paragraph{Results}
-As expected, \stdvec{} shows the best results in this test. As it is represented by a contiguous chunk of memory, it takes full advantage of CPU cache locality. Besides, its structure is not affected by the method used to build it, when \rbtree{} and \rrbtree{} based vectors are.
+As expected, \stdvec{} shows the best results in this test. As it is represented by a contiguous chunk of memory, it takes full advantage of CPU cache locality. Besides, its structure is not affected by the method used to build it, whereas \rbtree{} and \rrbtree{} based vectors are.
 
-Both balanced and relaxed \imrsvec{} variants are slower in comparison to \rrbvec{} in the \range{[100, \mega{1}]} input range by a factor of 2.06. For smaller inputs, \rrbvec{} it is slightly faster with a difference of 1.18.
+Both balanced and relaxed \imrsvec{} variants are slower in comparison to \rrbvec{} in the \range{[100, \mega{1}]} input range by a factor of 2.06. For smaller inputs, \rrbvec{} it is slightly faster by a factor of 1.18.
 
 \paragraph{Balanced vs. relaxed}
 The difference between \rbvec{} and \rrbvec{} becomes noticeable as the problem size grows. The balanced variant is faster than the relaxed one by a factor of 2.68 in the \range{[100, \mega{1}]} input range. This is expected because \rrbvec{} introduces relaxed nodes, which rely on the size tables to compute the path to the value.
@@ -238,7 +238,7 @@ A noticeable difference compared to the sequential benchmark is that the perform
 It is clear that \pvec{}, when flat, is marginally slower compared to \stdvec{}. The performance difference remains consistent over the input range at 1.75.
 
 \subsection{Updating}
-There are two dimensions in which the update operation is evaluated. The first one is the order in which vector values are updated: sequential and random. The second dimension introduces the clone operation to measure the cost of copying:
+There are two dimensions in which the update operation is evaluated. The first one is the order in which vector values are updated: sequentially and randomly. The second dimension introduces the clone operation to measure the cost of copying:
 
 \begin{itemize}
     \item Sequentially, with and without \emph{clone}.
@@ -249,7 +249,7 @@ The setup routine for all benchmarks is identical. As for the index benchmarks, 
 
 The vector size is determined by the benchmark argument. The problem size domain for tests using clone is \range{[20, \kilo{20}]}, and \range{[20, \kilo{100}]} range for benchmarks without clone.
 
-\paragraph{The cost of naive clone vs. path copying}
+\paragraph{The cost of naive cloning vs. path copying}
 The path copying algorithm of \rbtree{} enables cheap copies. \pvec{} takes advantage of that by switching from the flat to the tree-based representation when cloned. Hence, the objectives are:
 \begin{itemize}
     \item Compare the performance of naive and path copying algorithms.

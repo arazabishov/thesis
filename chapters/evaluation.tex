@@ -1,7 +1,7 @@
-\chapter{Methodology}
-\label{chapter:methodology}
+\chapter{Performance evaluation}
+\label{chapter:evaluation}
 
-Big \bigochar{} is a useful theoretical tool for reasoning about scalability and performance, and by design, it does not consider factors such as execution environment. It disregards constant factors as they are not significant for the growth rate of functions. It also does not consider the architecture of CPU and memory \cite{what-programmer-should-know-about-memory}, which indeed influence performance. Furthermore, the same applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms, which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
+The Big \bigochar{} notation is a useful theoretical tool for reasoning about scalability and performance, and by design, it does not consider factors such as execution environment. It disregards constant factors as they are not significant for the growth rate of functions. It also does not consider the architecture of the CPU and of the memory \cite{what-programmer-should-know-about-memory}, which indeed influence performance. Furthermore, the same applies to software, such as operating systems, schedulers, virtual machines, et cetera. Hence, often algorithms, which are expected to be equally fast based on \bigochar{}, may differ substantially in performance when evaluated experimentally.
 
 Thus, in this chapter, I will introduce a methodology for the experimental performance evaluation of \rrbvec{}, \pvec{}, and their variants, in comparison to implementations from \imrsvec{} and Rust's standard library. We will look at:
 
@@ -13,7 +13,7 @@ Thus, in this chapter, I will introduce a methodology for the experimental perfo
 To begin with, I will present the focus areas.
 
 \section{Evaluation dimensions}
-To evaluate the effectiveness of the proposed optimizations, we need to test various tree-based vectors, such as \rbvec{}, \rrbvec{}, and \pvec{}. Implementations from \imrsvec{} and the standard library will be evaluated as well. All vector variants are specified in \Cref{tab:vec-implementations}.
+To evaluate the efficiency of the proposed optimizations, we need to test various tree-based vectors, such as \rbvec{}, \rrbvec{}, and \pvec{}. Implementations from \imrsvec{} and the standard library will be evaluated as well. All vector variants are specified in \Cref{tab:vec-implementations}.
 
 \begin{table}[!htbp]
     \centering
@@ -45,7 +45,7 @@ Runtime benchmarks are categorized by the scope of what they test: individual op
 Space or memory benchmarks are designed to:
 \begin{enumerate}
     \item Measure the memory overhead of the tree-based vectors.
-    \item Evaluate whether structural sharing helps to preserve memory.
+    \item Evaluate whether structural sharing helps to reduce the memory footprint.
 \end{enumerate}
 
 \subsection{Objectives}
@@ -57,16 +57,14 @@ As instances of \rrbtree{} are generally not perfectly balanced and involve the 
 Before each benchmark run, an instance of \rrbvec{} will be prepared by concatenating small vectors together. The number of the relaxed nodes is affected by the vector size.
 
 \subsubsection*{Dynamic representation}
-A substantial advantage of the tree-based vectors is that they are cheap to copy. Other operations, however, are faster for \stdvec{} due to its optimal memory layout. Dynamic representation offers strong \stdvec{} performance until the vector is cloned, switching its representation to \rrbvec{}.
+A substantial advantage of the tree-based vectors is that they are cheap to copy. Other operations, however, are faster for \stdvec{} due to its optimal memory layout. Dynamic representation offers a strong performance based on \stdvec{} until the vector is cloned, switching its representation to \rrbvec{}.
 
-Ideally, \pvec{} should demonstrate the same performance of the type that represents it. Unfortunately, as \pvec{} itself is an additional abstraction, it might introduce some overhead.
-
-The goal is to measure the performance of \pvec{} in practice and to check if it adds overhead over the types used as its representations: \stdvec{} and \rrbvec{}.
+Ideally, \pvec{} should demonstrate the same performance of the type that represents it. The goal is to measure the \pvec{} performance in practice and to check if it adds overhead over the types used as its representations: \stdvec{} and \rrbvec{}.
 
 \subsubsection*{Unique access}
 While \rrbvec{} performs well as a persistent data structure, it can perform even better when persistence is not required. An example is a function creating and returning an instance of \rrbvec{}, where all versions except the returned one are disregarded.
 
-Luckily, the persistent vector presented in this project takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is similar to transience in the Clojure's persistent vector implementation, but not entirely identical \cite{improving-performance-through-transience}.
+Luckily, the persistent vector implementation presented in this project takes advantage of Rust's compiler capabilities of tracking object aliasing. Thus, it avoids redundant copying on mutation if the given object is uniquely accessed. This behavior is similar to transience in the Clojure's persistent vector implementation \cite{improving-performance-through-transience}, but not entirely identical.
 
 In Rust, non-transient, persistent behavior can be enforced by cloning the object before performing a mutation. The objective is to measure the cost of using the clone operation in the persistent vector.
 
@@ -76,7 +74,7 @@ Experimental performance evaluation introduces a set of unique challenges. For i
 Benchmarking frameworks were introduced to solve this problem. They are designed to get stable measurements by executing the same test thousands of times. Some of them, such as criterion for Haskell\footnote{\url{https://hackage.haskell.org/package/criterion}} and Rust\footnote{\url{https://crates.io/crates/criterion}}, JMH for Java\footnote{\url{https://openjdk.java.net/projects/code-tools/jmh/}}, and ScalaMeter for Scala\footnote{\url{https://scalameter.github.io/}}, introduce statistical methods for the detection and elimination of exceptionally different runs, known as outliers.
 
 \subsection{Benchmarking frameworks for Rust}
-There are several benchmarking frameworks available for Rust, and unfortunately, none of them reached a stable release yet. However, some of them are being actively used in the Rust community and have proven to produce reliable results.
+There are several benchmarking frameworks available for Rust, and unfortunately, none of them has reached a stable release yet. However, some of them are being actively used in the Rust community and have proven to produce reliable results.
 
 There are several criteria which a suitable framework has to meet:
 \begin{itemize}
@@ -98,7 +96,7 @@ Criterion for Rust is a powerful and statistically rigorous tool for profiling c
 It is compatible with the stable release of the Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project.
 
 \subsubsection*{Alternatives}
-Other less popular frameworks, such as \crate{bencher}\footnote{\url{https://crates.io/crates/bencher}} and \crate{easybench}\footnote{\url{https://crates.io/crates/easybench}}, were not considered due to the lack of features necessary for the experiment, such as setup routines, optional measurement of \emph{drop} outlier detection, et cetera.
+Other less popular frameworks, such as \crate{bencher}\footnote{\url{https://crates.io/crates/bencher}} and \crate{easybench}\footnote{\url{https://crates.io/crates/easybench}}, were not considered due to the lack of features necessary for the experiments, such as setup routines, optional measurement of \emph{drop} outlier detection, et cetera.
 
 \subsection{Configuration and input size}
 All tree-based vector implementations, such as \rbvec{}, \rrbvec{} and \pvec{} were configured to use a branching factor of 32, as it provides the best tradeoff for the performance of both read and write operations \cite{efficient-immutable-vectors}.
@@ -118,7 +116,7 @@ Unlike the sequential benchmarks that measure operations in isolation, the paral
 
 This is an acceptable tradeoff, as the objective is to evaluate the overall performance. Additionally, we also want to check whether the relaxed append and split of \rrbvec{} have a positive performance impact.
 
-Data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to facilitate the parallelism. Thus, data structures with the fast split and append operations are critical for optimal performance for such frameworks.
+Data parallelism frameworks, such as Rayon\footnote{\url{https://crates.io/crates/rayon}}, Cilk\footnote{\url{http://supertech.lcs.mit.edu/cilk/}}, and Scala's parallel collections\footnote{\url{https://docs.scala-lang.org/overviews/parallel-collections/overview.html}}, split the work into smaller chunks to facilitate parallelism. Thus, data structures with fast split and append operations are critical for optimal performance for such frameworks.
 
 In this section, we will take a look at how to configure Rayon and review how it distributes the work across threads.
 
@@ -236,7 +234,7 @@ By default, the thread number allocated by Rayon is equal to the number of cores
 Ideally, tasks split between threads take the same amount of time to process. Unfortunately, this is often not the case, resulting in poor utilization of resources. To fairly distribute the work, Rayon attaches a work queue to each thread. A thread keeps processing the queue until it becomes empty. When the queue is empty, a thread can steal work from another thread. This technique is known as work-stealing.
 
 \section{Measuring the memory footprint}
-This section presents a methodology used to evaluate the memory footprint of both the tree-based and flat vector types. The benchmark suite is expected to measure the overall memory footprint of the vector, including the stack and the heap memory.
+This section presents the methodology used to evaluate the memory footprint of both the tree-based and flat vector types. The benchmark suite is expected to measure the overall memory footprint of the vector, including the stack and the heap memory.
 
 \subsection{Memory profiling tools}
 As of the time of writing, there is no established practice or a framework for measuring the memory usage tailored towards Rust.
@@ -256,7 +254,7 @@ The first option is not ideal because it only evaluates the heap memory usage. A
 Benchmarking by measuring the process footprint allows to capture both the stack and the heap usage, and it does not depend on any special Rust debug or allocator features. This, in turn, means that the benchmarks can be optimized as if they were compiled for the production use, putting them as close as possible to real use cases.
 
 \paragraph{Implementation}
-A new module is introduced to \pvecrs{} -- \crate{pvec-memory}, that includes an application for executing the memory benchmarks. Its responsibilities are to configure, run, and collect the test results. It will be referred to as \emph{memory bencher} from now on.
+A new \crate{pvec-memory} crate is introduced to \pvecrs{} that includes an application for executing the memory benchmarks. Its responsibilities are to configure, run, and collect the test results. It will be referred to as \emph{memory bencher} from now on.
 
 The memory bencher contains a list of tests, input sizes, and vector types. It executes benchmarks by running them through the command line program called \emph{time}, which outputs information about the process, including the maximum amount of memory used in bytes. The memory bencher finds this value in the \emph{maximum resident set size} field in the output of \emph{time}.
 
@@ -334,7 +332,7 @@ To execute parallel benchmarks, the user needs to pass both the \emph{arc} and \
     \label{lst:parallel-benches}
 \end{listing}
 
-Criterion can also generate HTML reports that includes charts created by \emph{gnuplot}\footnote{\url{http://www.gnuplot.info/}}. Results can be found in the \dir{pvec-rs/target/criterion} directory, and if \emph{gnuplot} is available, the HTML report will be located in the \dir{report/index.html} subdirectory.
+Criterion can also generate HTML reports that include charts created by \emph{gnuplot}\footnote{\url{http://www.gnuplot.info/}}. Results can be found in the \dir{pvec-rs/target/criterion} directory, and if \emph{gnuplot} is available, the HTML report will be located at \dir{report/index.html}.
 
 For more information on available options and parameters for Criterion, please consult the library documentation\footnote{\url{https://docs.rs/criterion/0.3.1/criterion/}}.
 
