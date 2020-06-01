@@ -24,7 +24,7 @@ To evaluate the effectiveness of the proposed optimizations, we need to test var
         \rbvec{} & The \rbtree{}-based vector implementation \\ \hline
         \rrbvec{} & The \rrbtree{}-based vector implementation \\ \hline
         \pvec{} & The \rrbtree{}-based vector implementation with dynamic representation \\ \hline
-        \imrsvec{} & The \rrbtree{}-based vector implementation from the third party library \emph{im-rs}\footnotemark{} \\ \hline
+        \imrsvec{} & The \rrbtree{}-based vector implementation from the third party library \crate{im-rs}\footnotemark{} \\ \hline
     \end{tabular}
 
     \label{tab:vec-implementations}
@@ -98,7 +98,7 @@ Criterion for Rust is a powerful and statistically rigorous tool for profiling c
 It is compatible with the stable release of the Rust compiler. Thus, Criterion was chosen as a benchmarking framework for this project.
 
 \subsubsection*{Alternatives}
-Other less popular frameworks, such as \emph{bencher}\footnote{\url{https://crates.io/crates/bencher}} and \emph{easybench}\footnote{\url{https://crates.io/crates/easybench}}, were not considered due to the lack of features necessary for the experiment, such as setup routines, optional measurement of \emph{drop} outlier detection, et cetera.
+Other less popular frameworks, such as \crate{bencher}\footnote{\url{https://crates.io/crates/bencher}} and \crate{easybench}\footnote{\url{https://crates.io/crates/easybench}}, were not considered due to the lack of features necessary for the experiment, such as setup routines, optional measurement of \emph{drop} outlier detection, et cetera.
 
 \subsection{Configuration and input size}
 All tree-based vector implementations, such as \rbvec{}, \rrbvec{} and \pvec{} were configured to use a branching factor of 32, as it provides the best tradeoff for the performance of both read and write operations \cite{efficient-immutable-vectors}.
@@ -230,7 +230,7 @@ Next, Rayon decides whether it is beneficial to parallelize the work by evaluati
     \label{lst:rayon-join}
 \end{listing}
 
-By default, the thread number allocated by Rayon is equal to the number of cores available in the system. To observe how the thread number affects the performance, Rayon's thread pool will be configured to work with 2, 4, 8, and 16 threads.
+By default, the thread number allocated by Rayon is equal to the number of cores available in the system. To observe how the thread number affects the performance, Rayon's thread pool will be configured to work with 2, 4, and 8 threads.
 
 \subsection{Work distribution}
 Ideally, tasks split between threads take the same amount of time to process. Unfortunately, this is often not the case, resulting in poor utilization of resources. To fairly distribute the work, Rayon attaches a work queue to each thread. A thread keeps processing the queue until it becomes empty. When the queue is empty, a thread can steal work from another thread. This technique is known as work-stealing.
@@ -276,7 +276,7 @@ All benchmarks were executed on a computer with an octa-core processor with hype
     \centering
 
     \begin{tabular} { |l| p{11cm} | }
-        \hline CPU & 2,3 GHz 8-Core Intel Core i9, 16 threads. \\ \hline
+        \hline CPU & 2,3 GHz 8-Core Intel Core i9. \\ \hline
         RAM & 32GB DDR4, 2400MHz. \\ \hline
         Disk & 1TB SSD. \\ \hline
         OS & macOS Catalina v10.15.4. \\ \hline

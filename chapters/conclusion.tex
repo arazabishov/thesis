@@ -101,7 +101,7 @@ In an attempt to improve the cache locality properties of the standard vector, a
 
 The dynamic representation can be extended with the new representation type that allocates vector on the stack. The vector first will be allocated on the stack, then spill to the heap when exceeding a certain size threshold, and switched to \rrbvec{} when cloned.
 
-One has to be cautious in implementing this optimization. Internally, \pvec{} is backed by the \emph{Representation} enum, and in Rust, the enum size is bounded by its largest variant. The variant that holds the stack-allocated buffer will quickly supersede \emph{Flat} and \emph{Tree} representations if set to be sufficiently large, increasing the overall memory footprint of \pvec{}.
+One has to be cautious in implementing this optimization. Internally, \pvec{} is backed by the \type{Representation} enum, and in Rust, the enum size is bounded by its largest variant. The variant that holds the stack-allocated buffer will quickly supersede \type{Flat} and \type{Tree} representations if set to be sufficiently large, increasing the overall memory footprint of \pvec{}.
 
 \subsection{Focus and display optimizations}
 The notion of \emph{focus} was introduced in Scala's immutable vector implementation and was further studied in \cite{rrb-vector-practical-general-purpose-im-sequence}. Instead of keeping track only of the vector \emph{tail}, the focus is generalized to work with the leaf node, which was last modified. The basis for this is the principle of spatial locality, a heuristic that assumes that collocated elements are more likely to be accessed one after another.
@@ -122,7 +122,7 @@ Even though \emph{display} and \emph{focus} seem to optimize some specific use c
 Especially in Rust, the options listed above require either using the unsafe subset of the language features, sacrificing the simplicity, and possibly the reliability and performance. Adding \emph{focus} and \emph{display} to \rrbvec{} is therefore left as future work.
 
 \section{Towards the library of persistent data structures for Rust}
-Vector is only one of many other general-purpose data structures provided by the Rust standard library, such as \emph{LinkedList}, \emph{HashMap}, \emph{HashSet}, and others. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, the hash array mapped tries \cite{ideal-hash-trees} can be used as a foundation for \emph{HashMap}.
+Vector is only one of many other general-purpose data structures provided by the Rust standard library, such as \type{LinkedList}, \type{HashMap}, \type{HashSet}, and others. The ideas discussed in this thesis can be used to implement persistent variants of those data structures. For example, the hash array mapped tries \cite{ideal-hash-trees} can be used as a foundation for \type{HashMap}.
 
 In fact, there are other projects that implement persistent collections for Rust today, such as \imrs{}\footnote{\url{https://docs.rs/im/14.3.0/im/}} and \rpds{}\footnote{\url{https://docs.rs/rpds/0.7.0/rpds/}}. Even though they do not offer the same optimizations and interface as \pvecrs{}, they are a viable alternative for someone who needs other persistent data structures today.
 
