@@ -1,5 +1,7 @@
 # A technical report on RRB-Tree based vector for Rust
 
+The rendered pdf document can be downloaded from [here](https://github.com/ArazAbishov/thesis/releases/download/v1.0/thesis.pdf).
+
 ## The project links
 
 * [The project web page](https://abishov.com/pvec-rs)
