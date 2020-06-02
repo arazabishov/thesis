@@ -26,4 +26,4 @@ cd ../ && lualatex -shell-escape main.tex
 
 ## Tools
 
-For writing, I used the VSCode extension for LaTeX - [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=James-Yu.latex-workshop).
+For writing, I used the VSCode extension for LaTeX - [LaTeX Workshop](https://marketplace.visualstudio.com/items?itemName=James-Yu.latex-workshop). The `settings.json` file contains a configuration for the extension.
