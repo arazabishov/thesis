@@ -1,0 +1,7 @@
+{
+  "name": "thesis",
+  "compatibility_date": "2025-12-30",
+  "assets": {
+    "directory": "./_site",
+  },
+}
